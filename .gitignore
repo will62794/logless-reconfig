@@ -1,0 +1,4 @@
+*.toolbox
+latex/
+.DS_Store
+*.pdf
