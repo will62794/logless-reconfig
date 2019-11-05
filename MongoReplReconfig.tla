@@ -190,6 +190,7 @@ QuorumAgreeInSameTerm(matchEntryVal) ==
 (**************************************************************************************************)
 RollbackEntries(i, j) == 
     /\ CanRollback(log[i], log[j])
+    /\ i \in config[j]    
     /\ LET commonPoint == RollbackCommonPoint(log[i], log[j]) IN
            \* If there is no common entry between log 'i' and
            \* log 'j', then it means that the all entries of log 'j'
@@ -198,7 +199,11 @@ RollbackEntries(i, j) ==
            \* if the commonPoint is '0' then SubSeq(log[i], 1, 0) will evaluate
            \* to <<>>, the empty sequence.
            log' = [log EXCEPT ![j] = SubSeq(log[i], 1, commonPoint)] 
-    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, commitIndex, matchEntry, config, configVersion, immediatelyCommitted>>
+    /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
+                                          ![j] = Max({currentTerm[i], currentTerm[j]})]
+    \* Step down remote node if it's term is smaller than yours.                                      
+    /\ state' = [state EXCEPT ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i]] 
+    /\ UNCHANGED <<votedFor, candidateVars, leaderVars, commitIndex, matchEntry, config, configVersion, immediatelyCommitted>>
        
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -214,6 +219,7 @@ RollbackEntries(i, j) ==
 (**************************************************************************************************)
 GetEntries(i, j) == 
 \*  /\ currentTerm[j] >= currentTerm[i] \* (OPTIONAL, doesn't affect safety?)
+    /\ j \in config[i]
     /\ state[i] = Secondary
     \* Node j must have more entries than node i.
     /\ Len(log[j]) > Len(log[i])
@@ -236,7 +242,11 @@ GetEntries(i, j) ==
                             \* Advance commit index if newer.
                             THEN commitIndex[j]
                             ELSE commitIndex[i]]
-    /\ UNCHANGED <<state, votedFor, currentTerm, candidateVars, matchEntry, leaderVars, config, configVersion, immediatelyCommitted>>   
+    /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
+                                          ![j] = Max({currentTerm[i], currentTerm[j]})]
+    \* Step down remote node if it's term is smaller than yours.                                      
+    /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j]]          
+    /\ UNCHANGED <<votedFor, candidateVars, matchEntry, leaderVars, config, configVersion, immediatelyCommitted>>   
     
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -636,6 +646,6 @@ PrefixAndImmediatelyCommittedDiffer ==
 
 =============================================================================
 \* Modification History
-\* Last modified Tue Nov 05 12:44:06 EST 2019 by williamschultz
+\* Last modified Tue Nov 05 18:14:26 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
