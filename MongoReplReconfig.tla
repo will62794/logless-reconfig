@@ -315,68 +315,7 @@ CommitEntry(i) ==
             /\ log[s][ind] = log[i][ind]        \* they have the entry.
             /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
         /\ immediatelyCommitted' = immediatelyCommitted \cup {<<ind, currentTerm[i]>>}
-        /\ UNCHANGED <<serverVars, candidateVars, leaderVars, logVars, matchEntry, config, configVersion>>         
-
-  
-(**************************************************************************************************)
-(* [ACTION]                                                                                       *)
-(*                                                                                                *)
-(* Node 'i' updates node 'j' with its latest log application progress.                            *)
-(*                                                                                                *)
-(* This action abstracts away the details of how this information would be passed between two     *)
-(* nodes.  In a real system, it will likely be via a message sent from one node to the other.     *)
-(**************************************************************************************************)
-UpdatePosition(i, j) == 
-    /\ Len(log[i]) > 0
-    \* If node 'j' gives a progress update to node 'i', it must make sure to
-    \* update the term of node 'i' with its own term, if it is higher. In a real system,
-    \* this action would occur by 'j' sending a progress update message to 'i' that includes 
-    \* the term of 'j' at the time of sending. Upon receiving the message, 'i' would update its
-    \* own term if it was smaller than the term attached to the message.
-    /\ currentTerm' = [currentTerm EXCEPT ![j] = Max({currentTerm[i], currentTerm[j]})]
-    \* Primary nodes must revert to Secondary state if they increment their local term.
-    /\ state' = [state EXCEPT ![j] = IF currentTerm[i] > currentTerm[j] THEN Secondary ELSE @]
-    /\ LET lastEntry == <<Len(log[i]), LastTerm(log[i])>> IN
-           /\ matchEntry[j][i] # lastEntry \* Only update progress if newer.
-           /\ matchEntry' = [matchEntry EXCEPT ![j][i] = lastEntry] 
-    /\ UNCHANGED << votedFor, candidateVars, logVars, leaderVars, commitIndex>>        
-
-
-(**************************************************************************************************)
-(* [ACTION]                                                                                       *)
-(*                                                                                                *)
-(* Advances the commit point on server 'i'.                                                       *)
-(*                                                                                                *)
-(* The commit point is calculated based on node i's current 'matchEntry' vector.  Choose the      *)
-(* highest index that is agreed upon by a majority.  We are only allowed to choose a quorum whose *)
-(* last applied entries have the same term.                                                       *)
-(**************************************************************************************************)
-AdvanceCommitPoint(i) == 
-    LET quorumAgree == QuorumAgreeInSameTerm(matchEntry[i]) IN
-        /\ quorumAgree # Nil
-        \* The term of the entries in the quorum must match our current term.
-        /\ LET serverInQuorum == CHOOSE s \in quorumAgree : TRUE
-               termOfQuorum == matchEntry[i][serverInQuorum][2] 
-               \* The minimum index of the applied entries in the quorum.
-               newCommitIndex == Min({matchEntry[i][s][1] : s \in quorumAgree}) IN
-               /\ termOfQuorum = currentTerm[i]
-               \* We store the commit index as an <<index, term>> pair instead of just an
-               \* index, so that we can uniquely identify a committed log prefix.
-               /\ commitIndex' = [commitIndex EXCEPT ![i] = <<newCommitIndex, termOfQuorum>>]
-    /\ UNCHANGED << serverVars, candidateVars, leaderVars, log, matchEntry, config, configVersion>>  
-
-\* Version of commit point advancement on a primary that directly inspects the global history variables. This would
-\* not be possible in a real implementation, but we can use to it test other aspects of protocol e.g. commit point 
-\* propagation, without relying on the correctness of commit point advancement rules on primary. We simply advance the
-\* commit point to the newest "committed" log entry globally.
-AdvanceCommitPointOmniscient(i) == 
-    /\ state[i] = Primary 
-    \* Advance the commit point on a primary to an immediately committed log entry that exists
-    \* in the primary's log.
-    /\ \E e \in immediatelyCommitted : 
-        /\ \E index \in DOMAIN log[i] : log[i][index].term = e.entry[2]
-        /\ commitIndex' = [commitIndex EXCEPT ![i] = e.entry]
-    /\ UNCHANGED << serverVars, candidateVars, leaderVars, log, matchEntry, config, configVersion>>
+        /\ UNCHANGED <<serverVars, candidateVars, leaderVars, logVars, matchEntry, config, configVersion>>              
         
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -503,7 +442,8 @@ RollbackCommitted == \E s \in Server :
                         /\ <<ind, log[s][ind].term>> \in immediatelyCommitted
                         \* And the entry got rolled back.
                         /\ Len(log'[s]) < ind
-
+                        
+NeverRollbackCommitted == [][~RollbackCommitted]_vars
     
 RollbackSafety == 
     \E i,j \in Server : CanRollback(log[i], log[j]) =>
@@ -696,6 +636,6 @@ PrefixAndImmediatelyCommittedDiffer ==
 
 =============================================================================
 \* Modification History
-\* Last modified Mon Nov 04 23:42:15 EST 2019 by williamschultz
+\* Last modified Tue Nov 05 12:44:06 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
