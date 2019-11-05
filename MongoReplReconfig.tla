@@ -73,11 +73,24 @@ logVars == <<log, commitIndex>>
 \* implementation. It is a function from each server that voted for this candidate 
 \* in its currentTerm to that voter's log.
 VARIABLE voterLog
+
+\*
+\* Reconfig related variables.
+\*
+
+\* A server's current config. A config is just a set of servers 
+\* i.e. an element of SUBSET Server
+VARIABLE config
+
+\* The config version of a node's current config.
+VARIABLE configVersion
+
+
 candidateVars == <<voterLog>>
 
 leaderVars == <<elections>>
 
-vars == <<allLogs, serverVars, candidateVars, leaderVars, logVars, matchEntry, immediatelyCommitted>>
+vars == <<allLogs, serverVars, candidateVars, leaderVars, logVars, matchEntry, immediatelyCommitted, config, configVersion>>
 
 -------------------------------------------------------------------------------------------
 
@@ -88,6 +101,7 @@ vars == <<allLogs, serverVars, candidateVars, leaderVars, logVars, matchEntry, i
 \* The set of all quorums. This just calculates simple majorities, but the only
 \* important property is that every quorum overlaps with every other.
 Quorum == {i \in SUBSET(Server) : Cardinality(i) * 2 > Cardinality(Server)}
+Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
     
 \* Return the minimum value from a set, or undefined if the set is empty.
 Min(s) == CHOOSE x \in s : \A y \in s : x <= y
@@ -114,16 +128,19 @@ Empty(s) == Len(s) = 0
 \* The term of the last entry in a log, or 0 if the log is empty.
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)].term
 
-\* Can node 'i' currently cast a vote for node 'j'.
+\* Can node 'i' currently cast a vote for node 'j' in term 'term'.
 CanVoteFor(i, j) == 
     LET logOk == 
         \/ LastTerm(log[j]) > LastTerm(log[i])
         \/ /\ LastTerm(log[j]) = LastTerm(log[i])
            /\ Len(log[j]) >= Len(log[i]) IN
-    /\ currentTerm[i] <= currentTerm[j]
-    /\ j # votedFor[i] 
+\*    /\ currentTerm[i] <= currentTerm[j]
+\*    /\ j # votedFor[i] 
+    \* you can only vote for someone with the same config version as you.
+    /\ configVersion[i] = configVersion[j]
     /\ logOk
- 
+
+
 \* Could server 'i' win an election in the current state.
 IsElectable(i) == 
     LET voters == {s \in Server : CanVoteFor(s, i)} IN
@@ -181,7 +198,7 @@ RollbackEntries(i, j) ==
            \* if the commonPoint is '0' then SubSeq(log[i], 1, 0) will evaluate
            \* to <<>>, the empty sequence.
            log' = [log EXCEPT ![j] = SubSeq(log[i], 1, commonPoint)] 
-    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, commitIndex, matchEntry>>
+    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, commitIndex, matchEntry, config, configVersion>>
        
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -219,7 +236,7 @@ GetEntries(i, j) ==
                             \* Advance commit index if newer.
                             THEN commitIndex[j]
                             ELSE commitIndex[i]]
-    /\ UNCHANGED <<state, votedFor, currentTerm, candidateVars, leaderVars>>   
+    /\ UNCHANGED <<state, votedFor, currentTerm, candidateVars, leaderVars, config, configVersion>>   
     
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -232,12 +249,18 @@ GetEntries(i, j) ==
 (* quorum of nodes who voted for it appropriately, as if a full election has occurred.            *)
 (**************************************************************************************************)
 BecomeLeader(i) ==
-    \E voteQuorum \in Quorum :
+    \* Primaries make decisions based on their current configuration.
+    \E voteQuorum \in Quorums(config[i]) :
+        /\ i \in config[i] \* only become a leader if you are a part of your config.
         /\ i \in voteQuorum \* The new leader should vote for itself.
-        /\ \A v \in voteQuorum : CanVoteFor(v, i)
+        /\ \A v \in voteQuorum : 
+            /\ CanVoteFor(v, i)
+            \* Updating your term and casting your vote in that term are atomic in this spec,
+            \* so there's no possible way you could be in term T but not have voted yet in term T.
+            /\ currentTerm[i] + 1 > currentTerm[v]
         \* Update the terms of each voter.
         /\ currentTerm' = [s \in Server |-> IF s \in voteQuorum THEN currentTerm[i]+1 ELSE currentTerm[s]]
-        /\ votedFor' = [s \in Server |-> IF s \in voteQuorum THEN i ELSE votedFor[s]]
+        /\ votedFor' = votedFor
         /\ state' = [s \in Server |-> 
                         IF s = i THEN Primary
                         ELSE IF s \in voteQuorum THEN Secondary \* All voters should revert to secondary state.
@@ -248,8 +271,31 @@ BecomeLeader(i) ==
                             evotes    |-> voteQuorum,
                             evoterLog |-> voterLog[i]] IN
            elections'  = elections \cup {election}        
-        /\ UNCHANGED <<logVars, candidateVars, matchEntry>>         
-  
+        /\ UNCHANGED <<logVars, candidateVars, matchEntry, config, configVersion>>         
+
+\*
+\* A reconfig occurs on node i. The node must currently be a leader.
+\*
+Reconfig(i) == 
+    \* Pick some arbitrary subset of servers to reconfig to. 
+    \* Make sure to include this node in the new config, though.
+    \E newConfig \in SUBSET Server : 
+        /\ state[i] = Primary
+        /\ i \in newConfig
+        \* The config on this node takes effect immediately
+        /\ config' = [config EXCEPT ![i] = newConfig]
+        /\ \* Pick a config version higher than all existing config versions.
+            LET newConfigVersion == Max(Range(configVersion)) + 1 IN
+            configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
+        /\ UNCHANGED <<serverVars, candidateVars, leaderVars, logVars, matchEntry>>         
+
+\* Node i sends its current config to node j. It is only accepted if the config version is newer.
+SendConfig(i, j) == 
+    /\ configVersion[j] < configVersion[i]
+    /\ config' = [config EXCEPT ![j] = config[i]]
+    /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
+    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, logVars, matchEntry>>         
+
   
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -296,7 +342,7 @@ AdvanceCommitPoint(i) ==
                \* We store the commit index as an <<index, term>> pair instead of just an
                \* index, so that we can uniquely identify a committed log prefix.
                /\ commitIndex' = [commitIndex EXCEPT ![i] = <<newCommitIndex, termOfQuorum>>]
-    /\ UNCHANGED << serverVars, candidateVars, leaderVars, log, matchEntry>>  
+    /\ UNCHANGED << serverVars, candidateVars, leaderVars, log, matchEntry, config, configVersion>>  
 
 \* Version of commit point advancement on a primary that directly inspects the global history variables. This would
 \* not be possible in a real implementation, but we can use to it test other aspects of protocol e.g. commit point 
@@ -309,7 +355,7 @@ AdvanceCommitPointOmniscient(i) ==
     /\ \E e \in immediatelyCommitted : 
         /\ \E index \in DOMAIN log[i] : log[i][index].term = e.entry[2]
         /\ commitIndex' = [commitIndex EXCEPT ![i] = e.entry]
-    /\ UNCHANGED << serverVars, candidateVars, leaderVars, log, matchEntry>>
+    /\ UNCHANGED << serverVars, candidateVars, leaderVars, log, matchEntry, config, configVersion>>
         
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -323,7 +369,7 @@ ClientRequest(i, v) ==
        newLog == Append(log[i], entry) IN
        /\ log' = [log EXCEPT ![i] = newLog]
        /\ matchEntry' = [matchEntry EXCEPT ![i][i] = <<Len(newLog), entry.term>>]
-    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, commitIndex>>
+    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, commitIndex, config, configVersion>>
 
 -------------------------------------------------------------------------------------------
 
@@ -526,6 +572,11 @@ Init ==
     \* Log variables.
     /\ log          = [i \in Server |-> << >>]
     /\ commitIndex  = [i \in Server |-> <<0, 0>>]
+    \* Reconfig variables.
+    \* Initially, all nodes start out with the same view of the config, which includes
+    \* all nodes.
+    /\ config =         [i \in Server |-> Server]
+    /\ configVersion =  [i \in Server |-> 0]
     \* History variables
     /\ elections = {}
     /\ allLogs   = {log[i] : i \in Server}
@@ -538,16 +589,26 @@ Init ==
 HistNext == 
     /\ allLogs' = allLogs \cup {log[i] : i \in Server}
     /\ immediatelyCommitted' = immediatelyCommitted \cup AllImmediatelyCommitted'
-         
+
+
+BecomeLeaderAction ==   \E s \in Server : BecomeLeader(s) /\ HistNext
+ClientRequestAction ==  \E s \in Server : \E v \in Value : ClientRequest(s, v)    /\ HistNext
+GetEntriesAction ==     \E s, t \in Server : GetEntries(s, t)                       /\ HistNext
+RollbackEntriesAction ==  \E s, t \in Server : RollbackEntries(s, t)                /\ HistNext
+ReconfigAction ==       \E s \in Server : Reconfig(s)                             /\ HistNext
+SendConfigAction ==     \E s,t \in Server : SendConfig(s, t)                      /\ HistNext
+  
 Next == 
-    \/ \E s \in Server : BecomeLeader(s)                         /\ HistNext
-    \/ \E s \in Server : \E v \in Value : ClientRequest(s, v)    /\ HistNext
-    \/ \E s, t \in Server : GetEntries(s, t)                     /\ HistNext
-    \/ \E s, t \in Server : RollbackEntries(s, t)                /\ HistNext
+    \/ BecomeLeaderAction
+    \/ ClientRequestAction
+    \/ GetEntriesAction
+    \/ RollbackEntriesAction
+    \/ ReconfigAction
+    \/ SendConfigAction
 \*    Optionally disable learner protocol actions.
 \*    \/ \E s, t \in Server : UpdatePosition(s, t)                 /\ HistNext
 \*    \/ \E s \in Server : AdvanceCommitPoint(s)                   /\ HistNext
-    \/ \E s \in Server : AdvanceCommitPointOmniscient(s)         /\ HistNext
+\*    \/ \E s \in Server : AdvanceCommitPointOmniscient(s)         /\ HistNext
 
 Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 
@@ -602,6 +663,6 @@ PrefixAndImmediatelyCommittedDiffer ==
 
 =============================================================================
 \* Modification History
-\* Last modified Tue Oct 29 18:09:04 EDT 2019 by williamschultz
+\* Last modified Mon Nov 04 22:22:49 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
