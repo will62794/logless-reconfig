@@ -198,7 +198,7 @@ RollbackEntries(i, j) ==
            \* if the commonPoint is '0' then SubSeq(log[i], 1, 0) will evaluate
            \* to <<>>, the empty sequence.
            log' = [log EXCEPT ![j] = SubSeq(log[i], 1, commonPoint)] 
-    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, commitIndex, matchEntry, config, configVersion>>
+    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, commitIndex, matchEntry, config, configVersion, immediatelyCommitted>>
        
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -230,13 +230,13 @@ GetEntries(i, j) ==
               newEntry      == log[j][newEntryIndex] 
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
-              /\ matchEntry' = [matchEntry EXCEPT ![i][i] = <<Len(newLog), newEntry.term>>]
+\*              /\ matchEntry' = [matchEntry EXCEPT ![i][i] = <<Len(newLog), newEntry.term>>]
     /\ commitIndex' = [commitIndex EXCEPT ![i] = 
                         IF commitIndex[j][1] > commitIndex[i][1] 
                             \* Advance commit index if newer.
                             THEN commitIndex[j]
                             ELSE commitIndex[i]]
-    /\ UNCHANGED <<state, votedFor, currentTerm, candidateVars, leaderVars, config, configVersion>>   
+    /\ UNCHANGED <<state, votedFor, currentTerm, candidateVars, matchEntry, leaderVars, config, configVersion, immediatelyCommitted>>   
     
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -271,7 +271,7 @@ BecomeLeader(i) ==
                             evotes    |-> voteQuorum,
                             evoterLog |-> voterLog[i]] IN
            elections'  = elections \cup {election}        
-        /\ UNCHANGED <<logVars, candidateVars, matchEntry, config, configVersion>>         
+        /\ UNCHANGED <<logVars, candidateVars, matchEntry, config, configVersion, immediatelyCommitted>>         
 
 \*
 \* A reconfig occurs on node i. The node must currently be a leader.
@@ -287,14 +287,32 @@ Reconfig(i) ==
         /\ \* Pick a config version higher than all existing config versions.
             LET newConfigVersion == Max(Range(configVersion)) + 1 IN
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
-        /\ UNCHANGED <<serverVars, candidateVars, leaderVars, logVars, matchEntry>>         
+        /\ UNCHANGED <<serverVars, candidateVars, leaderVars, logVars, matchEntry, immediatelyCommitted>>         
 
 \* Node i sends its current config to node j. It is only accepted if the config version is newer.
 SendConfig(i, j) == 
     /\ configVersion[j] < configVersion[i]
     /\ config' = [config EXCEPT ![j] = config[i]]
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
-    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, logVars, matchEntry>>         
+    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, logVars, matchEntry, immediatelyCommitted>>         
+
+\* A leader i commits its newest log entry. It commits it according to its own config's notion of a quorum.
+CommitEntry(i) ==
+    LET ind == Len(log[i]) IN
+    \E quorum \in Quorums(config[i]) :
+        \* Must have some entries to commit. 
+        /\ ind > 0 
+        \* This node is leader.
+        /\ state[i] = Primary
+        \* The entry was written by this leader.
+        /\ log[i][ind].term = currentTerm[i]
+        \* all nodes have this log entry and are in the term of the leader.
+        /\ \A s \in quorum : 
+            /\ Len(log[s]) >= ind
+            /\ log[s][ind] = log[i][ind]        \* they have the entry.
+            /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
+        /\ immediatelyCommitted' = immediatelyCommitted \cup {<<ind, currentTerm[i]>>}
+        /\ UNCHANGED <<serverVars, candidateVars, leaderVars, logVars, matchEntry, config, configVersion>>         
 
   
 (**************************************************************************************************)
@@ -368,8 +386,7 @@ ClientRequest(i, v) ==
                      value |-> v]
        newLog == Append(log[i], entry) IN
        /\ log' = [log EXCEPT ![i] = newLog]
-       /\ matchEntry' = [matchEntry EXCEPT ![i][i] = <<Len(newLog), entry.term>>]
-    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, commitIndex, config, configVersion>>
+    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, commitIndex, matchEntry, config, configVersion, immediatelyCommitted>>
 
 -------------------------------------------------------------------------------------------
 
@@ -475,13 +492,23 @@ LogMatching ==
        
 (**************************************************************************************************)
 (* Only uncommitted entries are allowed to be deleted from logs.                                  *)
-(**************************************************************************************************)    
+(**************************************************************************************************)
+
+RollbackCommitted == \E s \in Server : 
+                     \E ind \in DOMAIN log[s] : 
+                        \* An entry is committed.
+                        /\ <<ind, log[s][ind].term>> \in immediatelyCommitted
+                        \* And the entry got rolled back.
+                        /\ Len(log'[s]) < ind
+
+    
 RollbackSafety == 
     \E i,j \in Server : CanRollback(log[i], log[j]) =>
         LET commonPoint == RollbackCommonPoint(log[i], log[j])
             entriesToRollback == SubSeq(log[j], commonPoint + 1, Len(log[j])) IN
             \* The entries being rolled back should NOT be committed.
-            entriesToRollback \cap CommittedEntries = {}     
+\*            entriesToRollback \cap CommittedEntries = {}     
+            entriesToRollback \cap immediatelyCommitted = {}     
 
 
 (**************************************************************************************************)
@@ -568,7 +595,7 @@ Init ==
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
     /\ votedFor    = [i \in Server |-> Nil]
-    /\ matchEntry = [i \in Server |-> [j \in Server |-> <<-1,-1>>]]                     
+    /\ matchEntry = {} \* [i \in Server |-> [j \in Server |-> <<-1,-1>>]]                     
     \* Log variables.
     /\ log          = [i \in Server |-> << >>]
     /\ commitIndex  = [i \in Server |-> <<0, 0>>]
@@ -588,7 +615,8 @@ Init ==
 \* Toolbox error traces i.e. we can see what specific action was executed at each step of the trace. 
 HistNext == 
     /\ allLogs' = allLogs \cup {log[i] : i \in Server}
-    /\ immediatelyCommitted' = immediatelyCommitted \cup AllImmediatelyCommitted'
+\*    /\ immediatelyCommitted' = immediatelyCommitted \cup AllImmediatelyCommitted'
+\*    /\ immediatelyCommitted' = immediatelyCommitted 
 
 
 BecomeLeaderAction ==   \E s \in Server : BecomeLeader(s) /\ HistNext
@@ -597,6 +625,7 @@ GetEntriesAction ==     \E s, t \in Server : GetEntries(s, t)                   
 RollbackEntriesAction ==  \E s, t \in Server : RollbackEntries(s, t)                /\ HistNext
 ReconfigAction ==       \E s \in Server : Reconfig(s)                             /\ HistNext
 SendConfigAction ==     \E s,t \in Server : SendConfig(s, t)                      /\ HistNext
+CommitEntryAction ==     \E s \in Server : CommitEntry(s)                      /\ HistNext
   
 Next == 
     \/ BecomeLeaderAction
@@ -605,6 +634,7 @@ Next ==
     \/ RollbackEntriesAction
     \/ ReconfigAction
     \/ SendConfigAction
+    \/ CommitEntryAction
 \*    Optionally disable learner protocol actions.
 \*    \/ \E s, t \in Server : UpdatePosition(s, t)                 /\ HistNext
 \*    \/ \E s \in Server : AdvanceCommitPoint(s)                   /\ HistNext
@@ -663,6 +693,6 @@ PrefixAndImmediatelyCommittedDiffer ==
 
 =============================================================================
 \* Modification History
-\* Last modified Mon Nov 04 22:22:49 EST 2019 by williamschultz
+\* Last modified Mon Nov 04 23:02:53 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
