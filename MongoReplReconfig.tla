@@ -64,11 +64,6 @@ VARIABLE log
 \* The index of the latest entry in the log the state machine may apply.
 logVars == <<log>>
 
-\* A history variable. This would not be present in an
-\* implementation. It is a function from each server that voted for this candidate 
-\* in its currentTerm to that voter's log.
-VARIABLE voterLog
-
 \*
 \* Reconfig related variables.
 \*
@@ -80,12 +75,9 @@ VARIABLE config
 \* The config version of a node's current config.
 VARIABLE configVersion
 
-
-candidateVars == <<voterLog>>
-
 leaderVars == <<elections>>
 
-vars == <<allLogs, serverVars, candidateVars, leaderVars, logVars, immediatelyCommitted, config, configVersion>>
+vars == <<allLogs, serverVars, leaderVars, logVars, immediatelyCommitted, config, configVersion>>
 
 -------------------------------------------------------------------------------------------
 
@@ -191,7 +183,7 @@ RollbackEntries(i, j) ==
     \* Step down remote node if it's term is smaller than yours.                                      
     /\ state' = [state EXCEPT ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i],
                               ![j] = Secondary] 
-    /\ UNCHANGED <<votedFor, candidateVars, leaderVars, config, configVersion, immediatelyCommitted>>
+    /\ UNCHANGED <<votedFor, leaderVars, config, configVersion, immediatelyCommitted>>
        
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -229,7 +221,7 @@ GetEntries(i, j) ==
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
     \* Step down remote node if it's term is smaller than yours.                                      
     /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j]]          
-    /\ UNCHANGED <<votedFor, candidateVars, leaderVars, config, configVersion, immediatelyCommitted>>   
+    /\ UNCHANGED <<votedFor, leaderVars, config, configVersion, immediatelyCommitted>>   
     
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -261,10 +253,9 @@ BecomeLeader(i) ==
         /\ LET election == [eterm     |-> currentTerm[i]+1,
                             eleader   |-> i,
                             elog      |-> log[i],
-                            evotes    |-> voteQuorum,
-                            evoterLog |-> voterLog[i]] IN
+                            evotes    |-> voteQuorum] IN
            elections'  = elections \cup {election}        
-        /\ UNCHANGED <<logVars, candidateVars, config, configVersion, immediatelyCommitted>>         
+        /\ UNCHANGED <<logVars, config, configVersion, immediatelyCommitted>>         
 
 \*
 \* A reconfig occurs on node i. The node must currently be a leader.
@@ -283,14 +274,14 @@ Reconfig(i) ==
         /\ \* Pick a config version higher than all existing config versions.
             LET newConfigVersion == Max(Range(configVersion)) + 1 IN
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
-        /\ UNCHANGED <<serverVars, candidateVars, leaderVars, logVars, immediatelyCommitted>>         
+        /\ UNCHANGED <<serverVars, leaderVars, logVars, immediatelyCommitted>>         
 
 \* Node i sends its current config to node j. It is only accepted if the config version is newer.
 SendConfig(i, j) == 
     /\ configVersion[j] < configVersion[i]
     /\ config' = [config EXCEPT ![j] = config[i]]
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
-    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, logVars, immediatelyCommitted>>         
+    /\ UNCHANGED <<serverVars, leaderVars, logVars, immediatelyCommitted>>         
 
 \* A leader i commits its newest log entry. It commits it according to its own config's notion of a quorum.
 CommitEntry(i) ==
@@ -308,7 +299,7 @@ CommitEntry(i) ==
             /\ log[s][ind] = log[i][ind]        \* they have the entry.
             /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
         /\ immediatelyCommitted' = immediatelyCommitted \cup {<<ind, currentTerm[i]>>}
-        /\ UNCHANGED <<serverVars, candidateVars, leaderVars, logVars, config, configVersion>>              
+        /\ UNCHANGED <<serverVars, leaderVars, logVars, config, configVersion>>              
         
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -321,7 +312,7 @@ ClientRequest(i, v) ==
                      value |-> v]
        newLog == Append(log[i], entry) IN
        /\ log' = [log EXCEPT ![i] = newLog]
-    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, config, configVersion, immediatelyCommitted>>
+    /\ UNCHANGED <<serverVars, leaderVars, config, configVersion, immediatelyCommitted>>
 
 -------------------------------------------------------------------------------------------
 
@@ -512,7 +503,6 @@ Init ==
     \* History variables
     /\ elections = {}
     /\ allLogs   = {log[i] : i \in Server}
-    /\ voterLog  = [i \in Server |-> [j \in {} |-> <<>>]]
     /\ immediatelyCommitted = {}
     
 \* Next state predicate for history variables. We (unfortunately) add it to every next-state disjunct
@@ -598,6 +588,6 @@ PrefixAndImmediatelyCommittedDiffer ==
 
 =============================================================================
 \* Modification History
-\* Last modified Wed Nov 06 14:45:13 EST 2019 by williamschultz
+\* Last modified Wed Nov 06 14:49:34 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
