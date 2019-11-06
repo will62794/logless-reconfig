@@ -190,7 +190,8 @@ QuorumAgreeInSameTerm(matchEntryVal) ==
 (**************************************************************************************************)
 RollbackEntries(i, j) == 
     /\ CanRollback(log[i], log[j])
-    /\ i \in config[j]    
+    /\ i \in config[j]
+    /\ configVersion[i] = configVersion[j]    
     /\ LET commonPoint == RollbackCommonPoint(log[i], log[j]) IN
            \* If there is no common entry between log 'i' and
            \* log 'j', then it means that the all entries of log 'j'
@@ -202,7 +203,8 @@ RollbackEntries(i, j) ==
     /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
     \* Step down remote node if it's term is smaller than yours.                                      
-    /\ state' = [state EXCEPT ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i]] 
+    /\ state' = [state EXCEPT ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i],
+                              ![j] = Secondary] 
     /\ UNCHANGED <<votedFor, candidateVars, leaderVars, commitIndex, matchEntry, config, configVersion, immediatelyCommitted>>
        
 (**************************************************************************************************)
@@ -221,6 +223,7 @@ GetEntries(i, j) ==
 \*  /\ currentTerm[j] >= currentTerm[i] \* (OPTIONAL, doesn't affect safety?)
     /\ j \in config[i]
     /\ state[i] = Secondary
+    /\ configVersion[i] = configVersion[j]
     \* Node j must have more entries than node i.
     /\ Len(log[j]) > Len(log[i])
        \* Ensure that the entry at the last index of node i's log must match the entry at 
@@ -292,8 +295,8 @@ Reconfig(i) ==
     \E newConfig \in SUBSET Server : 
         /\ state[i] = Primary
         \* Add or remove a single node. (OPTIONALLY ENABLE)
-        /\ \/ Cardinality(config[i]) + 1 = Cardinality(newConfig) 
-           \/ Cardinality(config[i]) - 1 = Cardinality(newConfig) 
+        \*/\ \/ Cardinality(config[i]) + 1 = Cardinality(newConfig) 
+        /\ \/ Cardinality(config[i]) - 1 = Cardinality(newConfig) 
         /\ i \in newConfig
         \* The config on this node takes effect immediately
         /\ config' = [config EXCEPT ![i] = newConfig]
@@ -646,6 +649,6 @@ PrefixAndImmediatelyCommittedDiffer ==
 
 =============================================================================
 \* Modification History
-\* Last modified Tue Nov 05 18:14:26 EST 2019 by williamschultz
+\* Last modified Tue Nov 05 18:47:09 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
