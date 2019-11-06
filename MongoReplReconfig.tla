@@ -549,42 +549,8 @@ StateConstraint == \A s \in Server :
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm    
 LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen    
 
--------------------------------------------------------------------------------------------
-
-\*
-\* Scratchpad
-\* 
-
-\* Does there exist a server with a log entry 'e' such that e is committed but it subsequently rolls back?
-RollBackCommitted == 
-    \E s \in Server : 
-    \E i \in DOMAIN log[s] : 
-    \E e \in CommittedEntries :
-        \* Entry is committed in the current state and in the log of 's'. 
-        /\ e.entry = <<i, log[s][i].term>>
-        \* Entry is no longer in the log of 's' in the next state.
-        /\ ~EntryInLog(log'[s], i, log[s][i].term)
-
-NeverRollBackCommitted == ~RollBackCommitted
-TLCNeverRollBackCommitted == [][NeverRollBackCommitted]_vars \* (For TLC temporal property checking) 
-        
-
-P1 == 
-    \E s \in Server :
-    \E i \in DOMAIN log[s] :
-    \E e \in CommittedEntries : e.entry = <<i, log[s][i].term>>
-
-IsLeader == \E s \in Server : state[s] = Primary
-
-\* A state where the set of "prefix committed" and "immediately committed" entries are both non-empty
-\* and the set of "prefix committed" entries is not a subset of "immediately committed" entries.
-PrefixAndImmediatelyCommittedDiffer ==
-    /\ PrefixCommittedEntriesWithTerm # {}
-    /\ immediatelyCommitted # {}
-    /\ ~ (PrefixCommittedEntriesWithTerm \subseteq immediatelyCommitted)
-
 =============================================================================
 \* Modification History
-\* Last modified Wed Nov 06 14:51:38 EST 2019 by williamschultz
+\* Last modified Wed Nov 06 14:53:54 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
