@@ -62,8 +62,7 @@ serverVars == <<currentTerm, state, votedFor>>
 VARIABLE log
 
 \* The index of the latest entry in the log the state machine may apply.
-VARIABLE commitIndex
-logVars == <<log, commitIndex>>
+logVars == <<log>>
 
 \* A history variable. This would not be present in an
 \* implementation. It is a function from each server that voted for this candidate 
@@ -192,7 +191,7 @@ RollbackEntries(i, j) ==
     \* Step down remote node if it's term is smaller than yours.                                      
     /\ state' = [state EXCEPT ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i],
                               ![j] = Secondary] 
-    /\ UNCHANGED <<votedFor, candidateVars, leaderVars, commitIndex, config, configVersion, immediatelyCommitted>>
+    /\ UNCHANGED <<votedFor, candidateVars, leaderVars, config, configVersion, immediatelyCommitted>>
        
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -226,11 +225,6 @@ GetEntries(i, j) ==
               newEntry      == log[j][newEntryIndex] 
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
-    /\ commitIndex' = [commitIndex EXCEPT ![i] = 
-                        IF commitIndex[j][1] > commitIndex[i][1] 
-                            \* Advance commit index if newer.
-                            THEN commitIndex[j]
-                            ELSE commitIndex[i]]
     /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
     \* Step down remote node if it's term is smaller than yours.                                      
@@ -327,7 +321,7 @@ ClientRequest(i, v) ==
                      value |-> v]
        newLog == Append(log[i], entry) IN
        /\ log' = [log EXCEPT ![i] = newLog]
-    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, commitIndex, config, configVersion, immediatelyCommitted>>
+    /\ UNCHANGED <<serverVars, candidateVars, leaderVars, config, configVersion, immediatelyCommitted>>
 
 -------------------------------------------------------------------------------------------
 
@@ -463,35 +457,6 @@ LeaderCompleteness ==
         term == e.entry[2] IN
     election.eterm > e.term => EntryInLog(election.elog, index, term)
 
-(**************************************************************************************************)
-(* If the 'commitIndex' on any server includes a particular log entry, then that log entry must   *)
-(* be committed.  To generalize the approach of basic Raft, we store commitIndex as an <<index,   *)
-(* term>> pair, instead of just an index.  That way we can store information about the commit     *)
-(* point even if if our log doesn't contain the committed entries.  An <<index,term>> pair should *)
-(* uniquely identify a log prefix (Log Matching), so a commitIndex being at <<index, term>>       *)
-(* indicates that that unique log prefix is committed.                                            *)
-(**************************************************************************************************)  
-LearnerSafety == 
-    \A s \in Server :
-    \* If the commit point exists in the node's log, then it should contain
-    \* all committed entries. Otherwise, it is not necessary to contain the committed
-    \* entries.
-    EntryInLog(log[s], commitIndex[s][1], commitIndex[s][2]) =>
-        \A i \in DOMAIN log[s] :
-            i < commitIndex[s][1] =>
-            \E c \in CommittedEntries : <<i, log[s][i].term>> = c.entry
-
-\* Are all the entries with indices less than the current 'commitIndex' of a server 's' actually committed?
-CommitIndexSafe(s) == 
-    \A i \in DOMAIN log[s] :
-        i < commitIndex[s][1] =>
-        \E e \in CommittedEntries : <<i, log[s][i].term>> = e.entry
-
-\* Checks commit index safety on all servers.
-LearnerSafety2 == 
-    \A s \in Server :
-    CommitIndexSafe(s)
-
 \*
 \* Liveness Properties (Experimental)
 \*
@@ -539,7 +504,6 @@ Init ==
     /\ votedFor    = [i \in Server |-> Nil]
     \* Log variables.
     /\ log          = [i \in Server |-> << >>]
-    /\ commitIndex  = [i \in Server |-> <<0, 0>>]
     \* Reconfig variables.
     \* Initially, all nodes start out with the same view of the config, which includes
     \* all nodes.
@@ -634,6 +598,6 @@ PrefixAndImmediatelyCommittedDiffer ==
 
 =============================================================================
 \* Modification History
-\* Last modified Wed Nov 06 14:42:48 EST 2019 by williamschultz
+\* Last modified Wed Nov 06 14:45:13 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
