@@ -61,9 +61,6 @@ serverVars == <<currentTerm, state, votedFor>>
 \* log entry
 VARIABLE log
 
-\* The index of the latest entry in the log the state machine may apply.
-logVars == <<log>>
-
 \*
 \* Reconfig related variables.
 \*
@@ -77,7 +74,7 @@ VARIABLE configVersion
 
 leaderVars == <<elections>>
 
-vars == <<allLogs, serverVars, leaderVars, logVars, immediatelyCommitted, config, configVersion>>
+vars == <<allLogs, serverVars, leaderVars, log, immediatelyCommitted, config, configVersion>>
 
 -------------------------------------------------------------------------------------------
 
@@ -255,7 +252,7 @@ BecomeLeader(i) ==
                             elog      |-> log[i],
                             evotes    |-> voteQuorum] IN
            elections'  = elections \cup {election}        
-        /\ UNCHANGED <<logVars, config, configVersion, immediatelyCommitted>>         
+        /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted>>         
 
 \*
 \* A reconfig occurs on node i. The node must currently be a leader.
@@ -274,14 +271,14 @@ Reconfig(i) ==
         /\ \* Pick a config version higher than all existing config versions.
             LET newConfigVersion == Max(Range(configVersion)) + 1 IN
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
-        /\ UNCHANGED <<serverVars, leaderVars, logVars, immediatelyCommitted>>         
+        /\ UNCHANGED <<serverVars, leaderVars, log, immediatelyCommitted>>         
 
 \* Node i sends its current config to node j. It is only accepted if the config version is newer.
 SendConfig(i, j) == 
     /\ configVersion[j] < configVersion[i]
     /\ config' = [config EXCEPT ![j] = config[i]]
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
-    /\ UNCHANGED <<serverVars, leaderVars, logVars, immediatelyCommitted>>         
+    /\ UNCHANGED <<serverVars, leaderVars, log, immediatelyCommitted>>         
 
 \* A leader i commits its newest log entry. It commits it according to its own config's notion of a quorum.
 CommitEntry(i) ==
@@ -299,7 +296,7 @@ CommitEntry(i) ==
             /\ log[s][ind] = log[i][ind]        \* they have the entry.
             /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
         /\ immediatelyCommitted' = immediatelyCommitted \cup {<<ind, currentTerm[i]>>}
-        /\ UNCHANGED <<serverVars, leaderVars, logVars, config, configVersion>>              
+        /\ UNCHANGED <<serverVars, leaderVars, log, config, configVersion>>              
         
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
@@ -588,6 +585,6 @@ PrefixAndImmediatelyCommittedDiffer ==
 
 =============================================================================
 \* Modification History
-\* Last modified Wed Nov 06 14:49:34 EST 2019 by williamschultz
+\* Last modified Wed Nov 06 14:51:38 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
