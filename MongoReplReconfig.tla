@@ -527,10 +527,6 @@ Next ==
     \/ ReconfigAction
     \/ SendConfigAction
     \/ CommitEntryAction
-\*    Optionally disable learner protocol actions.
-\*    \/ \E s, t \in Server : UpdatePosition(s, t)                 /\ HistNext
-\*    \/ \E s \in Server : AdvanceCommitPoint(s)                   /\ HistNext
-\*    \/ \E s \in Server : AdvanceCommitPointOmniscient(s)         /\ HistNext
 
 Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 
@@ -551,6 +547,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Wed Nov 06 14:53:54 EST 2019 by williamschultz
+\* Last modified Wed Nov 06 14:54:16 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
