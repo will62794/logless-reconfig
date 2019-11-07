@@ -101,13 +101,13 @@ Empty(s) == Len(s) = 0
 
 -------------------------------------------------------------------------------------------
 
-(**************************************************************************************************)
-(* Next state actions.                                                                            *)
-(*                                                                                                *)
-(* This section defines the core steps of the algorithm, along with some related helper           *)
-(* definitions/operators.  We annotate the main actions with an [ACTION] specifier to disinguish  *)
-(* them from auxiliary, helper operators.                                                         *)
-(**************************************************************************************************)    
+(******************************************************************************)
+(* Next state actions.                                                        *)
+(*                                                                            *)
+(* This section defines the core steps of the algorithm, along with some      *)
+(* related helper definitions/operators.  We annotate the main actions with   *)
+(* an [ACTION] specifier to disinguish them from auxiliary, helper operators. *)
+(******************************************************************************)    
 
 \* The term of the last entry in a log, or 0 if the log is empty.
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)].term
@@ -147,22 +147,11 @@ RollbackCommonPoint(li, lj) ==
                             /\ li[k] = lj[k]} IN
         IF commonIndices = {} THEN 0 ELSE Max(commonIndices)  
                                                           
-(**************************************************************************************************)
-(* [ACTION]                                                                                       *)
-(*                                                                                                *)
-(* Node 'j' removes entries based against the log of node 'i'.                                    *)
-(*                                                                                                *)
-(* The rollback procedure used in this protocol is always executed by comparing the logs of two   *)
-(* separate nodes.  By doing so, it is possible to determine if one node has a "divergent" log    *)
-(* suffix, and thus has entries in its log that are uncommitted.  The essential idea is to see if *)
-(* the last term of the entry of one log is less than the last term of the last entry of another  *)
-(* log.  In this case, the log with the lesser last term should be considered eligible for        *)
-(* rollback.  Note that the goal of this rollback procedure should be to truncate entries from a  *)
-(* log that are both uncommitted, and also only truncate entries that it knows will NEVER become  *)
-(* committed.  Of course, log entries that are written down by a primary before being replicated  *)
-(* are clearly uncommitted, but deleting them wouldn't be sensible, since it is very possible     *)
-(* those entries WILL become committed in the future.                                             *)
-(**************************************************************************************************)
+(******************************************************************************)
+(* [ACTION]                                                                   *)
+(*                                                                            *)
+(* Node 'j' removes entries based against the log of node 'i'.                *)
+(******************************************************************************)
 RollbackEntries(i, j) == 
     /\ CanRollback(log[i], log[j])
     /\ i \in config[j]
@@ -182,18 +171,11 @@ RollbackEntries(i, j) ==
                               ![j] = Secondary] 
     /\ UNCHANGED <<votedFor, leaderVars, config, configVersion, immediatelyCommitted>>
        
-(**************************************************************************************************)
-(* [ACTION]                                                                                       *)
-(*                                                                                                *)
-(* Node 'i' gets a new log entry from node 'j'.                                                   *)
-(*                                                                                                *)
-(* Note that there are only a few restrictions made about the sender and receiver of this log     *)
-(* transferral.  Only secondaries fetch new logs by this means, but we allow them to get entries  *)
-(* from any other node, regardless of whether they are a secondary or a primary.  We only         *)
-(* stipulate that the sending node actually has a longer log than the receiver and that the log   *)
-(* consistency check passes.  In other words, the receiver's log must be a prefix of the sender's *)
-(* log, at the time entries are sent.                                                             *)
-(**************************************************************************************************)
+(******************************************************************************)
+(* [ACTION]                                                                   *)
+(*                                                                            *)
+(* Node 'i' gets a new log entry from node 'j'.                               *)
+(******************************************************************************)
 GetEntries(i, j) == 
 \*  /\ currentTerm[j] >= currentTerm[i] \* (OPTIONAL, doesn't affect safety?)
     /\ j \in config[i]
@@ -220,16 +202,11 @@ GetEntries(i, j) ==
     /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j]]          
     /\ UNCHANGED <<votedFor, leaderVars, config, configVersion, immediatelyCommitted>>   
     
-(**************************************************************************************************)
-(* [ACTION]                                                                                       *)
-(*                                                                                                *)
-(* Node 'i' automatically becomes a leader, if eligible.                                          *)
-(*                                                                                                *)
-(* We model an election as one atomic step.  Normally this would occur in multiple steps i.e.     *)
-(* sending out vote requests to nodes and waiting for responses.  We simplify this process by     *)
-(* simply checking if a node can become leader and then updating its state and the state of a     *)
-(* quorum of nodes who voted for it appropriately, as if a full election has occurred.            *)
-(**************************************************************************************************)
+(******************************************************************************)
+(* [ACTION]                                                                   *)
+(*                                                                            *)
+(* Node 'i' automatically becomes a leader, if eligible.                      *)
+(******************************************************************************)
 BecomeLeader(i) ==
     \* Primaries make decisions based on their current configuration.
     \E voteQuorum \in Quorums(config[i]) :
@@ -316,11 +293,12 @@ CommitEntry(i) ==
         /\ immediatelyCommitted' = immediatelyCommitted \cup {<<ind, currentTerm[i]>>}
         /\ UNCHANGED <<serverVars, leaderVars, log, config, configVersion>>              
         
-(**************************************************************************************************)
-(* [ACTION]                                                                                       *)
-(*                                                                                                *)
-(* Node 'i', a primary, handles a new client request and places the entry in its log.             *)
-(**************************************************************************************************)        
+(******************************************************************************)
+(* [ACTION]                                                                   *)
+(*                                                                            *)
+(* Node 'i', a primary, handles a new client request and places the entry in  *)
+(* its log.                                                                   *)
+(******************************************************************************)        
 ClientRequest(i, v) == 
     /\ state[i] = Primary
     /\ LET entry == [term  |-> currentTerm[i],
@@ -565,6 +543,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Nov 07 18:47:07 EST 2019 by williamschultz
+\* Last modified Thu Nov 07 18:50:29 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
