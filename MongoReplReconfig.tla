@@ -263,7 +263,7 @@ Reconfig(i) ==
     \E newConfig \in SUBSET Server : 
         /\ state[i] = Primary
         \* Add or remove a single node. (OPTIONALLY ENABLE)
-        \*/\ \/ Cardinality(config[i]) + 1 = Cardinality(newConfig) 
+        /\ \/ Cardinality(config[i]) + 1 = Cardinality(newConfig) 
         /\ \/ Cardinality(config[i]) - 1 = Cardinality(newConfig) 
         /\ i \in newConfig
         \* The config on this node takes effect immediately
@@ -547,6 +547,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Wed Nov 06 14:54:16 EST 2019 by williamschultz
+\* Last modified Thu Nov 07 17:26:59 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
