@@ -146,7 +146,7 @@ RollbackCommonPoint(li, lj) ==
                             /\ k <= Len(lj)
                             /\ li[k] = lj[k]} IN
         IF commonIndices = {} THEN 0 ELSE Max(commonIndices)  
-
+                                                          
 (**************************************************************************************************)
 (* [ACTION]                                                                                       *)
 (*                                                                                                *)
@@ -254,6 +254,19 @@ BecomeLeader(i) ==
            elections'  = elections \cup {election}        
         /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted>>         
 
+\* Is the config on node i currently "safe".
+ConfigIsSafe(i) ==
+    \* a quorum of nodes have received this config or a newer one.
+    /\ \E quorum \in Quorums(config[i]) : \A s \in quorum : configVersion[s] >= configVersion[i]
+    \* require this node to have communicated with a quorum of the config i.e. to propagate term.
+    \* if this node communicated with a quorum, then there must be some quorum such that
+    \* all nodes have the same terms as i. 
+    /\ \E q \in Quorums(config[i]) : 
+       \A s \in q : 
+        /\ currentTerm[i] = currentTerm[s] 
+        /\ i \in q
+    
+
 \*
 \* A reconfig occurs on node i. The node must currently be a leader.
 \*
@@ -262,9 +275,11 @@ Reconfig(i) ==
     \* Make sure to include this node in the new config, though.
     \E newConfig \in SUBSET Server : 
         /\ state[i] = Primary
+        \* Only allow a new config to be installed if the current config is "safe".
+        /\ ConfigIsSafe(i)
         \* Add or remove a single node. (OPTIONALLY ENABLE)
         /\ \/ Cardinality(config[i]) + 1 = Cardinality(newConfig) 
-        /\ \/ Cardinality(config[i]) - 1 = Cardinality(newConfig) 
+           \/ Cardinality(config[i]) - 1 = Cardinality(newConfig) 
         /\ i \in newConfig
         \* The config on this node takes effect immediately
         /\ config' = [config EXCEPT ![i] = newConfig]
@@ -278,7 +293,10 @@ SendConfig(i, j) ==
     /\ configVersion[j] < configVersion[i]
     /\ config' = [config EXCEPT ![j] = config[i]]
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
-    /\ UNCHANGED <<serverVars, leaderVars, log, immediatelyCommitted>>         
+    \* Update the term of the receiver.
+    /\ currentTerm' = [currentTerm EXCEPT ![j] = Max({currentTerm[i], currentTerm[j]})]
+    /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j]]
+    /\ UNCHANGED <<votedFor, leaderVars, log, immediatelyCommitted>>         
 
 \* A leader i commits its newest log entry. It commits it according to its own config's notion of a quorum.
 CommitEntry(i) ==
@@ -547,6 +565,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Nov 07 17:26:59 EST 2019 by williamschultz
+\* Last modified Thu Nov 07 18:47:07 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
