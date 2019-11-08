@@ -147,7 +147,7 @@ RollbackCommonPoint(li, lj) ==
                             /\ k <= Len(lj)
                             /\ li[k] = lj[k]} IN
         IF commonIndices = {} THEN 0 ELSE Max(commonIndices)  
-                                                          
+                                                       
 (******************************************************************************)
 (* [ACTION]                                                                   *)
 (*                                                                            *)
@@ -229,22 +229,13 @@ BecomeLeader(i) ==
            elections'  = elections \cup {election}        
         /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted>>         
 
-\* Did node 'i' communicate with a quorum of nodes in its currently installed config?
-ContactedQuorumInConfig(i) == TRUE
 
 \* Is the config on node i currently "safe".
 ConfigIsSafe(i) ==
     \* a quorum of nodes have received this config or a newer one.
     /\ \E quorum \in Quorums(config[i]) : \A s \in quorum : configVersion[s] >= configVersion[i]
-    \* require this node to have communicated with a quorum of the config i.e. to propagate term.
-    \* if this node communicated with a quorum, then there must be some quorum such that
-    \* all nodes have the same terms as i. 
-    /\ ContactedQuorumInConfig(i)
-\*    /\ \E q \in Quorums(config[i]) : 
-\*       \A s \in q : 
-\*        /\ currentTerm[i] = currentTerm[s] 
-\*        /\ i \in q
-    
+    \* Require that an op was committed in this config.
+    /\ \E e \in immediatelyCommitted : e[3] = configVersion[i] 
 
 \*
 \* A reconfig occurs on node i. The node must currently be a leader.
@@ -292,7 +283,7 @@ CommitEntry(i) ==
             /\ Len(log[s]) >= ind
             /\ log[s][ind] = log[i][ind]        \* they have the entry.
             /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
-        /\ immediatelyCommitted' = immediatelyCommitted \cup {<<ind, currentTerm[i]>>}
+        /\ immediatelyCommitted' = immediatelyCommitted \cup {<<ind, currentTerm[i], configVersion[i]>>}
         /\ UNCHANGED <<serverVars, leaderVars, log, config, configVersion>>              
         
 (******************************************************************************)
@@ -416,11 +407,12 @@ LogMatching ==
 (**************************************************************************************************)
 
 RollbackCommitted == \E s \in Server : 
-                     \E ind \in DOMAIN log[s] : 
-                        \* An entry is committed.
-                        /\ <<ind, log[s][ind].term>> \in immediatelyCommitted
+                     \E e \in immediatelyCommitted :
+                        LET index == e[1]
+                            term  == e[2] IN
+                        /\ EntryInLog(log[s], index, term)
                         \* And the entry got rolled back.
-                        /\ Len(log'[s]) < ind
+                        /\ Len(log'[s]) < index
                         
 NeverRollbackCommitted == [][~RollbackCommitted]_vars
     
@@ -547,6 +539,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Nov 07 22:34:47 EST 2019 by williamschultz
+\* Last modified Thu Nov 07 23:16:52 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
