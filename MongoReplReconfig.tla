@@ -51,8 +51,7 @@ VARIABLE currentTerm
 \* The server's state (Follower, Candidate, or Leader).
 VARIABLE state
 
-\* The candidate the server voted for in its current term, or
-\* Nil if it hasn't voted for any.
+\* The set of terms each server has voted in, if any.
 VARIABLE votedFor
 
 serverVars == <<currentTerm, state, votedFor>>
@@ -113,22 +112,24 @@ Empty(s) == Len(s) = 0
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)].term
 
 \* Can node 'i' currently cast a vote for node 'j' in term 'term'.
-CanVoteFor(i, j) == 
+CanVoteFor(i, j, term) == 
     LET logOk == 
         \/ LastTerm(log[j]) > LastTerm(log[i])
         \/ /\ LastTerm(log[j]) = LastTerm(log[i])
            /\ Len(log[j]) >= Len(log[i]) IN
-\*    /\ currentTerm[i] <= currentTerm[j]
-\*    /\ j # votedFor[i] 
+    \* Nodes can only vote once per term, and they will never 
+    \* vote for someone with a lesser term than their own.
+    /\ currentTerm[i] <= term
+    /\ term \notin votedFor[i]
     \* you can only vote for someone with the same config version as you.
     /\ configVersion[i] = configVersion[j]
     /\ logOk
 
 
 \* Could server 'i' win an election in the current state.
-IsElectable(i) == 
-    LET voters == {s \in Server : CanVoteFor(s, i)} IN
-        voters \in Quorum
+\*IsElectable(i) == 
+\*    LET voters == {s \in Server : CanVoteFor(s, i)} IN
+\*        voters \in Quorum
 
 \* Is it possible for log 'lj' to roll back based on the log 'li'. If this is true, it implies that
 \* log 'lj' should remove entries to become a prefix of 'li'.
@@ -209,23 +210,19 @@ GetEntries(i, j) ==
 (******************************************************************************)
 BecomeLeader(i) ==
     \* Primaries make decisions based on their current configuration.
+    LET newTerm == currentTerm[i] + 1 IN
     \E voteQuorum \in Quorums(config[i]) :
         /\ i \in config[i] \* only become a leader if you are a part of your config.
         /\ i \in voteQuorum \* The new leader should vote for itself.
-        /\ \A v \in voteQuorum : 
-            /\ CanVoteFor(v, i)
-            \* Updating your term and casting your vote in that term are atomic in this spec,
-            \* so there's no possible way you could be in term T but not have voted yet in term T.
-            \* TODO (Will S.): This needs to be changed now that we propagate terms on other actions!
-            /\ currentTerm[i] + 1 > currentTerm[v]
+        /\ \A v \in voteQuorum : CanVoteFor(v, i, newTerm)
         \* Update the terms of each voter.
-        /\ currentTerm' = [s \in Server |-> IF s \in voteQuorum THEN currentTerm[i]+1 ELSE currentTerm[s]]
-        /\ votedFor' = votedFor
+        /\ currentTerm' = [s \in Server |-> IF s \in voteQuorum THEN newTerm ELSE currentTerm[s]]
+        /\ votedFor' = [s \in Server |-> IF s \in voteQuorum THEN votedFor[s] \cup {newTerm} ELSE votedFor[s]]
         /\ state' = [s \in Server |-> 
                         IF s = i THEN Primary
                         ELSE IF s \in voteQuorum THEN Secondary \* All voters should revert to secondary state.
                         ELSE state[s]] 
-        /\ LET election == [eterm     |-> currentTerm[i]+1,
+        /\ LET election == [eterm     |-> newTerm,
                             eleader   |-> i,
                             elog      |-> log[i],
                             evotes    |-> voteQuorum] IN
@@ -490,7 +487,9 @@ Init ==
     \* Server variables.
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
-    /\ votedFor    = [i \in Server |-> Nil]
+    \*/\ votedFor    = [i \in Server |-> Nil]
+    \* The set of terms that each node has voted in, if any. Every node can only vote 'yes' once in a given term.
+    /\ votedFor    = [i \in Server |-> {}]
     \* Log variables.
     /\ log          = [i \in Server |-> << >>]
     \* Reconfig variables.
@@ -548,6 +547,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Nov 07 19:59:23 EST 2019 by williamschultz
+\* Last modified Thu Nov 07 22:34:47 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
