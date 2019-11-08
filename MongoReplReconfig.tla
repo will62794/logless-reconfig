@@ -236,6 +236,9 @@ ConfigIsSafe(i) ==
     /\ \E quorum \in Quorums(config[i]) : \A s \in quorum : configVersion[s] >= configVersion[i]
     \* Require that an op was committed in this config.
     /\ \E e \in immediatelyCommitted : e[3] = configVersion[i] 
+    \* If you talked to a quorum as primary...
+    /\ \A q \in Quorums(config[i]) :
+       \A s \in q : currentTerm[i] >= currentTerm[s]
 
 \*
 \* A reconfig occurs on node i. The node must currently be a leader.
@@ -248,8 +251,8 @@ Reconfig(i) ==
         \* Only allow a new config to be installed if the current config is "safe".
         /\ ConfigIsSafe(i)
         \* Add or remove a single node. (OPTIONALLY ENABLE)
-        /\ \/ Cardinality(config[i]) + 1 = Cardinality(newConfig) 
-           \/ Cardinality(config[i]) - 1 = Cardinality(newConfig) 
+        /\ \/ \E n \in newConfig : newConfig \ {n} = config[i]  \* add 1.
+           \/ \E n \in config[i] : config[i] \ {n} = newConfig  \* remove 1.
         /\ i \in newConfig
         \* The config on this node takes effect immediately
         /\ config' = [config EXCEPT ![i] = newConfig]
@@ -264,8 +267,13 @@ SendConfig(i, j) ==
     /\ config' = [config EXCEPT ![j] = config[i]]
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
     \* Update the term of the receiver.
-    /\ currentTerm' = [currentTerm EXCEPT ![j] = Max({currentTerm[i], currentTerm[j]})]
-    /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j]]
+\*    /\ currentTerm' = [currentTerm EXCEPT ![j] = Max({currentTerm[i], currentTerm[j]})]
+    \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
+    /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
+                                          ![j] = Max({currentTerm[i], currentTerm[j]})]
+    \* May update state of sender or receiver.
+    /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j],
+                              ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
     /\ UNCHANGED <<votedFor, leaderVars, log, immediatelyCommitted>>         
 
 \* A leader i commits its newest log entry. It commits it according to its own config's notion of a quorum.
@@ -305,6 +313,16 @@ ClientRequest(i, v) ==
 (**************************************************************************************************)
 (* Correctness Properties                                                                         *)
 (**************************************************************************************************)
+
+\* If a node is currently primary and learns about a higher term, and it is not the leader
+\* of this newer term, then it must step down.
+NodesStepDown == \A s \in Server : 
+    /\ state[s] = Primary
+    /\ currentTerm'[s] > currentTerm[s]
+    /\ ~(\E elec \in elections' : elec.eterm = currentTerm'[s] /\ elec.eleader = s) =>
+        state'[s] = Secondary \* make sure the node stepped down.
+
+NodesStepDownProperty == [][NodesStepDown]_vars
 
 \* Are there two primaries in the current state.
 TwoPrimaries == \E s, t \in Server : s # t /\ state[s] = Primary /\ state[s] = state[t]
@@ -490,6 +508,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Nov 07 23:51:39 EST 2019 by williamschultz
+\* Last modified Fri Nov 08 18:27:34 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
