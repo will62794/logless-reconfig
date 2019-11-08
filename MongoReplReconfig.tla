@@ -369,23 +369,6 @@ IsPrefix(xlog, ylog) ==
     /\ Len(xlog) <= Len(ylog)
     /\ xlog = SubSeq(ylog, 1, Len(xlog))
 
-\* If two logs have the same last log entry term, then one is a prefix of the other. (Will is trying to see if 
-\* this is actually true).
-LastTermsEquivalentImplyPrefixes == 
-    \A xlog, ylog \in allLogs :
-        LastTerm(xlog) = LastTerm(ylog) =>
-        IsPrefix(xlog, ylog) \/ IsPrefix(ylog, xlog)
-
-
-(**************************************************************************************************)
-(* The terms of every server increase monotonically.                                              *)
-(*                                                                                                *)
-(* We express this as an 'action' property.  That is, it depends on the both primed and unprimed  *)
-(* variables.                                                                                     *)
-(**************************************************************************************************)
-TermsMonotonic == 
-    [][\A s \in Server : currentTerm'[s] >= currentTerm[s]]_vars        
-
 (**************************************************************************************************)
 (* There should be at most one leader per term.                                                   *)
 (**************************************************************************************************)
@@ -415,14 +398,6 @@ RollbackCommitted == \E s \in Server :
                         /\ Len(log'[s]) < index
                         
 NeverRollbackCommitted == [][~RollbackCommitted]_vars
-    
-RollbackSafety == 
-    \E i,j \in Server : CanRollback(log[i], log[j]) =>
-        LET commonPoint == RollbackCommonPoint(log[i], log[j])
-            entriesToRollback == SubSeq(log[j], commonPoint + 1, Len(log[j])) IN
-            \* The entries being rolled back should NOT be committed.
-\*            entriesToRollback \cap CommittedEntries = {}     
-            entriesToRollback \cap immediatelyCommitted = {}     
 
 
 (**************************************************************************************************)
@@ -444,30 +419,6 @@ LeaderCompleteness ==
 \* servers is limited in a model, then logs should eventually converge, since new client
 \* requests will eventually be disallowed.
 EventuallyLogsConverge == <>[][\A s, t \in Server : s # t => log[s] = log[t]]_vars
-
--------------------------------------------------------------------------------------------
-
-(**************************************************************************************************)
-(* "Sanity Check" Properties                                                                      *)
-(*                                                                                                *)
-(* These are not high level correctness properties of the algorithm, but important properties     *)
-(* that should hold true if we wrote the spec and the correctness properties correctly.           *)
-(**************************************************************************************************)
-
-\* The set of prefix committed entries should only ever grow. Entries should never be deleted
-\* from it.
-PrefixCommittedEntriesMonotonic == 
-    [][(PrefixCommittedEntriesWithTerm \subseteq PrefixCommittedEntriesWithTerm')]_<<vars>>
-
-\* The set of committed entries should only ever grow. Entries should never be deleted
-\* from it.
-CommittedEntriesMonotonic == 
-    [][(CommittedEntries \subseteq CommittedEntries')]_<<vars>>
-    
-\* Immediately committed entries <<index, T>> are always committed at term T.
-ImmediatelyCommittedTermMatchesLogEntryTerm == 
-    \A e \in immediatelyCommitted : e.entry[2] = e.term
-   
 
 -------------------------------------------------------------------------------------------
 
@@ -539,6 +490,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Nov 07 23:16:52 EST 2019 by williamschultz
+\* Last modified Thu Nov 07 23:49:22 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
