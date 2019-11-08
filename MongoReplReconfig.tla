@@ -125,12 +125,6 @@ CanVoteFor(i, j, term) ==
     /\ configVersion[i] = configVersion[j]
     /\ logOk
 
-
-\* Could server 'i' win an election in the current state.
-\*IsElectable(i) == 
-\*    LET voters == {s \in Server : CanVoteFor(s, i)} IN
-\*        voters \in Quorum
-
 \* Is it possible for log 'lj' to roll back based on the log 'li'. If this is true, it implies that
 \* log 'lj' should remove entries to become a prefix of 'li'.
 CanRollback(li, lj) == 
@@ -178,7 +172,6 @@ RollbackEntries(i, j) ==
 (* Node 'i' gets a new log entry from node 'j'.                               *)
 (******************************************************************************)
 GetEntries(i, j) == 
-\*  /\ currentTerm[j] >= currentTerm[i] \* (OPTIONAL, doesn't affect safety?)
     /\ j \in config[i]
     /\ state[i] = Secondary
     /\ configVersion[i] = configVersion[j]
@@ -266,8 +259,6 @@ SendConfig(i, j) ==
     /\ configVersion[j] < configVersion[i]
     /\ config' = [config EXCEPT ![j] = config[i]]
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
-    \* Update the term of the receiver.
-\*    /\ currentTerm' = [currentTerm EXCEPT ![j] = Max({currentTerm[i], currentTerm[j]})]
     \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
     /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
@@ -508,6 +499,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Fri Nov 08 18:27:34 EST 2019 by williamschultz
+\* Last modified Fri Nov 08 18:39:34 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
