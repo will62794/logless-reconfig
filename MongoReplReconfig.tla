@@ -216,6 +216,7 @@ BecomeLeader(i) ==
             /\ CanVoteFor(v, i)
             \* Updating your term and casting your vote in that term are atomic in this spec,
             \* so there's no possible way you could be in term T but not have voted yet in term T.
+            \* TODO (Will S.): This needs to be changed now that we propagate terms on other actions!
             /\ currentTerm[i] + 1 > currentTerm[v]
         \* Update the terms of each voter.
         /\ currentTerm' = [s \in Server |-> IF s \in voteQuorum THEN currentTerm[i]+1 ELSE currentTerm[s]]
@@ -231,6 +232,9 @@ BecomeLeader(i) ==
            elections'  = elections \cup {election}        
         /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted>>         
 
+\* Did node 'i' communicate with a quorum of nodes in its currently installed config?
+ContactedQuorumInConfig(i) == TRUE
+
 \* Is the config on node i currently "safe".
 ConfigIsSafe(i) ==
     \* a quorum of nodes have received this config or a newer one.
@@ -238,10 +242,11 @@ ConfigIsSafe(i) ==
     \* require this node to have communicated with a quorum of the config i.e. to propagate term.
     \* if this node communicated with a quorum, then there must be some quorum such that
     \* all nodes have the same terms as i. 
-    /\ \E q \in Quorums(config[i]) : 
-       \A s \in q : 
-        /\ currentTerm[i] = currentTerm[s] 
-        /\ i \in q
+    /\ ContactedQuorumInConfig(i)
+\*    /\ \E q \in Quorums(config[i]) : 
+\*       \A s \in q : 
+\*        /\ currentTerm[i] = currentTerm[s] 
+\*        /\ i \in q
     
 
 \*
@@ -543,6 +548,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Nov 07 18:50:29 EST 2019 by williamschultz
+\* Last modified Thu Nov 07 19:59:23 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
