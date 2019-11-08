@@ -454,13 +454,13 @@ HistNext ==
 \*    /\ immediatelyCommitted' = immediatelyCommitted 
 
 
-BecomeLeaderAction ==   \E s \in Server : BecomeLeader(s) /\ HistNext
-ClientRequestAction ==  \E s \in Server : \E v \in Value : ClientRequest(s, v)    /\ HistNext
-GetEntriesAction ==     \E s, t \in Server : GetEntries(s, t)                       /\ HistNext
-RollbackEntriesAction ==  \E s, t \in Server : RollbackEntries(s, t)                /\ HistNext
-ReconfigAction ==       \E s \in Server : Reconfig(s)                             /\ HistNext
-SendConfigAction ==     \E s,t \in Server : SendConfig(s, t)                      /\ HistNext
-CommitEntryAction ==     \E s \in Server : CommitEntry(s)                      /\ HistNext
+BecomeLeaderAction      ==  \E s \in Server : BecomeLeader(s)                           /\ HistNext
+ClientRequestAction     ==  \E s \in Server : \E v \in Value : ClientRequest(s, v)      /\ HistNext
+GetEntriesAction        ==  \E s, t \in Server : GetEntries(s, t)                       /\ HistNext
+RollbackEntriesAction   ==  \E s, t \in Server : RollbackEntries(s, t)                  /\ HistNext
+ReconfigAction          ==  \E s \in Server : Reconfig(s)                               /\ HistNext
+SendConfigAction        ==  \E s,t \in Server : SendConfig(s, t)                        /\ HistNext
+CommitEntryAction       ==  \E s \in Server : CommitEntry(s)                            /\ HistNext
   
 Next == 
     \/ BecomeLeaderAction
@@ -490,6 +490,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Nov 07 23:49:22 EST 2019 by williamschultz
+\* Last modified Thu Nov 07 23:51:39 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
