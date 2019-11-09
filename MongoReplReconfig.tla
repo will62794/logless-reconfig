@@ -223,15 +223,26 @@ BecomeLeader(i) ==
         /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted>>         
 
 
-\* Is the config on node i currently "safe".
-ConfigIsSafe(i) ==
-    \* a quorum of nodes have received this config or a newer one.
-    /\ \E quorum \in Quorums(config[i]) : \A s \in quorum : configVersion[s] >= configVersion[i]
-    \* Require that an op was committed in this config.
-    /\ \E e \in immediatelyCommitted : e[3] = configVersion[i] 
-    \* If you talked to a quorum as primary...
+
+\* A quorum of nodes have received this config or a newer one.
+ConfigQuorumCheck(i) == 
+    \E quorum \in Quorums(config[i]) : \A s \in quorum : configVersion[s] >= configVersion[i]
+
+\* Was an op was committed in the config of node i.
+OpCommittedInConfig(i) ==
+    /\ \E e \in immediatelyCommitted : e[3] = configVersion[i]
+
+\* Did a node talked to a quorum as primary.
+TermQuorumCheck(i) ==
     /\ \A q \in Quorums(config[i]) :
        \A s \in q : currentTerm[i] >= currentTerm[s]
+
+\* Is the config on node i currently "safe".
+ConfigIsSafe(i) ==
+    /\ TRUE \* a 'null' check i.e. always passes.
+    /\ ConfigQuorumCheck(i)
+    /\ OpCommittedInConfig(i)
+    /\ TermQuorumCheck(i)
 
 \*
 \* A reconfig occurs on node i. The node must currently be a leader.
@@ -495,6 +506,8 @@ StateConstraint == \A s \in Server :
                     /\ Len(log[s]) <= MaxLogLen
                     /\ configVersion[s] <= MaxConfigVersion
         
+ServerSymmetry == Permutations(Server)
+
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm    
 LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen    
 
