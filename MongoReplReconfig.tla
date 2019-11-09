@@ -236,10 +236,9 @@ TermQuorumCheck(i) ==
 
 \* Is the config on node i currently "safe".
 ConfigIsSafe(i) ==
-    /\ TRUE \* a 'null' check i.e. always passes.
     /\ ConfigQuorumCheck(i)
-    /\ OpCommittedInConfig(i)
     /\ TermQuorumCheck(i)
+    /\ OpCommittedInConfig(i)
 
 \*
 \* A reconfig occurs on node i. The node must currently be a leader.
@@ -264,9 +263,11 @@ Reconfig(i) ==
 
 \* Node i sends its current config to node j. It is only accepted if the config version is newer.
 SendConfig(i, j) == 
-    /\ configVersion[j] < configVersion[i]
-    /\ config' = [config EXCEPT ![j] = config[i]]
-    /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
+    \* Only update config if the received config version is newer. We still allow this
+    \* action to propagate terms, though, even if the config is not updated.
+    LET isNewerConfig == configVersion[i] > configVersion[j] IN
+    /\ config' = [config EXCEPT ![j] = IF isNewerConfig THEN config[i] ELSE config[j]]
+    /\ configVersion' = [configVersion EXCEPT ![j] = IF isNewerConfig THEN configVersion[i] ELSE configVersion[j]]
     \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
     /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
