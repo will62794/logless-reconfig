@@ -68,9 +68,7 @@ VARIABLE config
 \* The config version of a node's current config.
 VARIABLE configVersion
 
-leaderVars == <<elections>>
-
-vars == <<allLogs, serverVars, leaderVars, log, immediatelyCommitted, config, configVersion>>
+vars == <<allLogs, serverVars, elections, log, immediatelyCommitted, config, configVersion>>
 
 -------------------------------------------------------------------------------------------
 
@@ -161,7 +159,7 @@ RollbackEntries(i, j) ==
     \* Step down remote node if it's term is smaller than yours.                                      
     /\ state' = [state EXCEPT ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i],
                               ![j] = Secondary] 
-    /\ UNCHANGED <<votedFor, leaderVars, config, configVersion, immediatelyCommitted>>
+    /\ UNCHANGED <<votedFor, elections, config, configVersion, immediatelyCommitted>>
        
 (******************************************************************************)
 (* [ACTION]                                                                   *)
@@ -191,7 +189,7 @@ GetEntries(i, j) ==
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
     \* Step down remote node if it's term is smaller than yours.                                      
     /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j]]          
-    /\ UNCHANGED <<votedFor, leaderVars, config, configVersion, immediatelyCommitted>>   
+    /\ UNCHANGED <<votedFor, elections, config, configVersion, immediatelyCommitted>>   
     
 (******************************************************************************)
 (* [ACTION]                                                                   *)
@@ -259,7 +257,7 @@ Reconfig(i) ==
         /\ \* Pick a config version higher than all existing config versions.
             LET newConfigVersion == Max(Range(configVersion)) + 1 IN
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
-        /\ UNCHANGED <<serverVars, leaderVars, log, immediatelyCommitted>>         
+        /\ UNCHANGED <<serverVars, elections, log, immediatelyCommitted>>         
 
 \* Node i sends its current config to node j. It is only accepted if the config version is newer.
 SendConfig(i, j) == 
@@ -274,7 +272,7 @@ SendConfig(i, j) ==
     \* May update state of sender or receiver.
     /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j],
                               ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
-    /\ UNCHANGED <<votedFor, leaderVars, log, immediatelyCommitted>>         
+    /\ UNCHANGED <<votedFor, elections, log, immediatelyCommitted>>         
 
 \* A leader i commits its newest log entry. It commits it according to its own config's notion of a quorum.
 CommitEntry(i) ==
@@ -292,7 +290,7 @@ CommitEntry(i) ==
             /\ log[s][ind] = log[i][ind]        \* they have the entry.
             /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
         /\ immediatelyCommitted' = immediatelyCommitted \cup {<<ind, currentTerm[i], configVersion[i]>>}
-        /\ UNCHANGED <<serverVars, leaderVars, log, config, configVersion>>              
+        /\ UNCHANGED <<serverVars, elections, log, config, configVersion>>              
         
 (******************************************************************************)
 (* [ACTION]                                                                   *)
@@ -305,7 +303,7 @@ ClientRequest(i) ==
     /\ LET entry == [term  |-> currentTerm[i]]
        newLog == Append(log[i], entry) IN
        /\ log' = [log EXCEPT ![i] = newLog]
-    /\ UNCHANGED <<serverVars, leaderVars, config, configVersion, immediatelyCommitted>>
+    /\ UNCHANGED <<serverVars, elections, config, configVersion, immediatelyCommitted>>
 
 -------------------------------------------------------------------------------------------
 
