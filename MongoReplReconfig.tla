@@ -488,11 +488,12 @@ Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 (* State Constraint. Used for model checking only.                                                *)
 (**************************************************************************************************)
 
-CONSTANTS MaxTerm, MaxLogLen
+CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 
 StateConstraint == \A s \in Server : 
                     /\ currentTerm[s] <= MaxTerm
                     /\ Len(log[s]) <= MaxLogLen
+                    /\ configVersion[s] <= MaxConfigVersion
         
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm    
 LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen    

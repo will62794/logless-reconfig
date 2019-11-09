@@ -3,3 +3,4 @@ latex/
 .DS_Store
 *.pdf
 traces/
+states/
