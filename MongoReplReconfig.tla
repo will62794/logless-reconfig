@@ -236,8 +236,8 @@ TermQuorumCheck(i) ==
 
 \* Is the config on node i currently "safe".
 ConfigIsSafe(i) ==
-    /\ ConfigQuorumCheck(i)
     /\ TermQuorumCheck(i)
+    /\ ConfigQuorumCheck(i)
     /\ OpCommittedInConfig(i)
 
 \*
