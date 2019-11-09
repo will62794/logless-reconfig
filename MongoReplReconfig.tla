@@ -13,9 +13,6 @@ EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 \* The set of server IDs
 CONSTANTS Server
 
-\* The set of requests that can go into the log
-CONSTANTS Value
-
 \* Server states.
 CONSTANTS Secondary, Candidate, Primary
 
@@ -302,10 +299,9 @@ CommitEntry(i) ==
 (* Node 'i', a primary, handles a new client request and places the entry in  *)
 (* its log.                                                                   *)
 (******************************************************************************)        
-ClientRequest(i, v) == 
+ClientRequest(i) == 
     /\ state[i] = Primary
-    /\ LET entry == [term  |-> currentTerm[i],
-                     value |-> v]
+    /\ LET entry == [term  |-> currentTerm[i]]
        newLog == Append(log[i], entry) IN
        /\ log' = [log EXCEPT ![i] = newLog]
     /\ UNCHANGED <<serverVars, leaderVars, config, configVersion, immediatelyCommitted>>
@@ -475,7 +471,7 @@ HistNext ==
 
 
 BecomeLeaderAction      ==  \E s \in Server : BecomeLeader(s)                           /\ HistNext
-ClientRequestAction     ==  \E s \in Server : \E v \in Value : ClientRequest(s, v)      /\ HistNext
+ClientRequestAction     ==  \E s \in Server : ClientRequest(s)                          /\ HistNext
 GetEntriesAction        ==  \E s, t \in Server : GetEntries(s, t)                       /\ HistNext
 RollbackEntriesAction   ==  \E s, t \in Server : RollbackEntries(s, t)                  /\ HistNext
 ReconfigAction          ==  \E s \in Server : Reconfig(s)                               /\ HistNext
