@@ -311,6 +311,16 @@ ClientRequest(i) ==
 (* Correctness Properties                                                                         *)
 (**************************************************************************************************)
 
+\* Check if the term can be propagated by messages other than GetEntries i.e. can you update your 
+\* term without receiving a new log message.
+TermWasPropagatedViaHeartbeats == 
+    /\ Cardinality(elections) = 1 
+    /\ \A s \in Server : log[s] = <<>> 
+    /\ \E e \in elections :
+       /\ e.eterm = 1 
+       /\ Cardinality(e.evotes) = 2
+       /\ \E s \in Server : s \notin e.evotes /\ currentTerm[s]=1
+
 \* If a node is currently primary and learns about a higher term, and it is not the leader
 \* of this newer term, then it must step down.
 NodesStepDown == \A s \in Server : 
@@ -508,6 +518,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Fri Nov 08 18:39:34 EST 2019 by williamschultz
+\* Last modified Sat Nov 09 13:36:11 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
