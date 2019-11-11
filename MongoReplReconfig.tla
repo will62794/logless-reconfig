@@ -263,6 +263,7 @@ Reconfig(i) ==
 \* node j to accept the config of node i.
 IsNewerConfig(i, j) == 
     /\ configVersion[i] > configVersion[j]
+    /\ currentTerm[i] >= currentTerm[j]
 
 \* Node i sends its current config to node j. It is only accepted if the config version is newer.
 SendConfig(i, j) == 
