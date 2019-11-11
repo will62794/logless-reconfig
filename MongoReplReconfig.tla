@@ -259,13 +259,17 @@ Reconfig(i) ==
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
         /\ UNCHANGED <<serverVars, elections, log, immediatelyCommitted>>         
 
+\* Is the config of node i considered 'newer' than the config of node j. This is the condition for
+\* node j to accept the config of node i.
+IsNewerConfig(i, j) == 
+    /\ configVersion[i] > configVersion[j]
+
 \* Node i sends its current config to node j. It is only accepted if the config version is newer.
 SendConfig(i, j) == 
     \* Only update config if the received config version is newer. We still allow this
     \* action to propagate terms, though, even if the config is not updated.
-    LET isNewerConfig == configVersion[i] > configVersion[j] IN
-    /\ config' = [config EXCEPT ![j] = IF isNewerConfig THEN config[i] ELSE config[j]]
-    /\ configVersion' = [configVersion EXCEPT ![j] = IF isNewerConfig THEN configVersion[i] ELSE configVersion[j]]
+    /\ config' = [config EXCEPT ![j] = IF IsNewerConfig(i, j) THEN config[i] ELSE config[j]]
+    /\ configVersion' = [configVersion EXCEPT ![j] = IF IsNewerConfig(i, j) THEN configVersion[i] ELSE configVersion[j]]
     \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
     /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
