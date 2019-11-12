@@ -270,7 +270,7 @@ Reconfig(i) ==
 IsNewerConfig(i, j) == 
     /\ configVersion[i] > configVersion[j]
     \* /\ currentTerm[i] >= currentTerm[j] \* shouldn't be necessary anymore with 'configTerm'.
-    /\ configTerm[i] >= configTerm[j]
+    /\ configTerm[i] >= currentTerm[j]
 
 \* Node i sends its current config to node j. It is only accepted if the config version is newer.
 SendConfig(i, j) == 
@@ -346,6 +346,23 @@ NodesStepDownProperty == [][NodesStepDown]_vars
 
 \* Are there two primaries in the current state.
 TwoPrimaries == \E s, t \in Server : s # t /\ state[s] = Primary /\ state[s] = state[t]
+
+NPrimaries(n) == 
+    \E prims \in SUBSET Server : 
+        /\ \A s \in prims : state[s] = Primary 
+        /\ Cardinality(prims) = n
+
+\* Are there 'n' concurrent, differing configs active on some set of nodes in 
+\* the current state.
+NConcurrentConfigs(n) == 
+    \E S \in SUBSET Server :  
+        /\ Cardinality(S) = n
+        /\ \A x, y \in S : x # y => config[x] # config[y]
+
+2ConcurrentConfigs == ~NConcurrentConfigs(2)
+3ConcurrentConfigs == ~NConcurrentConfigs(3)
+4ConcurrentConfigs == ~NConcurrentConfigs(4)
+5ConcurrentConfigs == ~NConcurrentConfigs(5)
 
 \* The set of all log entries in a given log i.e. the set of all <<index, term>>
 \* pairs that appear in the log.
@@ -532,6 +549,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Nov 09 13:36:11 EST 2019 by williamschultz
+\* Last modified Tue Nov 12 15:11:06 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
