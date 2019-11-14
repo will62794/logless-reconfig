@@ -4,3 +4,4 @@ latex/
 *.pdf
 traces/
 states/
+*.out

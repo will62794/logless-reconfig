@@ -475,6 +475,9 @@ LeaderCompleteness ==
 \* requests will eventually be disallowed.
 EventuallyLogsConverge == <>[][\A s, t \in Server : s # t => log[s] = log[t]]_vars
 
+\* At any time, some node can always become a leader.
+ElectableNodeExists == \E s \in Server : ENABLED BecomeLeader(s)
+
 -------------------------------------------------------------------------------------------
 
 (**************************************************************************************************)
