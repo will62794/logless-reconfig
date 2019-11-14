@@ -121,6 +121,7 @@ CanVoteFor(i, j, term) ==
     /\ currentTerm[i] <= term
     /\ term \notin votedFor[i]
     \* you can only vote for someone with the same config version as you.
+    \* TODO: Only vote for someone if their config version is >= your own.
     /\ configVersion[i] = configVersion[j]
     /\ logOk
 
@@ -173,6 +174,7 @@ RollbackEntries(i, j) ==
 GetEntries(i, j) == 
     /\ j \in config[i]
     /\ state[i] = Secondary
+    \* TODO: Remove this restriction on checking config version when fetching log entries.
     /\ configVersion[i] = configVersion[j]
     \* Node j must have more entries than node i.
     /\ Len(log[j]) > Len(log[i])
@@ -274,6 +276,7 @@ IsNewerConfig(i, j) ==
 
 \* Node i sends its current config to node j. It is only accepted if the config version is newer.
 SendConfig(i, j) == 
+    \* TODO: Only allow configs to propagate from a primary to a secondary.
     \* Only update config if the received config version is newer. We still allow this
     \* action to propagate terms, though, even if the config is not updated.
     /\ config' = [config EXCEPT ![j] = IF IsNewerConfig(i, j) THEN config[i] ELSE config[j]]
@@ -286,6 +289,9 @@ SendConfig(i, j) ==
     /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j],
                               ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
     /\ UNCHANGED <<votedFor, elections, log, immediatelyCommitted>>         
+
+\* TODO: Re-propose your current config in term T in a higher term U if you have been elected in term U.
+ReproposeConfig(i) == TRUE
 
 \* A leader i commits its newest log entry. It commits it according to its own config's notion of a quorum.
 CommitEntry(i) ==
