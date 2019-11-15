@@ -500,9 +500,11 @@ Init ==
     \* Log variables.
     /\ log          = [i \in Server |-> << >>]
     \* Reconfig variables.
-    \* Initially, all nodes start out with the same view of the config, which includes
-    \* all nodes.
-    /\ config =         [i \in Server |-> Server]
+    \* Initially, all nodes start out with the same view of the config. 
+    \* We allow an initial config to be any non-empty subset of the current servers.
+    /\ \E initConfig \in (SUBSET Server) : 
+        /\ initConfig # {}
+        /\ config = [i \in Server |-> initConfig]
     /\ configVersion =  [i \in Server |-> 0]
     /\ configTerm    =  [i \in Server |-> 0]
     \* History variables
