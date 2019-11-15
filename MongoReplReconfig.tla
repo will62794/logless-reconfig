@@ -29,11 +29,7 @@ CONSTANTS Nil
 \* successful elections (see BecomeLeader).
 VARIABLE elections
 
-\* A history variable. This would not be present in an implementation. Keeps track of every log ever 
-\* in the system (set of logs).
-VARIABLE allLogs
-
-\* Set of all immediately committed <<index, term>> log entry pairs.
+\* Set of all immediately committed <<index, term, configVersion>> log entry pairs.
 VARIABLE immediatelyCommitted
 
 (**************************************************************************************************)
@@ -72,7 +68,7 @@ VARIABLE configVersion
 \* that moved to that config.
 VARIABLE configTerm
 
-vars == <<allLogs, serverVars, elections, log, immediatelyCommitted, config, configVersion, configTerm>>
+vars == <<serverVars, elections, log, immediatelyCommitted, config, configVersion, configTerm>>
 
 -------------------------------------------------------------------------------------------
 
@@ -380,51 +376,6 @@ EntryInLog(xlog, index, term) == <<index, term>> \in LogEntries(xlog)
 \* The set of all log entries (<<index, term>>) that appear in any log in the given log set.
 AllLogEntries(logSet) == UNION {LogEntries(l) : l \in logSet}      
 
-\* Determines whether an <<index, term>> entry is immediately committed, based on the
-\* current state. Be careful to note that the value of this expression only depends on the current state, not the 
-\* history of states. A particular entry may be immediately committed in the current state,
-\* but not immediately committed in the next state.
-ImmediatelyCommitted(index, term) == 
-    \E Q \in Quorum :
-        \A q \in Q : 
-            /\ currentTerm[q] = term 
-            /\ EntryInLog(log[q], index, term)
-
-\* The set of all immediately committed log entries in the current state. An entry is committed
-\* at a particular term t, so we store the entry itself along with the term at which it was committed. 
-\* In general, the "commitment term" doesn't need to match the term of the entry itself, although for 
-\* immediately committed entries, it will. It may not for prefix committed entries, though.
-AllImmediatelyCommitted == 
-    LET entries == {e \in AllLogEntries(Range(log)) : ImmediatelyCommitted(e[1], e[2])} IN
-    {[entry |-> e, term |-> e[2]] : e \in entries}
-
-\* The set of prefix committed entries.
-PrefixCommittedEntries == 
-    {e \in AllLogEntries(Range(log)) :
-        \E l \in Range(log) : 
-            /\ EntryInLog(l, e[1], e[2])
-            /\ \E c \in LogEntries(l) :
-                /\ c[1] > e[1]
-                /\ \E x \in immediatelyCommitted : c = x.entry}
-
-\* The set of prefix committed entries along with the term they were committed in.
-PrefixCommittedEntriesWithTerm == 
-    {   LET commitmentTerm == CHOOSE t \in 1..10 : 
-            \E l \in Range(log) :
-                /\ EntryInLog(l, e[1], e[2])
-                /\ \E c \in LogEntries(l) :
-                    /\ c[1] > e[1]
-                    /\ [entry |-> c, term |-> t] \in immediatelyCommitted IN
-         [entry |-> e, term |-> commitmentTerm]
-        : e \in PrefixCommittedEntries}
-
-\* The set of all committed log entries up to the current state. Note that this definition depends
-\* on a history variable, 'immediatelyCommitted'. That history variable is constructed by appending the
-\* immediately committed entries at every state to a set. So, at any one state, it should store the complete
-\* set of entries that were ever immediately committed. Some entries may never be immediately committed and will
-\* only get "prefix committed". 
-CommittedEntries == immediatelyCommitted \cup PrefixCommittedEntriesWithTerm
-
 \* Is 'xlog' a prefix of 'ylog'.
 IsPrefix(xlog, ylog) == 
     /\ Len(xlog) <= Len(ylog)
@@ -435,16 +386,6 @@ IsPrefix(xlog, ylog) ==
 (**************************************************************************************************)
 ElectionSafety == \A e1, e2 \in elections: 
                     e1.eterm = e2.eterm => e1.eleader = e2.eleader
-
-(**************************************************************************************************)
-(* An <<index, term>> pair should uniquely identify a log prefix.                                 *)
-(**************************************************************************************************)
-LogMatching == 
-    \A xlog, ylog \in allLogs : 
-    Len(xlog) <= Len(ylog) =>
-    \A i \in DOMAIN xlog : 
-        xlog[i].term = ylog[i].term => 
-        SubSeq(xlog, 1, i) = SubSeq(ylog, 1, i)
        
 (**************************************************************************************************)
 (* Only uncommitted entries are allowed to be deleted from logs.                                  *)
@@ -459,27 +400,6 @@ RollbackCommitted == \E s \in Server :
                         /\ Len(log'[s]) < index
                         
 NeverRollbackCommitted == [][~RollbackCommitted]_vars
-
-
-(**************************************************************************************************)
-(* If an entry was committed, then it must appear in the logs of all leaders of higher terms.     *)
-(**************************************************************************************************)
-LeaderCompleteness == 
- \A e \in CommittedEntries :
- \A election \in elections:
-    LET index == e.entry[1] 
-        term == e.entry[2] IN
-    election.eterm > e.term => EntryInLog(election.elog, index, term)
-
-\*
-\* Liveness Properties (Experimental)
-\*
-
-\* Eventually all servers store the same logs forever. This should only be true 
-\* in the absence of new client requests, but if the maximum log length of 
-\* servers is limited in a model, then logs should eventually converge, since new client
-\* requests will eventually be disallowed.
-EventuallyLogsConverge == <>[][\A s, t \in Server : s # t => log[s] = log[t]]_vars
 
 \* At any time, some node can always become a leader.
 ElectableNodeExists == \E s \in Server : ENABLED BecomeLeader(s)
@@ -509,25 +429,15 @@ Init ==
     /\ configTerm    =  [i \in Server |-> 0]
     \* History variables
     /\ elections = {}
-    /\ allLogs   = {log[i] : i \in Server}
     /\ immediatelyCommitted = {}
-    
-\* Next state predicate for history variables. We (unfortunately) add it to every next-state disjunct
-\* instead of adding it as a conjunct with the entire next-state relation because it makes for clearer TLC 
-\* Toolbox error traces i.e. we can see what specific action was executed at each step of the trace. 
-HistNext == 
-    /\ allLogs' = allLogs \cup {log[i] : i \in Server}
-\*    /\ immediatelyCommitted' = immediatelyCommitted \cup AllImmediatelyCommitted'
-\*    /\ immediatelyCommitted' = immediatelyCommitted 
 
-
-BecomeLeaderAction      ==  \E s \in Server : BecomeLeader(s)                           /\ HistNext
-ClientRequestAction     ==  \E s \in Server : ClientRequest(s)                          /\ HistNext
-GetEntriesAction        ==  \E s, t \in Server : GetEntries(s, t)                       /\ HistNext
-RollbackEntriesAction   ==  \E s, t \in Server : RollbackEntries(s, t)                  /\ HistNext
-ReconfigAction          ==  \E s \in Server : Reconfig(s)                               /\ HistNext
-SendConfigAction        ==  \E s,t \in Server : SendConfig(s, t)                        /\ HistNext
-CommitEntryAction       ==  \E s \in Server : CommitEntry(s)                            /\ HistNext
+BecomeLeaderAction      ==  \E s \in Server : BecomeLeader(s)         
+ClientRequestAction     ==  \E s \in Server : ClientRequest(s)        
+GetEntriesAction        ==  \E s, t \in Server : GetEntries(s, t)     
+RollbackEntriesAction   ==  \E s, t \in Server : RollbackEntries(s, t)
+ReconfigAction          ==  \E s \in Server : Reconfig(s)             
+SendConfigAction        ==  \E s,t \in Server : SendConfig(s, t)      
+CommitEntryAction       ==  \E s \in Server : CommitEntry(s)          
   
 Next == 
     \/ BecomeLeaderAction
