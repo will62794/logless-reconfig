@@ -209,22 +209,20 @@ BecomeLeader(i) ==
 
 
 \* A quorum of nodes have received this config or a newer one.
-ConfigQuorumCheck(i) == 
-    \E quorum \in Quorums(config[i]) : \A s \in quorum : configVersion[s] >= configVersion[i]
+ConfigQuorumCheck(self, s) == configVersion[self] <= configVersion[s]
 
 \* Was an op was committed in the config of node i.
 OpCommittedInConfig(i) ==
     /\ \E e \in immediatelyCommitted : e[3] = configVersion[i]
 
 \* Did a node talked to a quorum as primary.
-TermQuorumCheck(i) ==
-    /\ \A q \in Quorums(config[i]) :
-       \A s \in q : currentTerm[i] >= currentTerm[s]
+TermQuorumCheck(self, s) == currentTerm[self] >= currentTerm[s]
 
 \* Is the config on node i currently "safe".
 ConfigIsSafe(i) ==
-    /\ TermQuorumCheck(i)
-    /\ ConfigQuorumCheck(i)
+    /\ \E q \in Quorums(config[i]):
+       \A s \in q : /\ TermQuorumCheck(i, s)
+                    /\ ConfigQuorumCheck(i, s)
     /\ OpCommittedInConfig(i)
 
 \*
