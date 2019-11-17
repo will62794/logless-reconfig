@@ -23,12 +23,6 @@ CONSTANTS Nil
 (* Global variables                                                                               *)
 (**************************************************************************************************)
 
-\* A history variable. This would not be present in an
-\* implementation. Keeps track of successful elections, including the initial logs of the
-\* leader and voters' logs. Set of functions containing various things about
-\* successful elections (see BecomeLeader).
-VARIABLE elections
-
 \* Set of all immediately committed <<index, term, configVersion>> log entry pairs.
 VARIABLE immediatelyCommitted
 
@@ -65,7 +59,7 @@ VARIABLE configVersion
 \* that moved to that config.
 VARIABLE configTerm
 
-vars == <<serverVars, elections, log, immediatelyCommitted, config, configVersion, configTerm>>
+vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTerm>>
 
 -------------------------------------------------------------------------------------------
 
@@ -156,7 +150,7 @@ RollbackEntries(i, j) ==
     \* Step down remote node if it's term is smaller than yours.                                      
     /\ state' = [state EXCEPT ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i],
                               ![j] = Secondary] 
-    /\ UNCHANGED <<elections, config, configVersion, immediatelyCommitted, configTerm>>
+    /\ UNCHANGED <<config, configVersion, immediatelyCommitted, configTerm>>
        
 (******************************************************************************)
 (* [ACTION]                                                                   *)
@@ -187,7 +181,7 @@ GetEntries(i, j) ==
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
     \* Step down remote node if it's term is smaller than yours.                                      
     /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j]]          
-    /\ UNCHANGED <<elections, config, configVersion, immediatelyCommitted, configTerm>>   
+    /\ UNCHANGED <<config, configVersion, immediatelyCommitted, configTerm>>   
     
 (******************************************************************************)
 (* [ACTION]                                                                   *)
@@ -206,12 +200,7 @@ BecomeLeader(i) ==
         /\ state' = [s \in Server |-> 
                         IF s = i THEN Primary
                         ELSE IF s \in voteQuorum THEN Secondary \* All voters should revert to secondary state.
-                        ELSE state[s]] 
-        /\ LET election == [eterm     |-> newTerm,
-                            eleader   |-> i,
-                            elog      |-> log[i],
-                            evotes    |-> voteQuorum] IN
-           elections'  = elections \cup {election}        
+                        ELSE state[s]]
         /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted, configTerm>>         
 
 
@@ -256,7 +245,7 @@ Reconfig(i) ==
         /\ \* Pick a config version higher than all existing config versions.
             LET newConfigVersion == Max(Range(configVersion)) + 1 IN
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
-        /\ UNCHANGED <<serverVars, elections, log, immediatelyCommitted>>         
+        /\ UNCHANGED <<serverVars, log, immediatelyCommitted>>
 
 \* Is the config of node i considered 'newer' than the config of node j. This is the condition for
 \* node j to accept the config of node i.
@@ -279,7 +268,7 @@ SendConfig(i, j) ==
     \* May update state of sender or receiver.
     /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j],
                               ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
-    /\ UNCHANGED <<elections, log, immediatelyCommitted>>         
+    /\ UNCHANGED <<log, immediatelyCommitted>>
 
 \* TODO: Re-propose your current config in term T in a higher term U if you have been elected in term U.
 ReproposeConfig(i) == TRUE
@@ -300,7 +289,7 @@ CommitEntry(i) ==
             /\ log[s][ind] = log[i][ind]        \* they have the entry.
             /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
         /\ immediatelyCommitted' = immediatelyCommitted \cup {<<ind, currentTerm[i], configVersion[i]>>}
-        /\ UNCHANGED <<serverVars, elections, log, config, configVersion, configTerm>>              
+        /\ UNCHANGED <<serverVars, log, config, configVersion, configTerm>>
         
 (******************************************************************************)
 (* [ACTION]                                                                   *)
@@ -313,33 +302,13 @@ ClientRequest(i) ==
     /\ LET entry == [term  |-> currentTerm[i]]
        newLog == Append(log[i], entry) IN
        /\ log' = [log EXCEPT ![i] = newLog]
-    /\ UNCHANGED <<serverVars, elections, config, configVersion, immediatelyCommitted, configTerm>>
+    /\ UNCHANGED <<serverVars, config, configVersion, immediatelyCommitted, configTerm>>
 
 -------------------------------------------------------------------------------------------
 
 (**************************************************************************************************)
 (* Correctness Properties                                                                         *)
 (**************************************************************************************************)
-
-\* Check if the term can be propagated by messages other than GetEntries i.e. can you update your 
-\* term without receiving a new log message.
-TermWasPropagatedViaHeartbeats == 
-    /\ Cardinality(elections) = 1 
-    /\ \A s \in Server : log[s] = <<>> 
-    /\ \E e \in elections :
-       /\ e.eterm = 1 
-       /\ Cardinality(e.evotes) = 2
-       /\ \E s \in Server : s \notin e.evotes /\ currentTerm[s]=1
-
-\* If a node is currently primary and learns about a higher term, and it is not the leader
-\* of this newer term, then it must step down.
-NodesStepDown == \A s \in Server : 
-    /\ state[s] = Primary
-    /\ currentTerm'[s] > currentTerm[s]
-    /\ ~(\E elec \in elections' : elec.eterm = currentTerm'[s] /\ elec.eleader = s) =>
-        state'[s] = Secondary \* make sure the node stepped down.
-
-NodesStepDownProperty == [][NodesStepDown]_vars
 
 \* Are there two primaries in the current state.
 TwoPrimaries == \E s, t \in Server : s # t /\ state[s] = Primary /\ state[s] = state[t]
@@ -428,7 +397,6 @@ Init ==
     /\ configVersion =  [i \in Server |-> 0]
     /\ configTerm    =  [i \in Server |-> 0]
     \* History variables
-    /\ elections = {}
     /\ immediatelyCommitted = {}
 
 BecomeLeaderAction      ==  \E s \in Server : BecomeLeader(s)         
