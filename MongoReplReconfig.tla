@@ -264,7 +264,7 @@ SendConfig(i, j) ==
     \* action to propagate terms, though, even if the config is not updated.
     /\ config' = [config EXCEPT ![j] = IF IsNewerConfig(i, j) THEN config[i] ELSE config[j]]
     /\ configVersion' = [configVersion EXCEPT ![j] = IF IsNewerConfig(i, j) THEN configVersion[i] ELSE configVersion[j]]
-    /\ configTerm' = [configTerm EXCEPT ![j] = configTerm[i]]
+    /\ configTerm' = [configTerm EXCEPT ![j] = IF IsNewerConfig(i, j) THEN configTerm[i] ELSE configTerm[j]]
     \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
     /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
