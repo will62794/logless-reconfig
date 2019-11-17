@@ -70,6 +70,9 @@ vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTe
 \* The set of all quorums. This just calculates simple majorities, but the only
 \* important property is that every quorum overlaps with every other.
 Quorum == {i \in SUBSET(Server) : Cardinality(i) * 2 > Cardinality(Server)}
+MajorityOnlyQuorums(S) == {i \in SUBSET(S) :
+    /\ Cardinality(i) * 2 > Cardinality(S)
+    /\ Cardinality(i) * 2 <= Cardinality(S) + 2}
 Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
     
 \* Return the minimum value from a set, or undefined if the set is empty.
@@ -380,7 +383,8 @@ ElectableNodeExists == \E s \in Server : ENABLED BecomeLeader(s)
 (**************************************************************************************************)
 (* Spec definition                                                                                *)
 (**************************************************************************************************)
- 
+InitConfigConstriant(c) == TRUE
+InitConfigMaxSizeOnly(c) == c = Server
 Init == 
     \* Server variables.
     /\ currentTerm = [i \in Server |-> 0]
@@ -393,6 +397,7 @@ Init ==
     \* We allow an initial config to be any non-empty subset of the current servers.
     /\ \E initConfig \in (SUBSET Server) : 
         /\ initConfig # {}
+        /\ InitConfigConstriant(initConfig)
         /\ config = [i \in Server |-> initConfig]
     /\ configVersion =  [i \in Server |-> 0]
     /\ configTerm    =  [i \in Server |-> 0]
