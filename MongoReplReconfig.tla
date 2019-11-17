@@ -360,6 +360,13 @@ TwoPrimariesInSameTerm ==
 NoTwoPrimariesInSameTerm == ~TwoPrimariesInSameTerm
 ElectionSafety == NoTwoPrimariesInSameTerm
 
+ConfigVersionIncreasesWithTerm ==
+    ~(\E i, j \in Server :
+        /\ i # j
+        /\ configVersion[i] > configVersion[j]
+        /\ configTerm[i] < configTerm[j]
+    )
+
 (**************************************************************************************************)
 (* Only uncommitted entries are allowed to be deleted from logs.                                  *)
 (**************************************************************************************************)
@@ -376,6 +383,14 @@ NeverRollbackCommitted == [][~RollbackCommitted]_vars
 
 \* At any time, some node can always become a leader.
 ElectableNodeExists == \E s \in Server : ENABLED BecomeLeader(s)
+
+(**************************************************************************************************)
+(* Liveness properties                                                                            *)
+(**************************************************************************************************)
+ConfigEventuallyPropagates ==
+    \A i, j \in Server:
+        i \in config[j] ~> \/ i \notin config[j]
+                           \/ configVersion[i] = configVersion[j]
 
 -------------------------------------------------------------------------------------------
 
@@ -420,7 +435,11 @@ Next ==
     \/ SendConfigAction
     \/ CommitEntryAction
 
-Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
+Liveness ==
+    /\ WF_vars(BecomeLeaderAction)
+    /\ WF_vars(SendConfigAction)
+
+Spec == Init /\ [][Next]_vars /\ Liveness
 
 -------------------------------------------------------------------------------------------
 
