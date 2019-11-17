@@ -379,9 +379,16 @@ IsPrefix(xlog, ylog) ==
 (**************************************************************************************************)
 (* There should be at most one leader per term.                                                   *)
 (**************************************************************************************************)
-ElectionSafety == \A e1, e2 \in elections: 
-                    e1.eterm = e2.eterm => e1.eleader = e2.eleader
-       
+TwoPrimariesInSameTerm ==
+    \E i, j \in Server :
+        /\ i # j
+        /\ currentTerm[i] = currentTerm[j]
+        /\ state[i] = Primary
+        /\ state[j] = Primary
+
+NoTwoPrimariesInSameTerm == ~TwoPrimariesInSameTerm
+ElectionSafety == NoTwoPrimariesInSameTerm
+
 (**************************************************************************************************)
 (* Only uncommitted entries are allowed to be deleted from logs.                                  *)
 (**************************************************************************************************)
