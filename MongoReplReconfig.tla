@@ -44,10 +44,7 @@ VARIABLE currentTerm
 \* The server's state (Follower, Candidate, or Leader).
 VARIABLE state
 
-\* The set of terms each server has voted in, if any.
-VARIABLE votedFor
-
-serverVars == <<currentTerm, state, votedFor>>
+serverVars == <<currentTerm, state>>
 
 \* A sequence of log entries. The index into this sequence is the index of the
 \* log entry
@@ -114,8 +111,7 @@ CanVoteFor(i, j, term) ==
            /\ Len(log[j]) >= Len(log[i]) IN
     \* Nodes can only vote once per term, and they will never 
     \* vote for someone with a lesser term than their own.
-    /\ currentTerm[i] <= term
-    /\ term \notin votedFor[i]
+    /\ currentTerm[i] < term
     \* you can only vote for someone with the same config version as you.
     \* TODO: Only vote for someone if their config version is >= your own.
     /\ configVersion[i] = configVersion[j]
@@ -160,7 +156,7 @@ RollbackEntries(i, j) ==
     \* Step down remote node if it's term is smaller than yours.                                      
     /\ state' = [state EXCEPT ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i],
                               ![j] = Secondary] 
-    /\ UNCHANGED <<votedFor, elections, config, configVersion, immediatelyCommitted, configTerm>>
+    /\ UNCHANGED <<elections, config, configVersion, immediatelyCommitted, configTerm>>
        
 (******************************************************************************)
 (* [ACTION]                                                                   *)
@@ -191,7 +187,7 @@ GetEntries(i, j) ==
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
     \* Step down remote node if it's term is smaller than yours.                                      
     /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j]]          
-    /\ UNCHANGED <<votedFor, elections, config, configVersion, immediatelyCommitted, configTerm>>   
+    /\ UNCHANGED <<elections, config, configVersion, immediatelyCommitted, configTerm>>   
     
 (******************************************************************************)
 (* [ACTION]                                                                   *)
@@ -207,7 +203,6 @@ BecomeLeader(i) ==
         /\ \A v \in voteQuorum : CanVoteFor(v, i, newTerm)
         \* Update the terms of each voter.
         /\ currentTerm' = [s \in Server |-> IF s \in voteQuorum THEN newTerm ELSE currentTerm[s]]
-        /\ votedFor' = [s \in Server |-> IF s \in voteQuorum THEN votedFor[s] \cup {newTerm} ELSE votedFor[s]]
         /\ state' = [s \in Server |-> 
                         IF s = i THEN Primary
                         ELSE IF s \in voteQuorum THEN Secondary \* All voters should revert to secondary state.
@@ -284,7 +279,7 @@ SendConfig(i, j) ==
     \* May update state of sender or receiver.
     /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j],
                               ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
-    /\ UNCHANGED <<votedFor, elections, log, immediatelyCommitted>>         
+    /\ UNCHANGED <<elections, log, immediatelyCommitted>>         
 
 \* TODO: Re-propose your current config in term T in a higher term U if you have been elected in term U.
 ReproposeConfig(i) == TRUE
@@ -414,9 +409,7 @@ Init ==
     \* Server variables.
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
-    \*/\ votedFor    = [i \in Server |-> Nil]
     \* The set of terms that each node has voted in, if any. Every node can only vote 'yes' once in a given term.
-    /\ votedFor    = [i \in Server |-> {}]
     \* Log variables.
     /\ log          = [i \in Server |-> << >>]
     \* Reconfig variables.
