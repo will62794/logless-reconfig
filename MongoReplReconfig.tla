@@ -260,9 +260,10 @@ SendConfig(i, j) ==
     \* TODO: Only allow configs to propagate from a primary to a secondary.
     \* Only update config if the received config version is newer. We still allow this
     \* action to propagate terms, though, even if the config is not updated.
-    /\ config' = [config EXCEPT ![j] = IF IsNewerConfig(i, j) THEN config[i] ELSE config[j]]
-    /\ configVersion' = [configVersion EXCEPT ![j] = IF IsNewerConfig(i, j) THEN configVersion[i] ELSE configVersion[j]]
-    /\ configTerm' = [configTerm EXCEPT ![j] = IF IsNewerConfig(i, j) THEN configTerm[i] ELSE configTerm[j]]
+    /\ IsNewerConfig(i, j)
+    /\ config' = [config EXCEPT ![j] = config[i]]
+    /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
+    /\ configTerm' = [configTerm EXCEPT ![j] = configTerm[i]]
     \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
     /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
