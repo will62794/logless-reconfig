@@ -48,7 +48,7 @@ VARIABLE log
 \* Reconfig related variables.
 \*
 
-\* A server's current config. A config is just a set of servers 
+\* A server's current config. A config is just a set of servers
 \* i.e. an element of SUBSET Server
 VARIABLE config
 
@@ -74,7 +74,7 @@ MajorityOnlyQuorums(S) == {i \in SUBSET(S) :
     /\ Cardinality(i) * 2 > Cardinality(S)
     /\ Cardinality(i) * 2 <= Cardinality(S) + 2}
 Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
-    
+
 \* Return the minimum value from a set, or undefined if the set is empty.
 Min(s) == CHOOSE x \in s : \A y \in s : x <= y
 
@@ -98,18 +98,18 @@ AliveNodes(s) == { n \in Server: state[n] # Down }
 (* This section defines the core steps of the algorithm, along with some      *)
 (* related helper definitions/operators.  We annotate the main actions with   *)
 (* an [ACTION] specifier to disinguish them from auxiliary, helper operators. *)
-(******************************************************************************)    
+(******************************************************************************)
 
 \* The term of the last entry in a log, or 0 if the log is empty.
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)].term
 
 \* Can node 'i' currently cast a vote for node 'j' in term 'term'.
-CanVoteFor(i, j, term) == 
-    LET logOk == 
+CanVoteFor(i, j, term) ==
+    LET logOk ==
         \/ LastTerm(log[j]) > LastTerm(log[i])
         \/ /\ LastTerm(log[j]) = LastTerm(log[i])
            /\ Len(log[j]) >= Len(log[i]) IN
-    \* Nodes can only vote once per term, and they will never 
+    \* Nodes can only vote once per term, and they will never
     \* vote for someone with a lesser term than their own.
     /\ currentTerm[i] < term
     \* you can only vote for someone with the same config version as you.
@@ -119,76 +119,76 @@ CanVoteFor(i, j, term) ==
 
 \* Is it possible for log 'lj' to roll back based on the log 'li'. If this is true, it implies that
 \* log 'lj' should remove entries to become a prefix of 'li'.
-CanRollback(li, lj) == 
-    /\ Len(li) > 0 
+CanRollback(li, lj) ==
+    /\ Len(li) > 0
     /\ Len(lj) > 0
-    \* The terms of the last entries of each log do not match. The term of node i's last 
+    \* The terms of the last entries of each log do not match. The term of node i's last
     \* log entry is greater than that of node j's.
     /\ li[Len(li)].term > lj[Len(lj)].term
 
-\* Returns the highest common index between two divergent logs, 'li' and 'lj'. 
+\* Returns the highest common index between two divergent logs, 'li' and 'lj'.
 \* If there is no common index between the logs, returns 0.
-RollbackCommonPoint(li, lj) == 
-    LET commonIndices == {k \in DOMAIN li : 
+RollbackCommonPoint(li, lj) ==
+    LET commonIndices == {k \in DOMAIN li :
                             /\ k <= Len(lj)
                             /\ li[k] = lj[k]} IN
-        IF commonIndices = {} THEN 0 ELSE Max(commonIndices)  
-                                                       
+        IF commonIndices = {} THEN 0 ELSE Max(commonIndices)
+
 (******************************************************************************)
 (* [ACTION]                                                                   *)
 (*                                                                            *)
 (* Node 'j' removes entries based against the log of node 'i'.                *)
 (******************************************************************************)
-RollbackEntries(i, j) == 
+RollbackEntries(i, j) ==
     /\ CanRollback(log[i], log[j])
     /\ i \in config[j]
-    /\ configVersion[i] = configVersion[j]    
+    /\ configVersion[i] = configVersion[j]
     /\ LET commonPoint == RollbackCommonPoint(log[i], log[j]) IN
            \* If there is no common entry between log 'i' and
            \* log 'j', then it means that the all entries of log 'j'
            \* are divergent, and so we erase its entire log. Otherwise
-           \* we erase all log entries after the newest common entry. Note that 
+           \* we erase all log entries after the newest common entry. Note that
            \* if the commonPoint is '0' then SubSeq(log[i], 1, 0) will evaluate
            \* to <<>>, the empty sequence.
-           log' = [log EXCEPT ![j] = SubSeq(log[i], 1, commonPoint)] 
+           log' = [log EXCEPT ![j] = SubSeq(log[i], 1, commonPoint)]
     /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
-    \* Step down remote node if it's term is smaller than yours.                                      
+    \* Step down remote node if it's term is smaller than yours.
     /\ state' = [state EXCEPT ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i],
-                              ![j] = Secondary] 
+                              ![j] = Secondary]
     /\ UNCHANGED <<config, configVersion, immediatelyCommitted, configTerm>>
-       
+
 (******************************************************************************)
 (* [ACTION]                                                                   *)
 (*                                                                            *)
 (* Node 'i' gets a new log entry from node 'j'.                               *)
 (******************************************************************************)
-GetEntries(i, j) == 
+GetEntries(i, j) ==
     /\ j \in config[i]
     /\ state[i] = Secondary
     \* TODO: Remove this restriction on checking config version when fetching log entries.
     /\ configVersion[i] = configVersion[j]
     \* Node j must have more entries than node i.
     /\ Len(log[j]) > Len(log[i])
-       \* Ensure that the entry at the last index of node i's log must match the entry at 
+       \* Ensure that the entry at the last index of node i's log must match the entry at
        \* the same index in node j's log. If the log of node i is empty, then the check
        \* trivially passes. This is the essential 'log consistency check'.
-    /\ LET logOk == IF Empty(log[i]) 
-                        THEN TRUE  
+    /\ LET logOk == IF Empty(log[i])
+                        THEN TRUE
                         ELSE log[j][Len(log[i])] = log[i][Len(log[i])] IN
        /\ logOk \* log consistency check
        \* If the log of node i is empty, then take the first entry from node j's log.
        \* Otherwise take the entry following the last index of node i.
-       /\ LET newEntryIndex == IF Empty(log[i]) THEN 1 ELSE Len(log[i]) + 1 
-              newEntry      == log[j][newEntryIndex] 
+       /\ LET newEntryIndex == IF Empty(log[i]) THEN 1 ELSE Len(log[i]) + 1
+              newEntry      == log[j][newEntryIndex]
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
     /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
-    \* Step down remote node if it's term is smaller than yours.                                      
-    /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j]]          
-    /\ UNCHANGED <<config, configVersion, immediatelyCommitted, configTerm>>   
-    
+    \* Step down remote node if it's term is smaller than yours.
+    /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j]]
+    /\ UNCHANGED <<config, configVersion, immediatelyCommitted, configTerm>>
+
 (******************************************************************************)
 (* [ACTION]                                                                   *)
 (*                                                                            *)
@@ -203,11 +203,11 @@ BecomeLeader(i) ==
         /\ \A v \in voteQuorum : CanVoteFor(v, i, newTerm)
         \* Update the terms of each voter.
         /\ currentTerm' = [s \in Server |-> IF s \in voteQuorum THEN newTerm ELSE currentTerm[s]]
-        /\ state' = [s \in Server |-> 
+        /\ state' = [s \in Server |->
                         IF s = i THEN Primary
                         ELSE IF s \in voteQuorum THEN Secondary \* All voters should revert to secondary state.
                         ELSE state[s]]
-        /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted, configTerm>>         
+        /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted, configTerm>>
 
 
 
@@ -231,10 +231,10 @@ ConfigIsSafe(i) ==
 \*
 \* A reconfig occurs on node i. The node must currently be a leader.
 \*
-Reconfig(i) == 
-    \* Pick some arbitrary subset of servers to reconfig to. 
+Reconfig(i) ==
+    \* Pick some arbitrary subset of servers to reconfig to.
     \* Make sure to include this node in the new config, though.
-    \E newConfig \in SUBSET Server : 
+    \E newConfig \in SUBSET Server :
         /\ state[i] = Primary
         \* Only allow a new config to be installed if the current config is "safe".
         /\ ConfigIsSafe(i)
@@ -255,13 +255,13 @@ Reconfig(i) ==
 
 \* Is the config of node i considered 'newer' than the config of node j. This is the condition for
 \* node j to accept the config of node i.
-IsNewerConfig(i, j) == 
+IsNewerConfig(i, j) ==
     /\ configVersion[i] > configVersion[j]
     \* /\ currentTerm[i] >= currentTerm[j] \* shouldn't be necessary anymore with 'configTerm'.
     /\ configTerm[i] >= currentTerm[j]
 
 \* Node i sends its current config to node j. It is only accepted if the config version is newer.
-SendConfig(i, j) == 
+SendConfig(i, j) ==
     \* TODO: Only allow configs to propagate from a primary to a secondary.
     \* Only update config if the received config version is newer. We still allow this
     \* action to propagate terms, though, even if the config is not updated.
@@ -293,27 +293,27 @@ ShutDown(i) ==
 CommitEntry(i) ==
     LET ind == Len(log[i]) IN
     \E quorum \in Quorums(config[i]) :
-        \* Must have some entries to commit. 
-        /\ ind > 0 
+        \* Must have some entries to commit.
+        /\ ind > 0
         \* This node is leader.
         /\ state[i] = Primary
         \* The entry was written by this leader.
         /\ log[i][ind].term = currentTerm[i]
         \* all nodes have this log entry and are in the term of the leader.
-        /\ \A s \in quorum : 
+        /\ \A s \in quorum :
             /\ Len(log[s]) >= ind
             /\ log[s][ind] = log[i][ind]        \* they have the entry.
             /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
         /\ immediatelyCommitted' = immediatelyCommitted \cup {<<ind, currentTerm[i], configVersion[i]>>}
         /\ UNCHANGED <<serverVars, log, config, configVersion, configTerm>>
-        
+
 (******************************************************************************)
 (* [ACTION]                                                                   *)
 (*                                                                            *)
 (* Node 'i', a primary, handles a new client request and places the entry in  *)
 (* its log.                                                                   *)
-(******************************************************************************)        
-ClientRequest(i) == 
+(******************************************************************************)
+ClientRequest(i) ==
     /\ state[i] = Primary
     /\ LET entry == [term  |-> currentTerm[i]]
        newLog == Append(log[i], entry) IN
@@ -329,15 +329,15 @@ ClientRequest(i) ==
 \* Are there two primaries in the current state.
 TwoPrimaries == \E s, t \in Server : s # t /\ state[s] = Primary /\ state[s] = state[t]
 
-NPrimaries(n) == 
-    \E prims \in SUBSET Server : 
-        /\ \A s \in prims : state[s] = Primary 
+NPrimaries(n) ==
+    \E prims \in SUBSET Server :
+        /\ \A s \in prims : state[s] = Primary
         /\ Cardinality(prims) = n
 
-\* Are there 'n' concurrent, differing configs active on some set of nodes in 
+\* Are there 'n' concurrent, differing configs active on some set of nodes in
 \* the current state.
-NConcurrentConfigs(n) == 
-    \E S \in SUBSET Server :  
+NConcurrentConfigs(n) ==
+    \E S \in SUBSET Server :
         /\ Cardinality(S) = n
         /\ \A x, y \in S : x # y => config[x] # config[y]
 
@@ -354,10 +354,10 @@ LogEntries(xlog) == {<<i, xlog[i].term>> : i \in DOMAIN xlog}
 EntryInLog(xlog, index, term) == <<index, term>> \in LogEntries(xlog)
 
 \* The set of all log entries (<<index, term>>) that appear in any log in the given log set.
-AllLogEntries(logSet) == UNION {LogEntries(l) : l \in logSet}      
+AllLogEntries(logSet) == UNION {LogEntries(l) : l \in logSet}
 
 \* Is 'xlog' a prefix of 'ylog'.
-IsPrefix(xlog, ylog) == 
+IsPrefix(xlog, ylog) ==
     /\ Len(xlog) <= Len(ylog)
     /\ xlog = SubSeq(ylog, 1, Len(xlog))
 
@@ -385,14 +385,14 @@ ConfigVersionIncreasesWithTerm ==
 (* Only uncommitted entries are allowed to be deleted from logs.                                  *)
 (**************************************************************************************************)
 
-RollbackCommitted == \E s \in Server : 
+RollbackCommitted == \E s \in Server :
                      \E e \in immediatelyCommitted :
                         LET index == e[1]
                             term  == e[2] IN
                         /\ EntryInLog(log[s], index, term)
                         \* And the entry got rolled back.
                         /\ Len(log'[s]) < index
-                        
+
 NeverRollbackCommitted == [][~RollbackCommitted]_vars
 
 \* At any time, some node can always become a leader.
@@ -415,7 +415,7 @@ ElectableNodeEventuallyExists == <>(\E s \in Server : state[s] = Primary)
 (**************************************************************************************************)
 InitConfigConstriant(c) == TRUE
 InitConfigMaxSizeOnly(c) == c = Server
-Init == 
+Init ==
     \* Server variables.
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
@@ -423,9 +423,9 @@ Init ==
     \* Log variables.
     /\ log          = [i \in Server |-> << >>]
     \* Reconfig variables.
-    \* Initially, all nodes start out with the same view of the config. 
+    \* Initially, all nodes start out with the same view of the config.
     \* We allow an initial config to be any non-empty subset of the current servers.
-    /\ \E initConfig \in (SUBSET Server) : 
+    /\ \E initConfig \in (SUBSET Server) :
         /\ initConfig # {}
         /\ InitConfigConstriant(initConfig)
         /\ config = [i \in Server |-> initConfig]
@@ -434,16 +434,16 @@ Init ==
     \* History variables
     /\ immediatelyCommitted = {}
 
-BecomeLeaderAction      ==  \E s \in AliveNodes(Server) : BecomeLeader(s)         
-ClientRequestAction     ==  \E s \in AliveNodes(Server) : ClientRequest(s)        
-GetEntriesAction        ==  \E s, t \in AliveNodes(Server) : GetEntries(s, t)     
+BecomeLeaderAction      ==  \E s \in AliveNodes(Server) : BecomeLeader(s)
+ClientRequestAction     ==  \E s \in AliveNodes(Server) : ClientRequest(s)
+GetEntriesAction        ==  \E s, t \in AliveNodes(Server) : GetEntries(s, t)
 RollbackEntriesAction   ==  \E s, t \in AliveNodes(Server) : RollbackEntries(s, t)
-ReconfigAction          ==  \E s \in AliveNodes(Server) : Reconfig(s)             
-SendConfigAction        ==  \E s,t \in AliveNodes(Server) : SendConfig(s, t)      
-CommitEntryAction       ==  \E s \in AliveNodes(Server) : CommitEntry(s)          
+ReconfigAction          ==  \E s \in AliveNodes(Server) : Reconfig(s)
+SendConfigAction        ==  \E s,t \in AliveNodes(Server) : SendConfig(s, t)
+CommitEntryAction       ==  \E s \in AliveNodes(Server) : CommitEntry(s)
 ShutDownAction    ==  \E s \in AliveNodes(Server) : ShutDown(s)
 
-Next == 
+Next ==
     \/ BecomeLeaderAction
     \/ ClientRequestAction
     \/ GetEntriesAction
@@ -467,15 +467,15 @@ Spec == Init /\ [][Next]_vars /\ Liveness
 
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 
-StateConstraint == \A s \in Server : 
+StateConstraint == \A s \in Server :
                     /\ currentTerm[s] <= MaxTerm
                     /\ Len(log[s]) <= MaxLogLen
                     /\ configVersion[s] <= MaxConfigVersion
-        
+
 ServerSymmetry == Permutations(Server)
 
-MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm    
-LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen    
+MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
+LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
