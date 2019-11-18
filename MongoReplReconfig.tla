@@ -248,7 +248,8 @@ Reconfig(i) ==
         \* Record the term of the primary that wrote this config.
         /\ configTerm' = [configTerm EXCEPT ![i] = currentTerm[i]]
         /\ \* Pick a config version higher than all existing config versions.
-            LET newConfigVersion == configVersion[i] + 1 IN
+            \* Unique config version implies cv1.version > cv2.version => cv1.term > cv2.term
+            LET newConfigVersion == Max(Range(configVersion)) + 1 IN
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
         /\ UNCHANGED <<serverVars, log, immediatelyCommitted>>
 
