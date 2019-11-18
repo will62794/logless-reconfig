@@ -58,6 +58,7 @@ VARIABLE configVersion
 \* The term in which the current config on a node was written in i.e. the term of the primary
 \* that moved to that config.
 VARIABLE configTerm
+configVars == <<config, configVersion, configTerm>>
 
 vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTerm>>
 
@@ -133,6 +134,17 @@ RollbackCommonPoint(li, lj) ==
                             /\ li[k] = lj[k]} IN
         IF commonIndices = {} THEN 0 ELSE Max(commonIndices)
 
+\* Exchange terms between two nodes and step down the primary if needed.
+UpdateTerms(i, j) ==
+    \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
+    /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
+                                          ![j] = Max({currentTerm[i], currentTerm[j]})]
+    \* May update state of sender or receiver.
+    /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j],
+                              ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
+
+UpdateTermsOnNodes(i, j) == /\ UpdateTerms(i, j)
+                            /\ UNCHANGED <<log, immediatelyCommitted, configVars>>
 (******************************************************************************)
 (* [ACTION]                                                                   *)
 (*                                                                            *)
@@ -150,12 +162,8 @@ RollbackEntries(i, j) ==
            \* if the commonPoint is '0' then SubSeq(log[i], 1, 0) will evaluate
            \* to <<>>, the empty sequence.
            log' = [log EXCEPT ![j] = SubSeq(log[i], 1, commonPoint)]
-    /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
-                                          ![j] = Max({currentTerm[i], currentTerm[j]})]
-    \* Step down remote node if it's term is smaller than yours.
-    /\ state' = [state EXCEPT ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i],
-                              ![j] = Secondary]
-    /\ UNCHANGED <<config, configVersion, immediatelyCommitted, configTerm>>
+    /\ UpdateTerms(i, j)
+    /\ UNCHANGED <<immediatelyCommitted, configVars>>
 
 (******************************************************************************)
 (* [ACTION]                                                                   *)
@@ -268,12 +276,7 @@ SendConfig(i, j) ==
     /\ config' = [config EXCEPT ![j] = config[i]]
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
     /\ configTerm' = [configTerm EXCEPT ![j] = configTerm[i]]
-    \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
-    /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
-                                          ![j] = Max({currentTerm[i], currentTerm[j]})]
-    \* May update state of sender or receiver.
-    /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j],
-                              ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
+    /\ UpdateTerms(i, j)
     /\ UNCHANGED <<log, immediatelyCommitted>>
 
 \* TODO: Re-propose your current config in term T in a higher term U if you have been elected in term U.
@@ -286,7 +289,7 @@ ShutDown(i) ==
         /\ s \in config[s] \* The node isn't removed.
         /\ { n \in config[s]: state[n] # Down } \ {i} \in Quorums(config[s])
     /\ state' = [state EXCEPT ![i] = Down]
-    /\ UNCHANGED <<currentTerm, immediatelyCommitted, log, config, configVersion, configTerm>>
+    /\ UNCHANGED <<currentTerm, immediatelyCommitted, log, configVars>>
 
 \* A leader i commits its newest log entry. It commits it according to its own config's notion of a quorum.
 CommitEntry(i) ==
@@ -304,7 +307,7 @@ CommitEntry(i) ==
             /\ log[s][ind] = log[i][ind]        \* they have the entry.
             /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
         /\ immediatelyCommitted' = immediatelyCommitted \cup {<<ind, currentTerm[i], configVersion[i]>>}
-        /\ UNCHANGED <<serverVars, log, config, configVersion, configTerm>>
+        /\ UNCHANGED <<serverVars, log, configVars>>
 
 (******************************************************************************)
 (* [ACTION]                                                                   *)
@@ -317,7 +320,7 @@ ClientRequest(i) ==
     /\ LET entry == [term  |-> currentTerm[i]]
        newLog == Append(log[i], entry) IN
        /\ log' = [log EXCEPT ![i] = newLog]
-    /\ UNCHANGED <<serverVars, config, configVersion, immediatelyCommitted, configTerm>>
+    /\ UNCHANGED <<serverVars, immediatelyCommitted, configVars>>
 
 -------------------------------------------------------------------------------------------
 
@@ -440,7 +443,8 @@ RollbackEntriesAction   ==  \E s, t \in AliveNodes(Server) : RollbackEntries(s, 
 ReconfigAction          ==  \E s \in AliveNodes(Server) : Reconfig(s)
 SendConfigAction        ==  \E s,t \in AliveNodes(Server) : SendConfig(s, t)
 CommitEntryAction       ==  \E s \in AliveNodes(Server) : CommitEntry(s)
-ShutDownAction    ==  \E s \in AliveNodes(Server) : ShutDown(s)
+ShutDownAction          ==  \E s \in AliveNodes(Server) : ShutDown(s)
+UpdateTermsAction       ==  \E s, t \in AliveNodes(Server) : UpdateTermsOnNodes(s, t)
 
 Next ==
     \/ BecomeLeaderAction
@@ -451,10 +455,12 @@ Next ==
     \/ SendConfigAction
     \/ CommitEntryAction
     \/ ShutDownAction
+    \/ UpdateTermsAction
 
 Liveness ==
     /\ WF_vars(BecomeLeaderAction)
     /\ WF_vars(SendConfigAction)
+    /\ WF_vars(UpdateTermsAction)
 
 Spec == Init /\ [][Next]_vars /\ Liveness
 
