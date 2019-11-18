@@ -112,9 +112,8 @@ CanVoteFor(i, j, term) ==
     \* Nodes can only vote once per term, and they will never
     \* vote for someone with a lesser term than their own.
     /\ currentTerm[i] < term
-    \* you can only vote for someone with the same config version as you.
-    \* TODO: Only vote for someone if their config version is >= your own.
-    /\ configVersion[i] = configVersion[j]
+    \* Only vote for someone if their config version is >= your own.
+    /\ configVersion[i] <= configVersion[j]
     /\ logOk
 
 \* Is it possible for log 'lj' to roll back based on the log 'li'. If this is true, it implies that
