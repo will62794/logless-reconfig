@@ -407,6 +407,7 @@ ConfigEventuallyPropagates ==
                            \/ state[i] = Down
                            \/ configVersion[i] = configVersion[j]
 
+ElectableNodeEventuallyExists == <>(\E s \in Server : state[s] = Primary)
 -------------------------------------------------------------------------------------------
 
 (**************************************************************************************************)
