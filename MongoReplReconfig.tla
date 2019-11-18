@@ -104,19 +104,6 @@ AliveNodes(s) == { n \in Server: state[n] # Down }
 \* The term of the last entry in a log, or 0 if the log is empty.
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)].term
 
-\* Can node 'i' currently cast a vote for node 'j' in term 'term'.
-CanVoteFor(i, j, term) ==
-    LET logOk ==
-        \/ LastTerm(log[j]) > LastTerm(log[i])
-        \/ /\ LastTerm(log[j]) = LastTerm(log[i])
-           /\ Len(log[j]) >= Len(log[i]) IN
-    \* Nodes can only vote once per term, and they will never
-    \* vote for someone with a lesser term than their own.
-    /\ currentTerm[i] < term
-    \* Only vote for someone if their config version is >= your own.
-    /\ configVersion[i] <= configVersion[j]
-    /\ logOk
-
 \* Is it possible for log 'lj' to roll back based on the log 'li'. If this is true, it implies that
 \* log 'lj' should remove entries to become a prefix of 'li'.
 CanRollback(li, lj) ==
@@ -133,6 +120,13 @@ RollbackCommonPoint(li, lj) ==
                             /\ k <= Len(lj)
                             /\ li[k] = lj[k]} IN
         IF commonIndices = {} THEN 0 ELSE Max(commonIndices)
+
+\* Is the config of node i considered 'newer' than the config of node j. This is the condition for
+\* node j to accept the config of node i.
+IsNewerConfig(i, j) ==
+    \/ configTerm[i] > configTerm[j]
+    \/ /\ configTerm[i] = configTerm[j]
+       /\ configVersion[i] >= configVersion[j]
 
 \* Exchange terms between two nodes and step down the primary if needed.
 UpdateTerms(i, j) ==
@@ -173,8 +167,6 @@ RollbackEntries(i, j) ==
 GetEntries(i, j) ==
     /\ j \in config[i]
     /\ state[i] = Secondary
-    \* TODO: Remove this restriction on checking config version when fetching log entries.
-    /\ configVersion[i] = configVersion[j]
     \* Node j must have more entries than node i.
     /\ Len(log[j]) > Len(log[i])
        \* Ensure that the entry at the last index of node i's log must match the entry at
@@ -190,17 +182,28 @@ GetEntries(i, j) ==
               newEntry      == log[j][newEntryIndex]
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
-    /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
-                                          ![j] = Max({currentTerm[i], currentTerm[j]})]
-    \* Step down remote node if it's term is smaller than yours.
-    /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j]]
-    /\ UNCHANGED <<config, configVersion, immediatelyCommitted, configTerm>>
+    /\ UpdateTerms(i, j)
+    /\ UNCHANGED <<immediatelyCommitted, configVars>>
 
 (******************************************************************************)
 (* [ACTION]                                                                   *)
 (*                                                                            *)
 (* Node 'i' automatically becomes a leader, if eligible.                      *)
 (******************************************************************************)
+
+\* Can node 'i' currently cast a vote for node 'j' in term 'term'.
+CanVoteFor(i, j, term) ==
+    LET logOk ==
+        \/ LastTerm(log[j]) > LastTerm(log[i])
+        \/ /\ LastTerm(log[j]) = LastTerm(log[i])
+           /\ Len(log[j]) >= Len(log[i]) IN
+    \* Nodes can only vote once per term, and they will never
+    \* vote for someone with a lesser term than their own.
+    /\ currentTerm[i] < term
+    \* Only vote for someone if their config version is >= your own.
+    /\ IsNewerConfig(j, i)
+    /\ logOk
+
 BecomeLeader(i) ==
     \* Primaries make decisions based on their current configuration.
     LET newTerm == currentTerm[i] + 1 IN
@@ -214,12 +217,14 @@ BecomeLeader(i) ==
                         IF s = i THEN Primary
                         ELSE IF s \in voteQuorum THEN Secondary \* All voters should revert to secondary state.
                         ELSE state[s]]
-        /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted, configTerm>>
+        \* Update config's term on step-up.
+        /\ configTerm' = [configTerm EXCEPT ![i] = newTerm]
+        /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted>>
 
 
-
-\* A quorum of nodes have received this config or a newer one.
-ConfigQuorumCheck(self, s) == configVersion[self] <= configVersion[s]
+\* A quorum of nodes have received this config.
+ConfigQuorumCheck(self, s) == /\ configVersion[self] = configVersion[s]
+                              /\ configTerm[self] = configTerm[s]
 
 \* Was an op was committed in the config of node i.
 OpCommittedInConfig(i) ==
@@ -260,27 +265,18 @@ Reconfig(i) ==
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
         /\ UNCHANGED <<serverVars, log, immediatelyCommitted>>
 
-\* Is the config of node i considered 'newer' than the config of node j. This is the condition for
-\* node j to accept the config of node i.
-IsNewerConfig(i, j) ==
-    /\ configVersion[i] > configVersion[j]
-    \* /\ currentTerm[i] >= currentTerm[j] \* shouldn't be necessary anymore with 'configTerm'.
-    /\ configTerm[i] >= currentTerm[j]
-
 \* Node i sends its current config to node j. It is only accepted if the config version is newer.
 SendConfig(i, j) ==
     \* TODO: Only allow configs to propagate from a primary to a secondary.
     \* Only update config if the received config version is newer. We still allow this
     \* action to propagate terms, though, even if the config is not updated.
     /\ IsNewerConfig(i, j)
+    /\ configTerm[i] >= currentTerm[j]
     /\ config' = [config EXCEPT ![j] = config[i]]
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
     /\ configTerm' = [configTerm EXCEPT ![j] = configTerm[i]]
     /\ UpdateTerms(i, j)
     /\ UNCHANGED <<log, immediatelyCommitted>>
-
-\* TODO: Re-propose your current config in term T in a higher term U if you have been elected in term U.
-ReproposeConfig(i) == TRUE
 
 ShutDown(i) ==
     \* Assume there will never be a majority of any active config down.
