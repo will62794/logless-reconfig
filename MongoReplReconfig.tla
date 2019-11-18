@@ -14,7 +14,7 @@ EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 CONSTANTS Server
 
 \* Server states.
-CONSTANTS Secondary, Candidate, Primary
+CONSTANTS Secondary, Down, Primary
 
 \* A reserved value.
 CONSTANTS Nil
@@ -35,7 +35,7 @@ VARIABLE immediatelyCommitted
 \* The server's term number.
 VARIABLE currentTerm
 
-\* The server's state (Follower, Candidate, or Leader).
+\* The server's state (Follower, Down, or Leader).
 VARIABLE state
 
 serverVars == <<currentTerm, state>>
@@ -86,6 +86,9 @@ Range(f) == {f[x] : x \in DOMAIN f}
 
 \* Is a sequence empty.
 Empty(s) == Len(s) = 0
+
+\* Alive nodes in a set.
+AliveNodes(s) == { n \in Server: state[n] # Down }
 
 -------------------------------------------------------------------------------------------
 
@@ -239,6 +242,7 @@ Reconfig(i) ==
         /\ \/ \E n \in newConfig : newConfig \ {n} = config[i]  \* add 1.
            \/ \E n \in config[i] : config[i] \ {n} = newConfig  \* remove 1.
         /\ i \in newConfig
+        /\ AliveNodes(newConfig) \in Quorums(newConfig)
         \* The config on this node takes effect immediately
         /\ config' = [config EXCEPT ![i] = newConfig]
         \* Record the term of the primary that wrote this config.
@@ -274,6 +278,15 @@ SendConfig(i, j) ==
 
 \* TODO: Re-propose your current config in term T in a higher term U if you have been elected in term U.
 ReproposeConfig(i) == TRUE
+
+ShutDown(i) ==
+    \* Assume there will never be a majority of any active config down.
+    /\ state[i] # Down
+    /\ \A s \in Server:
+        /\ s \in config[s] \* The node isn't removed.
+        /\ { n \in config[s]: state[n] # Down } \ {i} \in Quorums(config[s])
+    /\ state' = [state EXCEPT ![i] = Down]
+    /\ UNCHANGED <<currentTerm, immediatelyCommitted, log, config, configVersion, configTerm>>
 
 \* A leader i commits its newest log entry. It commits it according to its own config's notion of a quorum.
 CommitEntry(i) ==
@@ -390,6 +403,7 @@ ElectableNodeExists == \E s \in Server : ENABLED BecomeLeader(s)
 ConfigEventuallyPropagates ==
     \A i, j \in Server:
         i \in config[j] ~> \/ i \notin config[j]
+                           \/ state[i] = Down
                            \/ configVersion[i] = configVersion[j]
 
 -------------------------------------------------------------------------------------------
@@ -418,14 +432,15 @@ Init ==
     \* History variables
     /\ immediatelyCommitted = {}
 
-BecomeLeaderAction      ==  \E s \in Server : BecomeLeader(s)         
-ClientRequestAction     ==  \E s \in Server : ClientRequest(s)        
-GetEntriesAction        ==  \E s, t \in Server : GetEntries(s, t)     
-RollbackEntriesAction   ==  \E s, t \in Server : RollbackEntries(s, t)
-ReconfigAction          ==  \E s \in Server : Reconfig(s)             
-SendConfigAction        ==  \E s,t \in Server : SendConfig(s, t)      
-CommitEntryAction       ==  \E s \in Server : CommitEntry(s)          
-  
+BecomeLeaderAction      ==  \E s \in AliveNodes(Server) : BecomeLeader(s)         
+ClientRequestAction     ==  \E s \in AliveNodes(Server) : ClientRequest(s)        
+GetEntriesAction        ==  \E s, t \in AliveNodes(Server) : GetEntries(s, t)     
+RollbackEntriesAction   ==  \E s, t \in AliveNodes(Server) : RollbackEntries(s, t)
+ReconfigAction          ==  \E s \in AliveNodes(Server) : Reconfig(s)             
+SendConfigAction        ==  \E s,t \in AliveNodes(Server) : SendConfig(s, t)      
+CommitEntryAction       ==  \E s \in AliveNodes(Server) : CommitEntry(s)          
+ShutDownAction    ==  \E s \in AliveNodes(Server) : ShutDown(s)
+
 Next == 
     \/ BecomeLeaderAction
     \/ ClientRequestAction
@@ -434,6 +449,7 @@ Next ==
     \/ ReconfigAction
     \/ SendConfigAction
     \/ CommitEntryAction
+    \/ ShutDownAction
 
 Liveness ==
     /\ WF_vars(BecomeLeaderAction)
