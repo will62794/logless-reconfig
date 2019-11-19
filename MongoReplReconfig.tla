@@ -183,6 +183,29 @@ GetEntries(i, j) ==
               /\ log' = [log EXCEPT ![i] = newLog]
     /\ UpdateTerms(i, j)
     /\ UNCHANGED <<immediatelyCommitted, configVars>>
+(******************************************************************************)
+(* [ACTION]                                                                   *)
+(*                                                                            *)
+(* A leader i commits its newest log entry. It commits it according to        *)
+(* its own config's notion of a quorum.                                       *)
+(******************************************************************************)
+CommitEntry(i) ==
+    LET ind == Len(log[i]) IN
+    \E quorum \in Quorums(config[i]) :
+        \* Must have some entries to commit.
+        /\ ind > 0
+        \* This node is leader.
+        /\ state[i] = Primary
+        \* The entry was written by this leader.
+        /\ log[i][ind].term = currentTerm[i]
+        \* all nodes have this log entry and are in the term of the leader.
+        /\ \A s \in quorum :
+            /\ Len(log[s]) >= ind
+            /\ log[s][ind] = log[i][ind]        \* they have the entry.
+            /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
+        /\ immediatelyCommitted' = immediatelyCommitted \cup
+             {[index |->ind, term |-> currentTerm[i], configVersion |-> configVersion[i]]}
+        /\ UNCHANGED <<serverVars, log, configVars>>
 
 (******************************************************************************)
 (* [ACTION]                                                                   *)
@@ -225,9 +248,8 @@ BecomeLeader(i) ==
 ConfigQuorumCheck(self, s) == /\ configVersion[self] = configVersion[s]
                               /\ configTerm[self] = configTerm[s]
 
-\* Was an op was committed in the config of node i.
-OpCommittedInConfig(i) ==
-    /\ \E e \in immediatelyCommitted : e.configVersion = configVersion[i]
+\* Was an op was committed in the current config of node i.
+OpCommittedInConfig(i) == ENABLED CommitEntry(i)
 
 \* Did a node talked to a quorum as primary.
 TermQuorumCheck(self, s) == currentTerm[self] >= currentTerm[s]
@@ -284,25 +306,6 @@ ShutDown(i) ==
         /\ { n \in config[s]: state[n] # Down } \ {i} \in Quorums(config[s])
     /\ state' = [state EXCEPT ![i] = Down]
     /\ UNCHANGED <<currentTerm, immediatelyCommitted, log, configVars>>
-
-\* A leader i commits its newest log entry. It commits it according to its own config's notion of a quorum.
-CommitEntry(i) ==
-    LET ind == Len(log[i]) IN
-    \E quorum \in Quorums(config[i]) :
-        \* Must have some entries to commit.
-        /\ ind > 0
-        \* This node is leader.
-        /\ state[i] = Primary
-        \* The entry was written by this leader.
-        /\ log[i][ind].term = currentTerm[i]
-        \* all nodes have this log entry and are in the term of the leader.
-        /\ \A s \in quorum :
-            /\ Len(log[s]) >= ind
-            /\ log[s][ind] = log[i][ind]        \* they have the entry.
-            /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
-        /\ immediatelyCommitted' = immediatelyCommitted \cup
-           {[index |->ind, term |-> currentTerm[i], configVersion |-> configVersion[i]]}
-        /\ UNCHANGED <<serverVars, log, configVars>>
 
 (******************************************************************************)
 (* [ACTION]                                                                   *)
