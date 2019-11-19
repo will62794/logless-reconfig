@@ -227,7 +227,7 @@ ConfigQuorumCheck(self, s) == /\ configVersion[self] = configVersion[s]
 
 \* Was an op was committed in the config of node i.
 OpCommittedInConfig(i) ==
-    /\ \E e \in immediatelyCommitted : e[3] = configVersion[i]
+    /\ \E e \in immediatelyCommitted : e.configVersion = configVersion[i]
 
 \* Did a node talked to a quorum as primary.
 TermQuorumCheck(self, s) == currentTerm[self] >= currentTerm[s]
@@ -300,7 +300,8 @@ CommitEntry(i) ==
             /\ Len(log[s]) >= ind
             /\ log[s][ind] = log[i][ind]        \* they have the entry.
             /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
-        /\ immediatelyCommitted' = immediatelyCommitted \cup {<<ind, currentTerm[i], configVersion[i]>>}
+        /\ immediatelyCommitted' = immediatelyCommitted \cup
+           {[index |->ind, term |-> currentTerm[i], configVersion |-> configVersion[i]]}
         /\ UNCHANGED <<serverVars, log, configVars>>
 
 (******************************************************************************)
@@ -383,11 +384,9 @@ ConfigVersionIncreasesWithTerm ==
 
 RollbackCommitted == \E s \in Server :
                      \E e \in immediatelyCommitted :
-                        LET index == e[1]
-                            term  == e[2] IN
-                        /\ EntryInLog(log[s], index, term)
+                        /\ EntryInLog(log[s], e.index, e.term)
                         \* And the entry got rolled back.
-                        /\ Len(log'[s]) < index
+                        /\ Len(log'[s]) < e.index
 
 NeverRollbackCommitted == [][~RollbackCommitted]_vars
 
