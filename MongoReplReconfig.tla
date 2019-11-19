@@ -147,7 +147,6 @@ UpdateTermsOnNodes(i, j) == /\ UpdateTerms(i, j)
 RollbackEntries(i, j) ==
     /\ CanRollback(log[i], log[j])
     /\ i \in config[j]
-    /\ configVersion[i] = configVersion[j]
     /\ LET commonPoint == RollbackCommonPoint(log[i], log[j]) IN
            \* If there is no common entry between log 'i' and
            \* log 'j', then it means that the all entries of log 'j'
