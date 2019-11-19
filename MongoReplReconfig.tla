@@ -455,6 +455,9 @@ Liveness ==
     /\ WF_vars(BecomeLeaderAction)
     /\ WF_vars(SendConfigAction)
     /\ WF_vars(UpdateTermsAction)
+    /\ WF_vars(GetEntriesAction)
+    /\ WF_vars(RollbackEntriesAction)
+    /\ WF_vars(CommitEntryAction)
 
 Spec == Init /\ [][Next]_vars /\ Liveness
 
