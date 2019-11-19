@@ -396,6 +396,21 @@ NeverRollbackCommitted == [][~RollbackCommitted]_vars
 \* At any time, some node can always become a leader.
 ElectableNodeExists == \E s \in Server : ENABLED BecomeLeader(s)
 
+\* The set of all currently installed configs in the system.
+InstalledConfigs == Range(config)
+
+\* Do all quorums of set x and set y share at least one overlapping node.
+QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
+
+\* Is a given config "active"
+ActiveConfig(cfg) == \E Q \in Quorums(cfg) : \A s \in Q : config[s] = cfg
+
+\* For all installed configs, do their quorums overlap.
+InstalledConfigsOverlap == \A x,y \in InstalledConfigs : QuorumsOverlap(x, y)
+
+\* For all active configs, do their quorums overlap.
+ActiveConfigsOverlap == \A x,y \in InstalledConfigs : ActiveConfig(x) /\ ActiveConfig(y) => QuorumsOverlap(x, y)
+
 (**************************************************************************************************)
 (* Liveness properties                                                                            *)
 (**************************************************************************************************)
