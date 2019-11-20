@@ -65,3 +65,8 @@ To do a sanity check, I checked a model on the latest [revision](https://github.
 - Total states generated: 46,866,046
 - Distinct states found: 3,547,079
 - Max throughput: 24,606,593 s/min
+
+### Nov. 20, 2019
+
+I tried to resolve the problem mentioned above with `AliveNodes` by f[ixing its definition](https://github.com/will62794/mongo-repl-reconfig/commit/75c4407258ef63b982ac5ea45c120330b19125df). I can now confirm that with the fixed definition, removing the `ConfigIsSafe` definition entirely on a 3 node model will cause the model checker to quickly find a violation. Running the spec on this [revision](https://github.com/will62794/mongo-repl-reconfig/blob/75c4407258ef63b982ac5ea45c120330b19125df/MongoReplReconfig.tla), the model checker finds an ElectionSafety violation in under a second with a 3 node model with no logs. This seems to confirm that the definition of `AliveNodes` was causing the problem. I will run larger models with the fixed definition to make sure it wasn't masking any bugs.
+
