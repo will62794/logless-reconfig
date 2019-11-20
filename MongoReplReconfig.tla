@@ -277,7 +277,8 @@ Reconfig(i) ==
         /\ config' = [config EXCEPT ![i] = newConfig]
         \* Record the term of the primary that wrote this config.
         /\ configTerm' = [configTerm EXCEPT ![i] = currentTerm[i]]
-        /\ \* Pick a config version higher than all existing config versions.
+        /\ \* Increment the local config version. Here we do not assume that config versions
+           \* are globally unique.
             LET newConfigVersion == configVersion[i] + 1 IN
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
         /\ UNCHANGED <<serverVars, log, immediatelyCommitted>>
