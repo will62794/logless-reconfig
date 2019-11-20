@@ -285,10 +285,9 @@ Reconfig(i) ==
         /\ UNCHANGED <<serverVars, log, immediatelyCommitted>>
 
 \* [ACTION]
-\* Node i sends its current config to node j. It is only accepted if the config version is newer.
+\* Node i sends its current config to node j. It is only accepted if the config is newer.
 SendConfig(i, j) ==
-    \* Only update config if the received config version is newer. We still allow this
-    \* action to propagate terms, though, even if the config is not updated.
+    \* Only update config if the received config is newer and its term is >= than your current term.
     /\ IsNewerConfig(i, j)
     /\ configTerm[i] >= currentTerm[j]
     /\ config' = [config EXCEPT ![j] = config[i]]
