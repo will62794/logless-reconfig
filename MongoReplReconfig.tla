@@ -272,6 +272,7 @@ Reconfig(i) ==
         /\ \/ \E n \in newConfig : newConfig \ {n} = config[i]  \* add 1.
            \/ \E n \in config[i] : config[i] \ {n} = newConfig  \* remove 1.
         /\ i \in newConfig
+        \* Require that at least a quorum of nodes in the new config are not down.
         /\ AliveNodes(newConfig) \in Quorums(newConfig)
         \* The config on this node takes effect immediately
         /\ config' = [config EXCEPT ![i] = newConfig]
