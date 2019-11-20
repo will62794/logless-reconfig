@@ -87,7 +87,7 @@ Range(f) == {f[x] : x \in DOMAIN f}
 Empty(s) == Len(s) = 0
 
 \* Alive nodes in a set.
-AliveNodes(s) == { n \in Server: state[n] # Down }
+AliveNodes(s) == { n \in s : state[n] # Down }
 
 -------------------------------------------------------------------------------------------
 
