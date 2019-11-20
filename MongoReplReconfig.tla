@@ -1,12 +1,8 @@
 ----------------------------- MODULE MongoReplReconfig -----------------------------
-(**************************************************************************************************)
-(* A high level specification of the MongoDB replication protocol, which is based on the Raft     *)
-(* consensus protocol.                                                                            *)
-(*                                                                                                *)
-(* This spec models the system at a high level of abstraction.  For example, we do not explicitly *)
-(* model the network or the exchange of messages between nodes.  Instead, we model the system so  *)
-(* as to make it clear what the essential invariants to be upheld are.                            *)
-(**************************************************************************************************)
+\*
+\* A specification of reconfiguration in the MongoDB replication protocol.
+\*
+
 
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 
@@ -24,6 +20,8 @@ CONSTANTS Nil
 (**************************************************************************************************)
 
 \* Set of all immediately committed <<index, term, configVersion>> log entry pairs.
+\* This set only includes "immediately committed" entries. It does not include "prefix committed"
+\* entries.
 VARIABLE immediatelyCommitted
 
 (**************************************************************************************************)
@@ -261,9 +259,8 @@ ConfigIsSafe(i) ==
                     /\ ConfigQuorumCheck(i, s)
     /\ OpCommittedInConfig(i)
 
-\*
+\* [ACTION]
 \* A reconfig occurs on node i. The node must currently be a leader.
-\*
 Reconfig(i) ==
     \* Pick some arbitrary subset of servers to reconfig to.
     \* Make sure to include this node in the new config, though.
@@ -285,9 +282,9 @@ Reconfig(i) ==
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
         /\ UNCHANGED <<serverVars, log, immediatelyCommitted>>
 
+\* [ACTION]
 \* Node i sends its current config to node j. It is only accepted if the config version is newer.
 SendConfig(i, j) ==
-    \* TODO: Only allow configs to propagate from a primary to a secondary.
     \* Only update config if the received config version is newer. We still allow this
     \* action to propagate terms, though, even if the config is not updated.
     /\ IsNewerConfig(i, j)
@@ -298,6 +295,8 @@ SendConfig(i, j) ==
     /\ UpdateTerms(i, j)
     /\ UNCHANGED <<log, immediatelyCommitted>>
 
+\* [ACTION]
+\* Shut down a node.
 ShutDown(i) ==
     \* Assume there will never be a majority of any active config down.
     /\ state[i] # Down
@@ -323,7 +322,7 @@ ClientRequest(i) ==
 -------------------------------------------------------------------------------------------
 
 (**************************************************************************************************)
-(* Correctness Properties                                                                         *)
+(* Miscellaneous properties for exploring/understanding the spec.                                 *)
 (**************************************************************************************************)
 
 \* Are there two primaries in the current state.
@@ -346,6 +345,10 @@ NConcurrentConfigs(n) ==
 4ConcurrentConfigs == ~NConcurrentConfigs(4)
 5ConcurrentConfigs == ~NConcurrentConfigs(5)
 
+(**************************************************************************************************)
+(* Correctness Properties                                                                         *)
+(**************************************************************************************************)
+
 \* The set of all log entries in a given log i.e. the set of all <<index, term>>
 \* pairs that appear in the log.
 LogEntries(xlog) == {<<i, xlog[i].term>> : i \in DOMAIN xlog}
@@ -353,17 +356,12 @@ LogEntries(xlog) == {<<i, xlog[i].term>> : i \in DOMAIN xlog}
 \* Is <<index, term>> in the given log.
 EntryInLog(xlog, index, term) == <<index, term>> \in LogEntries(xlog)
 
-\* The set of all log entries (<<index, term>>) that appear in any log in the given log set.
-AllLogEntries(logSet) == UNION {LogEntries(l) : l \in logSet}
-
 \* Is 'xlog' a prefix of 'ylog'.
 IsPrefix(xlog, ylog) ==
     /\ Len(xlog) <= Len(ylog)
     /\ xlog = SubSeq(ylog, 1, Len(xlog))
 
-(**************************************************************************************************)
-(* There should be at most one leader per term.                                                   *)
-(**************************************************************************************************)
+\* There should be at most one leader per term.
 TwoPrimariesInSameTerm ==
     \E i, j \in Server :
         /\ i # j
@@ -381,10 +379,7 @@ ConfigVersionIncreasesWithTerm ==
         /\ configTerm[i] < configTerm[j]
     )
 
-(**************************************************************************************************)
-(* Only uncommitted entries are allowed to be deleted from logs.                                  *)
-(**************************************************************************************************)
-
+\* Only uncommitted entries are allowed to be deleted from logs.
 RollbackCommitted == \E s \in Server :
                      \E e \in immediatelyCommitted :
                         /\ EntryInLog(log[s], e.index, e.term)
@@ -421,12 +416,11 @@ ConfigEventuallyPropagates ==
                            \/ configVersion[i] = configVersion[j]
 
 ElectableNodeEventuallyExists == <>(\E s \in Server : state[s] = Primary)
--------------------------------------------------------------------------------------------
 
 (**************************************************************************************************)
 (* Spec definition                                                                                *)
 (**************************************************************************************************)
-InitConfigConstriant(c) == TRUE
+InitConfigConstraint(c) == TRUE
 InitConfigMaxSizeOnly(c) == c = Server
 Init ==
     \* Server variables.
@@ -440,11 +434,10 @@ Init ==
     \* We allow an initial config to be any non-empty subset of the current servers.
     /\ \E initConfig \in (SUBSET Server) :
         /\ initConfig # {}
-        /\ InitConfigConstriant(initConfig)
+        /\ InitConfigConstraint(initConfig)
         /\ config = [i \in Server |-> initConfig]
     /\ configVersion =  [i \in Server |-> 0]
     /\ configTerm    =  [i \in Server |-> 0]
-    \* History variables
     /\ immediatelyCommitted = {}
 
 BecomeLeaderAction      ==  \E s \in AliveNodes(Server) : BecomeLeader(s)
