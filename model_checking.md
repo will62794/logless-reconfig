@@ -70,3 +70,20 @@ To do a sanity check, I checked a model on the latest [revision](https://github.
 
 I tried to resolve the problem mentioned above with `AliveNodes` by f[ixing its definition](https://github.com/will62794/mongo-repl-reconfig/commit/75c4407258ef63b982ac5ea45c120330b19125df). I can now confirm that with the fixed definition, removing the `ConfigIsSafe` definition entirely on a 3 node model will cause the model checker to quickly find a violation. Running the spec on this [revision](https://github.com/will62794/mongo-repl-reconfig/blob/75c4407258ef63b982ac5ea45c120330b19125df/MongoReplReconfig.tla), the model checker finds an ElectionSafety violation in under a second with a 3 node model with no logs. This seems to confirm that the definition of `AliveNodes` was causing the problem. I will run larger models with the fixed definition to make sure it wasn't masking any bugs.
 
+### Nov. 20, 2019
+
+Ran a 5 node model on this [revision](https://github.com/will62794/mongo-repl-reconfig/tree/c66da514c1eac158d46b6becb7d18f643ca7538f) after fixing the definition of `AliveNodes`. TLC reported no violation of ElectionSafety.
+
+- Reporter: Will Schultz
+- Invariants: `ElectionSafety`
+- Server = {n1, n2, n3, n4, n5}
+- MaxLogLen = 0
+- MaxTerm = 3
+- MaxConfigVersion = 3
+- Symmetry: `ServerSymmetry`
+- 11 TLC workers on Ubuntu 16.10 workstation.
+- Error: No violation found.
+- Model checking time: 02h 06min
+- Total states generated: 520,720,228
+- Distinct states found: 13,935,343
+- Max throughput: 4,647,994 s/min
