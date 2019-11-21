@@ -87,3 +87,22 @@ Ran a 5 node model on this [revision](https://github.com/will62794/mongo-repl-re
 - Total states generated: 520,720,228
 - Distinct states found: 13,935,343
 - Max throughput: 4,647,994 s/min
+
+### Nov. 21, 2019
+
+Ran a 3 node model with logs to check NeverRollbackCommitted after I [updated the definition](https://github.com/will62794/mongo-repl-reconfig/commit/8a2f5dde4053d1db6a432a2989c99c3f6a8fe45f) of CanRollback.
+
+- [Spec Revision](https://github.com/will62794/mongo-repl-reconfig/tree/8a2f5dde4053d1db6a432a2989c99c3f6a8fe45f) 
+- Reporter: Will Schultz
+- Invariants: `NeverRollbackCommitted`
+- Server = {n1, n2, n3}
+- MaxLogLen = 2
+- MaxTerm = 3
+- MaxConfigVersion = 3
+- Symmetry: `ServerSymmetry`
+- 11 TLC workers on Ubuntu 16.10 workstation.
+- Error: No violation found.
+- Model checking time: 03min 25s
+- Total states generated: 49,875,644
+- Distinct states found: 3,008,553
+- Max throughput: 13,501,997 s/min
