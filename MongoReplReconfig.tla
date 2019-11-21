@@ -12,16 +12,16 @@ CONSTANTS Server
 \* Server states.
 CONSTANTS Secondary, Down, Primary
 
-\* A reserved value.
+\* An empty value.
 CONSTANTS Nil
 
 (**************************************************************************************************)
 (* Global variables                                                                               *)
 (**************************************************************************************************)
 
-\* Set of all immediately committed <<index, term, configVersion>> log entry pairs.
-\* This set only includes "immediately committed" entries. It does not include "prefix committed"
-\* entries.
+\* Set of all immediately committed entries. 
+\* Each element of the set is a record e.g. [index |-> ..., term |-> ..., configVersion |-> ...]
+\* This set does not include "prefix committed" entries.
 VARIABLE immediatelyCommitted
 
 (**************************************************************************************************)
@@ -56,6 +56,7 @@ VARIABLE configVersion
 \* The term in which the current config on a node was written in i.e. the term of the primary
 \* that moved to that config.
 VARIABLE configTerm
+
 configVars == <<config, configVersion, configTerm>>
 
 vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTerm>>
@@ -69,9 +70,12 @@ vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTe
 \* The set of all quorums. This just calculates simple majorities, but the only
 \* important property is that every quorum overlaps with every other.
 Quorum == {i \in SUBSET(Server) : Cardinality(i) * 2 > Cardinality(Server)}
+
 MajorityOnlyQuorums(S) == {i \in SUBSET(S) :
     /\ Cardinality(i) * 2 > Cardinality(S)
     /\ Cardinality(i) * 2 <= Cardinality(S) + 2}
+
+\* The set of all quorums of a given set.
 Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
 
 \* Return the minimum value from a set, or undefined if the set is empty.
@@ -101,15 +105,19 @@ AliveNodes(s) == { n \in s : state[n] # Down }
 
 \* The term of the last entry in a log, or 0 if the log is empty.
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)].term
+GetTerm(xlog, index) == IF index = 0 THEN 0 ELSE xlog[index].term
+LogTerm(i, index) == GetTerm(log[i], index)
 
-\* Is it possible for log 'lj' to roll back based on the log 'li'. If this is true, it implies that
-\* log 'lj' should remove entries to become a prefix of 'li'.
-CanRollback(li, lj) ==
-    /\ Len(li) > 0
-    /\ Len(lj) > 0
-    \* The terms of the last entries of each log do not match. The term of node i's last
-    \* log entry is greater than that of node j's.
-    /\ li[Len(li)].term > lj[Len(lj)].term
+\* Is it possible for log 'i' to roll back against log 'j'. 
+\* If this is true, it implies that log 'i' should remove entries from the end of its log.
+CanRollback(i, j) ==
+    /\ Len(log[i]) > 0
+    /\ \* The log with later term is more up-to-date.
+       LastTerm(log[i]) < LastTerm(log[j])
+    /\ \/ Len(log[i]) > Len(log[j])
+       \* There seems no short-cut of OR clauses, so we specify the negative case.
+       \/ /\ Len(log[i]) <= Len(log[j])
+          /\ LastTerm(log[i]) /= LogTerm(j, Len(log[i]))
 
 \* Returns the highest common index between two divergent logs, 'li' and 'lj'.
 \* If there is no common index between the logs, returns 0.
@@ -140,19 +148,13 @@ UpdateTermsOnNodes(i, j) == /\ UpdateTerms(i, j)
 (******************************************************************************)
 (* [ACTION]                                                                   *)
 (*                                                                            *)
-(* Node 'j' removes entries based against the log of node 'i'.                *)
+(* Node 'i' rolls back against the log of node 'j'.                           *)
 (******************************************************************************)
 RollbackEntries(i, j) ==
-    /\ CanRollback(log[i], log[j])
-    /\ i \in config[j]
-    /\ LET commonPoint == RollbackCommonPoint(log[i], log[j]) IN
-           \* If there is no common entry between log 'i' and
-           \* log 'j', then it means that the all entries of log 'j'
-           \* are divergent, and so we erase its entire log. Otherwise
-           \* we erase all log entries after the newest common entry. Note that
-           \* if the commonPoint is '0' then SubSeq(log[i], 1, 0) will evaluate
-           \* to <<>>, the empty sequence.
-           log' = [log EXCEPT ![j] = SubSeq(log[i], 1, commonPoint)]
+    /\ CanRollback(i, j)
+    /\ j \in config[i]
+    \* Roll back one log entry.
+    /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
     /\ UpdateTerms(i, j)
     /\ UNCHANGED <<immediatelyCommitted, configVars>>
 
