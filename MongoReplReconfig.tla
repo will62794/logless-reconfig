@@ -398,14 +398,20 @@ InstalledConfigs == Range(config)
 \* Do all quorums of set x and set y share at least one overlapping node.
 QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
 
-\* Is a given config "active"
+\* Is a given config "active" i.e. can it form a quorum.
 ActiveConfig(cfg) == \E Q \in Quorums(cfg) : \A s \in Q : config[s] = cfg
+
+\* The set of all active configs.
+ActiveConfigs == {c \in InstalledConfigs : ActiveConfig(c)}
 
 \* For all installed configs, do their quorums overlap.
 InstalledConfigsOverlap == \A x,y \in InstalledConfigs : QuorumsOverlap(x, y)
 
 \* For all active configs, do their quorums overlap.
-ActiveConfigsOverlap == \A x,y \in InstalledConfigs : ActiveConfig(x) /\ ActiveConfig(y) => QuorumsOverlap(x, y)
+ActiveConfigsOverlap == \A x,y \in ActiveConfigs : QuorumsOverlap(x, y)
+
+\* Property asserting that there is never more than 1 active config at a time.
+AtMostOneActiveConfig == Cardinality(ActiveConfigs) <= 1
 
 (**************************************************************************************************)
 (* Liveness properties                                                                            *)
@@ -445,7 +451,7 @@ BecomeLeaderAction      ==  \E s \in AliveNodes(Server) : BecomeLeader(s)
 ClientRequestAction     ==  \E s \in AliveNodes(Server) : ClientRequest(s)
 GetEntriesAction        ==  \E s, t \in AliveNodes(Server) : GetEntries(s, t)
 RollbackEntriesAction   ==  \E s, t \in AliveNodes(Server) : RollbackEntries(s, t)
-ReconfigAction          ==  \E s \in AliveNodes(Server) : Reconfig(s)
+ReconfigAction          ==  \E s \in AliveNodes(Server) : Reconfig(s) \*/\ PrintT(Cardinality(ActiveConfigs))
 SendConfigAction        ==  \E s,t \in AliveNodes(Server) : SendConfig(s, t)
 CommitEntryAction       ==  \E s \in AliveNodes(Server) : CommitEntry(s)
 ShutDownAction          ==  \E s \in AliveNodes(Server) : ShutDown(s)
