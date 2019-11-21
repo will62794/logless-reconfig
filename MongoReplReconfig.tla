@@ -119,14 +119,6 @@ CanRollback(i, j) ==
        \/ /\ Len(log[i]) <= Len(log[j])
           /\ LastTerm(log[i]) /= LogTerm(j, Len(log[i]))
 
-\* Returns the highest common index between two divergent logs, 'li' and 'lj'.
-\* If there is no common index between the logs, returns 0.
-RollbackCommonPoint(li, lj) ==
-    LET commonIndices == {k \in DOMAIN li :
-                            /\ k <= Len(lj)
-                            /\ li[k] = lj[k]} IN
-        IF commonIndices = {} THEN 0 ELSE Max(commonIndices)
-
 \* Is the config of node i considered 'newer' than the config of node j. This is the condition for
 \* node j to accept the config of node i.
 IsNewerConfig(i, j) ==
