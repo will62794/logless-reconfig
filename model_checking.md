@@ -106,3 +106,24 @@ Ran a 3 node model with logs to check NeverRollbackCommitted after I [updated th
 - Total states generated: 49,875,644
 - Distinct states found: 3,008,553
 - Max throughput: 13,501,997 s/min
+
+### Nov. 22, 2019
+
+- [Spec Revision](https://github.com/will62794/mongo-repl-reconfig/tree/136f130876fff112090ef1243de2f80137117fbe) 
+- Reporter: Will Schultz
+- Invariants: `NeverRollbackCommitted`
+- Server = {n1, n2, n3, n4}
+- MaxLogLen = 2
+- MaxTerm = 3
+- MaxConfigVersion = 3
+- Symmetry: `ServerSymmetry`
+- 36 TLC workers on c5d.24xlarge EC2 instance (96 cores, 192GB memory)
+- Error: No violation found.
+- Model checking time: 08h 38min
+- Total states generated: 11,025,885,594
+- Distinct states found: 414,201,087
+- Max throughput: 24,547,077 s/min
+
+```
+Running breadth-first search Model-Checking with fp 14 and seed -5659610528572021697 with 36 workers on 96 cores with 106832MB heap and 120000MB offheap memory [pid: 78293] (Linux 4.15.0-1051-aws amd64Ubuntu 11.0.4 x86_64, OffHeapDiskFPSet, DiskStateQueue).
+```
