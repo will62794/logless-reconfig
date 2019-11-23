@@ -127,3 +127,23 @@ Ran a 3 node model with logs to check NeverRollbackCommitted after I [updated th
 ```
 Running breadth-first search Model-Checking with fp 14 and seed -5659610528572021697 with 36 workers on 96 cores with 106832MB heap and 120000MB offheap memory [pid: 78293] (Linux 4.15.0-1051-aws amd64Ubuntu 11.0.4 x86_64, OffHeapDiskFPSet, DiskStateQueue).
 ```
+
+### Nov. 22, 2019
+
+Ran a model with the `ShutDown` action completely disabled, to see if it reduces the state space for safety checking.
+
+- [Spec Revision](https://github.com/will62794/mongo-repl-reconfig/tree/136f130876fff112090ef1243de2f80137117fbe) 
+- Reporter: Will Schultz
+- Invariants: `NeverRollbackCommitted`
+- Server = {n1, n2, n3, n4}
+- MaxLogLen = 2
+- MaxTerm = 3
+- MaxConfigVersion = 3
+- Symmetry: `ServerSymmetry`
+- 36 TLC workers on c5d.24xlarge EC2 instance (96 cores, 192GB memory)
+- Error: No violation found.
+- Model checking time: 05h 20min
+- Total states generated: 7,661,579,353
+- Distinct states found: 246,830,557
+- Max throughput: 29,460,611 s/min
+
