@@ -147,3 +147,12 @@ Ran a model with the `ShutDown` action completely disabled, to see if it reduces
 - Distinct states found: 246,830,557
 - Max throughput: 29,460,611 s/min
 
+### Nov. 28, 2019
+
+Model `models/never_rollback_committed/MC_6_all_checks_5_nodes.cfg` with 5 nodes has been running for several days, using 36 workers on EC2 instance without any safety violations found. The latest progress report:
+
+```
+Progress(25) at 2019-11-28 21:32:13: 86,398,756,264 states generated (11,165,753 s/min), 3,079,412,985 distinct states found (326,866 ds/min), 1,163,200,870 states left on queue.
+```
+
+
