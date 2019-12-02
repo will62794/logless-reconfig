@@ -445,7 +445,7 @@ BecomeLeaderAction      ==  \E s \in AliveNodes(Server) : BecomeLeader(s)
 ClientRequestAction     ==  \E s \in AliveNodes(Server) : ClientRequest(s)
 GetEntriesAction        ==  \E s, t \in AliveNodes(Server) : GetEntries(s, t)
 RollbackEntriesAction   ==  \E s, t \in AliveNodes(Server) : RollbackEntries(s, t)
-ReconfigAction          ==  \E s \in AliveNodes(Server) : Reconfig(s) \*/\ PrintT(Cardinality(ActiveConfigs))
+ReconfigAction          ==  \E s \in AliveNodes(Server) : Reconfig(s)
 SendConfigAction        ==  \E s,t \in AliveNodes(Server) : SendConfig(s, t)
 CommitEntryAction       ==  \E s \in AliveNodes(Server) : CommitEntry(s)
 ShutDownAction          ==  \E s \in AliveNodes(Server) : ShutDown(s)
@@ -492,6 +492,6 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
 \* Modification History
-\* Last modified Tue Nov 12 15:11:06 EST 2019 by williamschultz
+\* Last modified Mon Dec 02 09:00:03 EST 2019 by williamschultz
 \* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
 \* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
