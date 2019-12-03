@@ -283,7 +283,8 @@ Reconfig(i) ==
 SendConfig(i, j) ==
     \* Only update config if the received config is newer and its term is >= than your current term.
     /\ IsNewerConfig(i, j)
-    /\ configTerm[i] >= currentTerm[j]
+    \* Commenting out the line below allows receipt of configs with terms lower than your current term.
+    \* /\ configTerm[i] >= currentTerm[j]
     /\ config' = [config EXCEPT ![j] = config[i]]
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
     /\ configTerm' = [configTerm EXCEPT ![j] = configTerm[i]]
