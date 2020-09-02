@@ -291,17 +291,6 @@ SendConfig(i, j) ==
     /\ UpdateTerms(i, j)
     /\ UNCHANGED <<log, immediatelyCommitted>>
 
-\* [ACTION]
-\* Shut down a node.
-ShutDown(i) ==
-    \* Assume there will never be a majority of any active config down.
-    /\ state[i] # Down
-    /\ \A s \in Server:
-        /\ s \in config[s] \* The node isn't removed.
-        /\ { n \in config[s]: state[n] # Down } \ {i} \in Quorums(config[s])
-    /\ state' = [state EXCEPT ![i] = Down]
-    /\ UNCHANGED <<currentTerm, immediatelyCommitted, log, configVars>>
-
 (******************************************************************************)
 (* [ACTION]                                                                   *)
 (*                                                                            *)
@@ -449,7 +438,6 @@ RollbackEntriesAction   ==  \E s, t \in AliveNodes(Server) : RollbackEntries(s, 
 ReconfigAction          ==  \E s \in AliveNodes(Server) : Reconfig(s)
 SendConfigAction        ==  \E s,t \in AliveNodes(Server) : SendConfig(s, t)
 CommitEntryAction       ==  \E s \in AliveNodes(Server) : CommitEntry(s)
-ShutDownAction          ==  \E s \in AliveNodes(Server) : ShutDown(s)
 UpdateTermsAction       ==  \E s, t \in AliveNodes(Server) : UpdateTermsOnNodes(s, t)
 
 Next ==
@@ -460,7 +448,6 @@ Next ==
     \/ ReconfigAction
     \/ SendConfigAction
     \/ CommitEntryAction
-    \/ ShutDownAction
     \/ UpdateTermsAction
 
 Liveness ==
@@ -492,7 +479,3 @@ MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 =============================================================================
-\* Modification History
-\* Last modified Mon Dec 02 09:00:03 EST 2019 by williamschultz
-\* Last modified Sun Jul 29 20:32:12 EDT 2018 by willyschultz
-\* Created Mon Apr 16 20:56:44 EDT 2018 by willyschultz
