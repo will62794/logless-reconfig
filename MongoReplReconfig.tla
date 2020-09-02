@@ -10,7 +10,7 @@ EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 CONSTANTS Server
 
 \* Server states.
-CONSTANTS Secondary, Down, Primary
+CONSTANTS Secondary, Primary
 
 \* An empty value.
 CONSTANTS Nil
@@ -33,7 +33,7 @@ VARIABLE immediatelyCommitted
 \* The server's term number.
 VARIABLE currentTerm
 
-\* The server's state (Follower, Down, or Leader).
+\* The server's state (Follower, or Leader).
 VARIABLE state
 
 serverVars == <<currentTerm, state>>
@@ -89,9 +89,6 @@ Range(f) == {f[x] : x \in DOMAIN f}
 
 \* Is a sequence empty.
 Empty(s) == Len(s) = 0
-
-\* Alive nodes in a set.
-AliveNodes(s) == { n \in s : state[n] # Down }
 
 -------------------------------------------------------------------------------------------
 
@@ -266,8 +263,6 @@ Reconfig(i) ==
         /\ \/ \E n \in newConfig : newConfig \ {n} = config[i]  \* add 1.
            \/ \E n \in config[i] : config[i] \ {n} = newConfig  \* remove 1.
         /\ i \in newConfig
-        \* Require that at least a quorum of nodes in the new config are not down.
-        /\ AliveNodes(newConfig) \in Quorums(newConfig)
         \* The config on this node takes effect immediately
         /\ config' = [config EXCEPT ![i] = newConfig]
         \* Record the term of the primary that wrote this config.
@@ -403,7 +398,6 @@ AtMostOneActiveConfig == Cardinality(ActiveConfigs) <= 1
 ConfigEventuallyPropagates ==
     \A i, j \in Server:
         i \in config[j] ~> \/ i \notin config[j]
-                           \/ state[i] = Down
                            \/ configVersion[i] = configVersion[j]
 
 ElectableNodeEventuallyExists == <>(\E s \in Server : state[s] = Primary)
@@ -431,14 +425,14 @@ Init ==
     /\ configTerm    =  [i \in Server |-> 0]
     /\ immediatelyCommitted = {}
 
-BecomeLeaderAction      ==  \E s \in AliveNodes(Server) : BecomeLeader(s)
-ClientRequestAction     ==  \E s \in AliveNodes(Server) : ClientRequest(s)
-GetEntriesAction        ==  \E s, t \in AliveNodes(Server) : GetEntries(s, t)
-RollbackEntriesAction   ==  \E s, t \in AliveNodes(Server) : RollbackEntries(s, t)
-ReconfigAction          ==  \E s \in AliveNodes(Server) : Reconfig(s)
-SendConfigAction        ==  \E s,t \in AliveNodes(Server) : SendConfig(s, t)
-CommitEntryAction       ==  \E s \in AliveNodes(Server) : CommitEntry(s)
-UpdateTermsAction       ==  \E s, t \in AliveNodes(Server) : UpdateTermsOnNodes(s, t)
+BecomeLeaderAction      ==  \E s \in Server : BecomeLeader(s)
+ClientRequestAction     ==  \E s \in Server : ClientRequest(s)
+GetEntriesAction        ==  \E s, t \in Server : GetEntries(s, t)
+RollbackEntriesAction   ==  \E s, t \in Server : RollbackEntries(s, t)
+ReconfigAction          ==  \E s \in Server : Reconfig(s)
+SendConfigAction        ==  \E s,t \in Server : SendConfig(s, t)
+CommitEntryAction       ==  \E s \in Server : CommitEntry(s)
+UpdateTermsAction       ==  \E s, t \in Server : UpdateTermsOnNodes(s, t)
 
 Next ==
     \/ BecomeLeaderAction
