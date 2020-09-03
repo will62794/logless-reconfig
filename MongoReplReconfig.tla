@@ -64,7 +64,7 @@ vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTe
 -------------------------------------------------------------------------------------------
 
 (**************************************************************************************************)
-(* Generic helper operators                                                                       *)
+(* Helper operators                                                                       *)
 (**************************************************************************************************)
 
 \* The set of all quorums. This just calculates simple majorities, but the only
@@ -90,16 +90,6 @@ Range(f) == {f[x] : x \in DOMAIN f}
 \* Is a sequence empty.
 Empty(s) == Len(s) = 0
 
--------------------------------------------------------------------------------------------
-
-(******************************************************************************)
-(* Next state actions.                                                        *)
-(*                                                                            *)
-(* This section defines the core steps of the algorithm, along with some      *)
-(* related helper definitions/operators.  We annotate the main actions with   *)
-(* an [ACTION] specifier to disinguish them from auxiliary, helper operators. *)
-(******************************************************************************)
-
 \* The term of the last entry in a log, or 0 if the log is empty.
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)].term
 GetTerm(xlog, index) == IF index = 0 THEN 0 ELSE xlog[index].term
@@ -122,6 +112,34 @@ IsNewerConfig(i, j) ==
     \/ configTerm[i] > configTerm[j]
     \/ /\ configTerm[i] = configTerm[j]
        /\ configVersion[i] >= configVersion[j]
+       
+\* Can node 'i' currently cast a vote for node 'j' in term 'term'.
+CanVoteFor(i, j, term) ==
+    LET logOk ==
+        \/ LastTerm(log[j]) > LastTerm(log[i])
+        \/ /\ LastTerm(log[j]) = LastTerm(log[i])
+           /\ Len(log[j]) >= Len(log[i]) IN
+    \* Nodes can only vote once per term, and they will never
+    \* vote for someone with a lesser term than their own.
+    /\ currentTerm[i] < term
+    \* Only vote for someone if their config version is >= your own.
+    /\ IsNewerConfig(j, i)
+    /\ logOk
+    
+\* A quorum of nodes have received this config.
+ConfigQuorumCheck(self, s) == /\ configVersion[self] = configVersion[s]
+                              /\ configTerm[self] = configTerm[s]
+
+-------------------------------------------------------------------------------------------
+
+(******************************************************************************)
+(* Next state actions.                                                        *)
+(*                                                                            *)
+(* This section defines the core steps of the algorithm, along with some      *)
+(* related helper definitions/operators.  We annotate the main actions with   *)
+(* an [ACTION] specifier to disinguish them from auxiliary, helper operators. *)
+(******************************************************************************)
+
 
 \* Exchange terms between two nodes and step down the primary if needed.
 UpdateTerms(i, j) ==
@@ -201,20 +219,6 @@ CommitEntry(i) ==
 (*                                                                            *)
 (* Node 'i' automatically becomes a leader, if eligible.                      *)
 (******************************************************************************)
-
-\* Can node 'i' currently cast a vote for node 'j' in term 'term'.
-CanVoteFor(i, j, term) ==
-    LET logOk ==
-        \/ LastTerm(log[j]) > LastTerm(log[i])
-        \/ /\ LastTerm(log[j]) = LastTerm(log[i])
-           /\ Len(log[j]) >= Len(log[i]) IN
-    \* Nodes can only vote once per term, and they will never
-    \* vote for someone with a lesser term than their own.
-    /\ currentTerm[i] < term
-    \* Only vote for someone if their config version is >= your own.
-    /\ IsNewerConfig(j, i)
-    /\ logOk
-
 BecomeLeader(i) ==
     \* Primaries make decisions based on their current configuration.
     LET newTerm == currentTerm[i] + 1 IN
@@ -232,10 +236,18 @@ BecomeLeader(i) ==
         /\ configTerm' = [configTerm EXCEPT ![i] = newTerm]
         /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted>>
 
-
-\* A quorum of nodes have received this config.
-ConfigQuorumCheck(self, s) == /\ configVersion[self] = configVersion[s]
-                              /\ configTerm[self] = configTerm[s]
+(******************************************************************************)
+(* [ACTION]                                                                   *)
+(*                                                                            *)
+(* Node 'i', a primary, handles a new client request and places the entry in  *)
+(* its log.                                                                   *)
+(******************************************************************************)
+ClientRequest(i) ==
+    /\ state[i] = Primary
+    /\ LET entry == [term  |-> currentTerm[i]]
+       newLog == Append(log[i], entry) IN
+       /\ log' = [log EXCEPT ![i] = newLog]
+    /\ UNCHANGED <<serverVars, immediatelyCommitted, configVars>>
 
 \* Was an op was committed in the current config of node i.
 OpCommittedInConfig(i) == ENABLED CommitEntry(i)
@@ -250,8 +262,11 @@ ConfigIsSafe(i) ==
                     /\ ConfigQuorumCheck(i, s)
     /\ OpCommittedInConfig(i)
 
-\* [ACTION]
-\* A reconfig occurs on node i. The node must currently be a leader.
+(***************************************************************************)
+(* [ACTION]                                                                *)
+(*                                                                         *)
+(* A reconfig occurs on node i. The node must currently be a leader.       *)
+(***************************************************************************)
 Reconfig(i) ==
     \* Pick some arbitrary subset of servers to reconfig to.
     \* Make sure to include this node in the new config, though.
@@ -273,8 +288,12 @@ Reconfig(i) ==
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
         /\ UNCHANGED <<serverVars, log, immediatelyCommitted>>
 
-\* [ACTION]
-\* Node i sends its current config to node j. It is only accepted if the config is newer.
+(***************************************************************************)
+(* [ACTION]                                                                *)
+(*                                                                         *)
+(* Node i sends its current config to node j.  It is only accepted if the  *)
+(* config is newer.                                                        *)
+(***************************************************************************)
 SendConfig(i, j) ==
     \* Only update config if the received config is newer and its term is >= than your current term.
     /\ IsNewerConfig(i, j)
@@ -285,19 +304,6 @@ SendConfig(i, j) ==
     /\ configTerm' = [configTerm EXCEPT ![j] = configTerm[i]]
     /\ UpdateTerms(i, j)
     /\ UNCHANGED <<log, immediatelyCommitted>>
-
-(******************************************************************************)
-(* [ACTION]                                                                   *)
-(*                                                                            *)
-(* Node 'i', a primary, handles a new client request and places the entry in  *)
-(* its log.                                                                   *)
-(******************************************************************************)
-ClientRequest(i) ==
-    /\ state[i] = Primary
-    /\ LET entry == [term  |-> currentTerm[i]]
-       newLog == Append(log[i], entry) IN
-       /\ log' = [log EXCEPT ![i] = newLog]
-    /\ UNCHANGED <<serverVars, immediatelyCommitted, configVars>>
 
 -------------------------------------------------------------------------------------------
 
