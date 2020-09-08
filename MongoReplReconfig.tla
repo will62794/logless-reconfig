@@ -250,7 +250,10 @@ ClientRequest(i) ==
     /\ UNCHANGED <<serverVars, immediatelyCommitted, configVars>>
 
 \* Was an op was committed in the current config of node i.
-OpCommittedInConfig(i) == ENABLED CommitEntry(i)
+\* OpCommittedInConfig(i) == ENABLED CommitEntry(i)
+
+\* TODO: Fill in this definition correctly.
+OpCommittedInConfig(i) == TRUE
 
 \* Did a node talked to a quorum as primary.
 TermQuorumCheck(self, s) == currentTerm[self] >= currentTerm[s]
