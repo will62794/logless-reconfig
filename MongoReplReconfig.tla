@@ -1,12 +1,14 @@
 ----------------------------- MODULE MongoReplReconfig -----------------------------
-\*
-\* A specification of reconfiguration in the MongoDB replication protocol.
-\*
-
+(***************************************************************************)
+(*                                                                         *)
+(* A specification of the logless, dynamic reconfiguration protocol in     *)
+(* MongoDB replication.                                                    *)
+(*                                                                         *)
+(***************************************************************************)
 
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 
-\* The set of server IDs
+\* The set of server IDs.
 CONSTANTS Server
 
 \* Server states.
@@ -15,39 +17,28 @@ CONSTANTS Secondary, Primary
 \* An empty value.
 CONSTANTS Nil
 
-(**************************************************************************************************)
-(* Global variables                                                                               *)
-(**************************************************************************************************)
-
-\* Set of all immediately committed entries. 
-\* Each element of the set is a record e.g. [index |-> ..., term |-> ..., configVersion |-> ...]
-\* This set does not include "prefix committed" entries.
-VARIABLE immediatelyCommitted
-
-(**************************************************************************************************)
-(* Per server variables.                                                                          *)
-(*                                                                                                *)
-(* These are all functions with domain Server.                                                    *)
-(**************************************************************************************************)
+(***************************************************************************)
+(* Replication related variables.                                          *)
+(***************************************************************************)
 
 \* The server's term number.
 VARIABLE currentTerm
 
-\* The server's state (Follower, or Leader).
+\* The server's current state.
 VARIABLE state
 
 serverVars == <<currentTerm, state>>
 
-\* A sequence of log entries. The index into this sequence is the index of the
-\* log entry
+\* A node's sequence of log entries. 
+\* The index into the sequence is the index of the log entry.
 VARIABLE log
 
-\*
-\* Reconfig related variables.
-\*
+(***************************************************************************)
+(* Reconfiguration related variables.                                      *)
+(***************************************************************************)
 
-\* A server's current config. A config is just a set of servers
-\* i.e. an element of SUBSET Server
+\* A server's current config. 
+\* A config is just a set of servers i.e. an element of SUBSET Server
 VARIABLE config
 
 \* The config version of a node's current config.
@@ -59,13 +50,26 @@ VARIABLE configTerm
 
 configVars == <<config, configVersion, configTerm>>
 
+(***************************************************************************)
+(* Auxiliary variables.                                                    *)
+(***************************************************************************)
+
+\* Set of all immediately committed entries. 
+\* Each element of the set is a record e.g. [index |-> ..., term |-> ..., configVersion |-> ...]
+\* This set does not include "prefix committed" entries.
+VARIABLE immediatelyCommitted
+
 vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTerm>>
 
 -------------------------------------------------------------------------------------------
 
-(**************************************************************************************************)
-(* Helper operators                                                                       *)
-(**************************************************************************************************)
+\* TODO: Add TypeOK invariant.
+
+-------------------------------------------------------------------------------------------
+
+(***************************************************************************)
+(* Helper operators.                                                       *)
+(***************************************************************************)
 
 \* The set of all quorums. This just calculates simple majorities, but the only
 \* important property is that every quorum overlaps with every other.
@@ -132,13 +136,14 @@ ConfigQuorumCheck(self, s) == /\ configVersion[self] = configVersion[s]
 
 -------------------------------------------------------------------------------------------
 
-(******************************************************************************)
-(* Next state actions.                                                        *)
-(*                                                                            *)
-(* This section defines the core steps of the algorithm, along with some      *)
-(* related helper definitions/operators.  We annotate the main actions with   *)
-(* an [ACTION] specifier to disinguish them from auxiliary, helper operators. *)
-(******************************************************************************)
+(***************************************************************************)
+(* Next state actions.                                                     *)
+(*                                                                         *)
+(* This section defines the core steps of the algorithm, along with some   *)
+(* related helper definitions/operators.  We annotate the main actions     *)
+(* with an [ACTION] specifier to disinguish them from auxiliary, helper    *)
+(* operators.                                                              *)
+(***************************************************************************)
 
 
 \* Exchange terms between two nodes and step down the primary if needed.
@@ -152,11 +157,11 @@ UpdateTerms(i, j) ==
 
 UpdateTermsOnNodes(i, j) == /\ UpdateTerms(i, j)
                             /\ UNCHANGED <<log, immediatelyCommitted, configVars>>
-(******************************************************************************)
-(* [ACTION]                                                                   *)
-(*                                                                            *)
-(* Node 'i' rolls back against the log of node 'j'.                           *)
-(******************************************************************************)
+(***************************************************************************)
+(* [ACTION]                                                                *)
+(*                                                                         *)
+(* Node 'i' rolls back against the log of node 'j'.                        *)
+(***************************************************************************)
 RollbackEntries(i, j) ==
     /\ CanRollback(i, j)
     /\ j \in config[i]
@@ -165,11 +170,11 @@ RollbackEntries(i, j) ==
     /\ UpdateTerms(i, j)
     /\ UNCHANGED <<immediatelyCommitted, configVars>>
 
-(******************************************************************************)
-(* [ACTION]                                                                   *)
-(*                                                                            *)
-(* Node 'i' gets a new log entry from node 'j'.                               *)
-(******************************************************************************)
+(***************************************************************************)
+(* [ACTION]                                                                *)
+(*                                                                         *)
+(* Node 'i' gets a new log entry from node 'j'.                            *)
+(***************************************************************************)
 GetEntries(i, j) ==
     /\ j \in config[i]
     /\ state[i] = Secondary
@@ -190,12 +195,13 @@ GetEntries(i, j) ==
               /\ log' = [log EXCEPT ![i] = newLog]
     /\ UpdateTerms(i, j)
     /\ UNCHANGED <<immediatelyCommitted, configVars>>
-(******************************************************************************)
-(* [ACTION]                                                                   *)
-(*                                                                            *)
-(* A leader i commits its newest log entry. It commits it according to        *)
-(* its own config's notion of a quorum.                                       *)
-(******************************************************************************)
+
+(***************************************************************************)
+(* [ACTION]                                                                *)
+(*                                                                         *)
+(* A leader i commits its newest log entry.  It commits it according to    *)
+(* its own config's notion of a quorum.                                    *)
+(***************************************************************************)
 CommitEntry(i) ==
     LET ind == Len(log[i]) IN
     \E quorum \in Quorums(config[i]) :
@@ -214,11 +220,11 @@ CommitEntry(i) ==
              {[index |->ind, term |-> currentTerm[i], configVersion |-> configVersion[i]]}
         /\ UNCHANGED <<serverVars, log, configVars>>
 
-(******************************************************************************)
-(* [ACTION]                                                                   *)
-(*                                                                            *)
-(* Node 'i' automatically becomes a leader, if eligible.                      *)
-(******************************************************************************)
+(***************************************************************************)
+(* [ACTION]                                                                *)
+(*                                                                         *)
+(* Node 'i' automatically becomes a leader, if eligible.                   *)
+(***************************************************************************)
 BecomeLeader(i) ==
     \* Primaries make decisions based on their current configuration.
     LET newTerm == currentTerm[i] + 1 IN
@@ -236,12 +242,12 @@ BecomeLeader(i) ==
         /\ configTerm' = [configTerm EXCEPT ![i] = newTerm]
         /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted>>
 
-(******************************************************************************)
-(* [ACTION]                                                                   *)
-(*                                                                            *)
-(* Node 'i', a primary, handles a new client request and places the entry in  *)
-(* its log.                                                                   *)
-(******************************************************************************)
+(***************************************************************************)
+(* [ACTION]                                                                *)
+(*                                                                         *)
+(* Node 'i', a primary, handles a new client request and places the entry  *)
+(* in its log.                                                             *)
+(***************************************************************************)
 ClientRequest(i) ==
     /\ state[i] = Primary
     /\ LET entry == [term  |-> currentTerm[i]]
@@ -310,9 +316,9 @@ SendConfig(i, j) ==
 
 -------------------------------------------------------------------------------------------
 
-(**************************************************************************************************)
-(* Miscellaneous properties for exploring/understanding the spec.                                 *)
-(**************************************************************************************************)
+(***************************************************************************)
+(* Miscellaneous properties for exploring/understanding the spec.          *)
+(***************************************************************************)
 
 \* Are there two primaries in the current state.
 TwoPrimaries == \E s, t \in Server : s # t /\ state[s] = Primary /\ state[s] = state[t]
@@ -334,9 +340,9 @@ NConcurrentConfigs(n) ==
 4ConcurrentConfigs == ~NConcurrentConfigs(4)
 5ConcurrentConfigs == ~NConcurrentConfigs(5)
 
-(**************************************************************************************************)
-(* Correctness Properties                                                                         *)
-(**************************************************************************************************)
+(***************************************************************************)
+(* Correctness Properties                                                  *)
+(***************************************************************************)
 
 \* The set of all log entries in a given log i.e. the set of all <<index, term>>
 \* pairs that appear in the log.
@@ -401,9 +407,9 @@ ActiveConfigsOverlap == \A x,y \in ActiveConfigs : QuorumsOverlap(x, y)
 \* Property asserting that there is never more than 1 active config at a time.
 AtMostOneActiveConfig == Cardinality(ActiveConfigs) <= 1
 
-(**************************************************************************************************)
-(* Liveness properties                                                                            *)
-(**************************************************************************************************)
+(***************************************************************************)
+(* Liveness properties                                                     *)
+(***************************************************************************)
 ConfigEventuallyPropagates ==
     \A i, j \in Server:
         i \in config[j] ~> \/ i \notin config[j]
@@ -411,9 +417,9 @@ ConfigEventuallyPropagates ==
 
 ElectableNodeEventuallyExists == <>(\E s \in Server : state[s] = Primary)
 
-(**************************************************************************************************)
-(* Spec definition                                                                                *)
-(**************************************************************************************************)
+(***************************************************************************)
+(* Spec definition                                                         *)
+(***************************************************************************)
 InitConfigConstraint(c) == TRUE
 InitConfigMaxSizeOnly(c) == c = Server
 Init ==
