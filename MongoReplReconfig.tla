@@ -326,6 +326,7 @@ Reconfig(i) ==
 (* config is newer.                                                        *)
 (***************************************************************************)
 SendConfig(i, j) ==
+    /\ state[j] = Secondary
     \* Only update config if the received config is newer and its term is >= than your current term.
     /\ IsNewerConfig(i, j)
     \* Commenting out the line below allows receipt of configs with terms lower than your current term.
@@ -478,7 +479,7 @@ Next ==
     \/ RollbackEntriesAction
     \/ ReconfigAction
     \/ SendConfigAction
-    \/ CommitEntryAction
+\*    \/ CommitEntryAction
     \/ UpdateTermsAction
 
 Liveness ==
@@ -510,15 +511,29 @@ MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
 TypeOKRandom == 
-    /\ currentTerm \in RandomSubset(3, [Server -> Nat])
-    /\ state \in RandomSubset(3, [Server -> {Secondary, Primary}])
-    /\ log \in RandomSubset(3, [Server -> Seq([term  : Nat])])
-    /\ config \in RandomSubset(3, [Server -> SUBSET Server])
-    /\ configVersion \in RandomSubset(3, [Server -> Nat])
-    /\ configTerm \in RandomSubset(3, [Server -> Nat])
-    /\ immediatelyCommitted \in [index : {0}, term : {0}, configVersion: {0}]
+    /\ currentTerm \in RandomSubset(4, [Server -> Nat])
+    /\ state \in RandomSubset(4, [Server -> {Secondary, Primary}])
+    /\ log \in RandomSubset(4, [Server -> Seq([term  : Nat])])
+\*    /\ config \in [Server -> {Server}] \* used this for checking election safety without reconfiguration
+    /\ config \in RandomSubset(4, [Server -> SUBSET Server])
+    /\ configVersion \in RandomSubset(4, [Server -> Nat])
+    /\ configTerm \in RandomSubset(4, [Server -> Nat])
+    /\ immediatelyCommitted = {}
 
-IndInv == ElectionSafety
+\* Inductive invariant for proving election safety.
+\* TODO: More work to expand this to handle safety under reconfigurations.
+ElectionSafetyInd == 
+    /\ ElectionSafety
+    /\ \A s \in Server : 
+        ((state[s] = Primary) => 
+        \* A quorum should have voted for you, so are in your term or greater.
+        /\ (\E voters \in Quorums(config[s]) : 
+            (\A v \in voters : currentTerm[v] >= currentTerm[s]))
+        \* Primary's current config term must be equal to its current term.
+        /\ configTerm[s] = currentTerm[s])
+    
+    
+IndInv == ElectionSafetyInd
 IInit == TypeOKRandom /\ IndInv
 INext == Next
 
