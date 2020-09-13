@@ -6,7 +6,7 @@
 (*                                                                         *)
 (***************************************************************************)
 
-EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
+EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC, Randomization
 
 \* The set of server IDs.
 CONSTANTS Server
@@ -63,7 +63,29 @@ vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTe
 
 -------------------------------------------------------------------------------------------
 
+SeqOf(set, n) == 
+  (***************************************************************************)
+  (* All sequences up to length n with all elements in set.  Includes empty  *)
+  (* sequence.                                                               *)
+  (***************************************************************************)
+  UNION {[1..m -> set] : m \in 0..n}
+
+BoundedSeq(S, n) ==
+  (***************************************************************************)
+  (* An alias for SeqOf to make the connection to Sequences!Seq, which is    *)
+  (* the unbounded version of BoundedSeq.                                    *)
+  (***************************************************************************)
+  SeqOf(S, n)
+
 \* TODO: Add TypeOK invariant.
+TypeOK == 
+    /\ currentTerm \in [Server -> Nat]
+    /\ state \in [Server -> {Secondary, Primary}]
+    /\ log \in [Server -> Seq([term  : Nat])]
+    /\ config \in [Server -> SUBSET Server]
+    /\ configVersion \in [Server -> Nat]
+    /\ configTerm \in [Server -> Nat]
+    /\ immediatelyCommitted \in (SUBSET [index : Nat, term : Nat, configVersion: Nat])
 
 -------------------------------------------------------------------------------------------
 
@@ -486,5 +508,19 @@ ServerSymmetry == Permutations(Server)
 
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
+
+TypeOKRandom == 
+    /\ currentTerm \in RandomSubset(3, [Server -> Nat])
+    /\ state \in RandomSubset(3, [Server -> {Secondary, Primary}])
+    /\ log \in RandomSubset(3, [Server -> Seq([term  : Nat])])
+    /\ config \in RandomSubset(3, [Server -> SUBSET Server])
+    /\ configVersion \in RandomSubset(3, [Server -> Nat])
+    /\ configTerm \in RandomSubset(3, [Server -> Nat])
+    /\ immediatelyCommitted \in [index : {0}, term : {0}, configVersion: {0}]
+
+IndInv == ElectionSafety
+IInit == TypeOKRandom /\ IndInv
+INext == Next
+
 
 =============================================================================
