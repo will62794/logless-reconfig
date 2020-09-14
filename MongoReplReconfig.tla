@@ -563,7 +563,7 @@ TypeOKRandom ==
     /\ configTerm \in RandomSubset(4, [Server -> Nat])
     /\ immediatelyCommitted = {}
     /\ elections = {}
-    /\ reconfigs = RandomSubset(3, ReconfigsType)
+    /\ reconfigs \in RandomSubset(3, ReconfigsType)
 
 
 \*
