@@ -82,19 +82,23 @@ BoundedSeq(S, n) ==
   (***************************************************************************)
   SeqOf(S, n)
 
-ElectionType == SUBSET [ leader : Nat, 
-                         term   : Nat, 
-                         voters : SUBSET Server,
-                         config : SUBSET Server,
-                         configVersion : Nat,
-                         configTerm    : Nat]
+ElectionRecType == [ leader : Server, 
+                     term   : Nat, 
+                     voters : SUBSET Server,
+                     config : SUBSET Server,
+                     configVersion : Nat,
+                     configTerm    : Nat]
 
-ReconfigsType == SUBSET [ configOld : SUBSET Server,
-                          configOldVersion : Nat,
-                          configOldTerm : Nat,
-                          configNew : SUBSET Server,
-                          configNewVersion : Nat,
-                          configNewTerm : Nat]
+ElectionType == SUBSET ElectionRecType
+
+ReconfigType == [ configOld : SUBSET Server,
+                  configOldVersion : Nat,
+                  configOldTerm : Nat,
+                  configNew : SUBSET Server,
+                  configNewVersion : Nat,
+                  configNewTerm : Nat]
+
+ReconfigsType == SUBSET ReconfigType
 
 \* TODO: Add TypeOK invariant.
 TypeOK == 
@@ -291,12 +295,13 @@ BecomeLeader(i) ==
                                 configVersion |-> configVersion[i],
                                 configTerm    |-> configTerm[i]] IN
            elections' = elections \cup {electionRec}
-        /\ reconfigs' = [ configOld |-> config[i],
+        /\ reconfigs' = reconfigs \cup 
+                        {[ configOld |-> config[i],
                           configOldVersion |-> configVersion[i],
                           configOldTerm |-> configTerm[i],
                           configNew |-> config[i],
                           configNewVersion |-> configVersion[i],
-                          configNewTerm |-> newTerm]
+                          configNewTerm |-> newTerm]}
         /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted>>
 
 (***************************************************************************)
@@ -352,12 +357,13 @@ Reconfig(i) ==
            \* are globally unique.
             LET newConfigVersion == configVersion[i] + 1 IN
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
-        /\ reconfigs' = [ configOld |-> config[i],
-                          configOldVersion |-> configVersion[i],
-                          configOldTerm |-> configTerm[i],
-                          configNew |-> newConfig,
-                          configNewVersion |-> configVersion[i] + 1,
-                          configNewTerm |-> currentTerm[i]]
+        /\ reconfigs' = reconfigs \cup 
+                        {[ configOld |-> config[i],
+                           configOldVersion |-> configVersion[i],
+                           configOldTerm |-> configTerm[i],
+                           configNew |-> newConfig,
+                           configNewVersion |-> configVersion[i] + 1,
+                           configNewTerm |-> currentTerm[i]]}
         /\ UNCHANGED <<serverVars, log, immediatelyCommitted, elections>>
 
 (***************************************************************************)
@@ -553,6 +559,19 @@ ServerSymmetry == Permutations(Server)
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
+\* The argument to this operator is unused.
+\*RandomReconfig(x) ==
+\*    [ configOld |-> RandomElement(SUBSET Server),
+\*      configOldVersion |-> RandomElement(Nat),
+\*      configOldTerm |-> RandomElement(Nat),
+\*      configNew |-> RandomElement(SUBSET Server),
+\*      configNewVersion |-> RandomElement(Nat),
+\*      configNewTerm |-> RandomElement(Nat)]
+\*
+\*ReconfigTypeSampled == RandomSubset(8, ReconfigType) \*{RandomReconfig(0) : i \in 1..20}
+\*
+\*ReconfigsTypeWorkaround == SUBSET ReconfigTypeSampled
+
 TypeOKRandom == 
     /\ currentTerm \in RandomSubset(4, [Server -> Nat])
     /\ state \in RandomSubset(4, [Server -> {Secondary, Primary}])
@@ -562,8 +581,22 @@ TypeOKRandom ==
     /\ configVersion \in RandomSubset(4, [Server -> Nat])
     /\ configTerm \in RandomSubset(4, [Server -> Nat])
     /\ immediatelyCommitted = {}
-    /\ elections = {}
-    /\ reconfigs \in RandomSubset(3, ReconfigsType)
+\*    /\ elections = {}
+    /\ elections \in RandomSetOfSubsets(12, 4, ElectionRecType)
+    \* /\ reconfigs \in RandomSubset(3, ReconfigsType)
+    /\ reconfigs \in RandomSetOfSubsets(12, 4, ReconfigType)
+    
+
+\* Compares two configs given as <<configVersion, configTerm>> tuples.
+NewerConfig(ci, cj) ==
+    \* Compare configTerm first.
+    \/ ci[2] > cj[2] 
+    \* Compare configVersion if terms are equal.
+    \/ /\ ci[2] = cj[2]
+       /\ ci[1] > cj[1]  
+
+\* Compares two configs given as <<configVersion, configTerm>> tuples.
+NewerOrEqualConfig(ci, cj) == NewerConfig(ci, cj) \/ ci = cj
 
 
 \*
@@ -618,18 +651,42 @@ PrimaryElectionRecorded ==
             /\ e.term = currentTerm[s]
 
 
-\* If a config C exists, then it must have been created via some reconfig.
+\* If a config C exists, then it must have been created via some reconfig or it is the initial config.
 ConfigExistenceImpliesReconfigOccurred == 
     \A s \in Server :
-        \E rc \in reconfigs : 
-            /\ rc.configNew = config[s]
-            /\ rc.configNewVersion = configVersion[s]
-            /\ rc.configNewTerm = configTerm[s]
+        \* Has a config created by a reconfig.
+        \/ (\E rc \in reconfigs : 
+             /\ rc.configNew = config[s]
+             /\ rc.configNewVersion = configVersion[s]
+             /\ rc.configNewTerm = configTerm[s])
+        \* Has the initial config.
+        \/ /\ configVersion[s] = 0
+           /\ configTerm[s] = 0      
 
-
-\* If a config C exists, then its parent config must have been committed.
+\* If we moved to config C, then the parent of C must have been committed.
 \* TODO.
+ReconfigRequiresParentWasCommitted == 
+    \A rc \in reconfigs:
+    \E configQuorum \in Quorums(rc.configOld) :
+    \* Config should have been committed by a quorum,
+    \* so this quorum should have this config or a newer one. 
+    \A s \in configQuorum :
+        NewerOrEqualConfig(<<configVersion[s], configTerm[s]>>,
+                           <<rc.configOldVersion, rc.configOldTerm>>)
+                           
+\* Reconfigs that are not step up reconfigs cannot change config term. 
+NormalReconfigsDoNotChangeConfigTerm == 
+    \A rc \in reconfigs : 
+        \/ rc.configNewTerm = rc.configOldTerm
+        \* Step up reconfigs are the only case where version is not incremented.
+        \/ /\ rc.configNewTerm > rc.configNewTerm
+           /\ rc.configNewVersion = rc.configOldVersion
 
+\* If all nodes are in the initial config <<0, 0>>, then they should all have the same config i.e.
+\* we always start out in a static config.
+AllNodesInInitialConfigImpliesAllNodesHaveSameConfig == 
+    (\A s \in Server : configVersion[s] = 0 /\ configTerm[s] = 0) =>
+    (\A s,t \in Server : config[s] = config[t])
 
 \* Inductive invariant for proving election safety.
 \* TODO: More work to expand this to handle safety under reconfigurations.
@@ -641,8 +698,10 @@ ElectionSafetyInd ==
     /\ PrimaryConfigHasAtLeastOneMember
     /\ PrimaryElectionRecorded
     /\ ConfigTermNotGreaterThanCurrentTerm
-    /\ AtMostOneActiveConfig
     /\ ConfigExistenceImpliesReconfigOccurred
+    /\ ReconfigRequiresParentWasCommitted
+    \* /\ AllNodesInInitialConfigImpliesAllNodesHaveSameConfig
+    \* /\ NormalReconfigsDoNotChangeConfigTerm
         
 IndInv == ElectionSafetyInd
 IInit == TypeOKRandom /\ IndInv
