@@ -79,6 +79,13 @@ BoundedSeq(S, n) ==
   (***************************************************************************)
   SeqOf(S, n)
 
+ElectionType == SUBSET [ leader : Nat, 
+                         term   : Nat, 
+                         voters : SUBSET Server,
+                         config : SUBSET Server,
+                         configVersion : Nat,
+                         configTerm    : Nat]
+
 \* TODO: Add TypeOK invariant.
 TypeOK == 
     /\ currentTerm \in [Server -> Nat]
@@ -88,6 +95,7 @@ TypeOK ==
     /\ configVersion \in [Server -> Nat]
     /\ configTerm \in [Server -> Nat]
     /\ immediatelyCommitted \in (SUBSET [index : Nat, term : Nat, configVersion: Nat])
+    /\ elections \in ElectionType
 
 -------------------------------------------------------------------------------------------
 
@@ -268,7 +276,9 @@ BecomeLeader(i) ==
         /\ LET electionRec == [ leader |-> i, 
                                 term   |-> newTerm, 
                                 voters |-> voteQuorum,
-                                config |-> config[i]] IN
+                                config |-> config[i],
+                                configVersion |-> configVersion[i],
+                                configTerm    |-> configTerm[i]] IN
            elections' = elections \cup {electionRec}
         /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted>>
 
