@@ -61,7 +61,10 @@ VARIABLE immediatelyCommitted
 
 VARIABLE elections
 
-vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTerm, elections>>
+\* Records every reconfig state transition and the current and new config.
+VARIABLE reconfigs
+
+vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTerm, elections, reconfigs>>
 
 -------------------------------------------------------------------------------------------
 
@@ -86,6 +89,13 @@ ElectionType == SUBSET [ leader : Nat,
                          configVersion : Nat,
                          configTerm    : Nat]
 
+ReconfigsType == SUBSET [ configOld : SUBSET Server,
+                          configOldVersion : Nat,
+                          configOldTerm : Nat,
+                          configNew : SUBSET Server,
+                          configNewVersion : Nat,
+                          configNewTerm : Nat]
+
 \* TODO: Add TypeOK invariant.
 TypeOK == 
     /\ currentTerm \in [Server -> Nat]
@@ -96,6 +106,7 @@ TypeOK ==
     /\ configTerm \in [Server -> Nat]
     /\ immediatelyCommitted \in (SUBSET [index : Nat, term : Nat, configVersion: Nat])
     /\ elections \in ElectionType
+    /\ reconfigs \in ReconfigsType
 
 -------------------------------------------------------------------------------------------
 
@@ -188,7 +199,7 @@ UpdateTerms(i, j) ==
                               ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
 
 UpdateTermsOnNodes(i, j) == /\ UpdateTerms(i, j)
-                            /\ UNCHANGED <<log, immediatelyCommitted, configVars, elections>>
+                            /\ UNCHANGED <<log, immediatelyCommitted, configVars, elections, reconfigs>>
 (***************************************************************************)
 (* [ACTION]                                                                *)
 (*                                                                         *)
@@ -200,7 +211,7 @@ RollbackEntries(i, j) ==
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
     /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<immediatelyCommitted, configVars, elections>>
+    /\ UNCHANGED <<immediatelyCommitted, configVars, elections, reconfigs>>
 
 (***************************************************************************)
 (* [ACTION]                                                                *)
@@ -226,7 +237,7 @@ GetEntries(i, j) ==
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
     /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<immediatelyCommitted, configVars, elections>>
+    /\ UNCHANGED <<immediatelyCommitted, configVars, elections, reconfigs>>
 
 (***************************************************************************)
 (* [ACTION]                                                                *)
@@ -250,7 +261,7 @@ CommitEntry(i) ==
             /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
         /\ immediatelyCommitted' = immediatelyCommitted \cup
              {[index |->ind, term |-> currentTerm[i], configVersion |-> configVersion[i]]}
-        /\ UNCHANGED <<serverVars, log, configVars, elections>>
+        /\ UNCHANGED <<serverVars, log, configVars, elections, reconfigs>>
 
 (***************************************************************************)
 (* [ACTION]                                                                *)
@@ -280,6 +291,12 @@ BecomeLeader(i) ==
                                 configVersion |-> configVersion[i],
                                 configTerm    |-> configTerm[i]] IN
            elections' = elections \cup {electionRec}
+        /\ reconfigs' = [ configOld |-> config[i],
+                          configOldVersion |-> configVersion[i],
+                          configOldTerm |-> configTerm[i],
+                          configNew |-> config[i],
+                          configNewVersion |-> configVersion[i],
+                          configNewTerm |-> newTerm]
         /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted>>
 
 (***************************************************************************)
@@ -293,7 +310,7 @@ ClientRequest(i) ==
     /\ LET entry == [term  |-> currentTerm[i]]
        newLog == Append(log[i], entry) IN
        /\ log' = [log EXCEPT ![i] = newLog]
-    /\ UNCHANGED <<serverVars, immediatelyCommitted, configVars, elections>>
+    /\ UNCHANGED <<serverVars, immediatelyCommitted, configVars, elections, reconfigs>>
 
 \* Was an op was committed in the current config of node i.
 \* OpCommittedInConfig(i) == ENABLED CommitEntry(i)
@@ -335,6 +352,12 @@ Reconfig(i) ==
            \* are globally unique.
             LET newConfigVersion == configVersion[i] + 1 IN
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
+        /\ reconfigs' = [ configOld |-> config[i],
+                          configOldVersion |-> configVersion[i],
+                          configOldTerm |-> configTerm[i],
+                          configNew |-> newConfig,
+                          configNewVersion |-> configVersion[i] + 1,
+                          configNewTerm |-> currentTerm[i]]
         /\ UNCHANGED <<serverVars, log, immediatelyCommitted, elections>>
 
 (***************************************************************************)
@@ -353,7 +376,7 @@ SendConfig(i, j) ==
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
     /\ configTerm' = [configTerm EXCEPT ![j] = configTerm[i]]
     /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<log, immediatelyCommitted, elections>>
+    /\ UNCHANGED <<log, immediatelyCommitted, elections, reconfigs>>
 
 -------------------------------------------------------------------------------------------
 
@@ -481,6 +504,7 @@ Init ==
     /\ configTerm    =  [i \in Server |-> 0]
     /\ immediatelyCommitted = {}
     /\ elections = {}
+    /\ reconfigs = {}
 
 BecomeLeaderAction      ==  \E s \in Server : BecomeLeader(s)
 ClientRequestAction     ==  \E s \in Server : ClientRequest(s)
@@ -539,6 +563,7 @@ TypeOKRandom ==
     /\ configTerm \in RandomSubset(4, [Server -> Nat])
     /\ immediatelyCommitted = {}
     /\ elections = {}
+    /\ reconfigs = RandomSubset(3, ReconfigsType)
 
 
 \*
@@ -558,9 +583,28 @@ PrimaryHasQuorumInElectionConfigInTermOrGreater ==
        (\E voters \in Quorums(e.config) : 
          (\A v \in voters : currentTerm[v] >= e.term))
 
+\* If you are a primary, a quorum should have voted for you, so a quorum in your election config should 
+\* have configs the same or newer than the config you got elected in.
+\*PrimaryHasQuorumInElectionConfigInConfigOrNewer == 
+\*    \A e \in elections : 
+\*       (\E voters \in Quorums(e.config) : 
+\*         (\A v \in voters : 
+\*            \/ configTerm[e.leader] >= e.configTerm
+\*            \/ /\ configTerm[e.leader] = e.configTerm
+\*               /\ configVersion[e.leader] >= e.configVersion))
+
+PrimaryConfigsMonotonic == 
+    \A e \in elections : 
+        \/ configTerm[e.leader] >= e.configTerm
+        \/ /\ configTerm[e.leader] = e.configTerm
+           /\ configVersion[e.leader] >= e.configVersion
+        
 \* The config term of a primary should be equal to its current term.
 PrimarysCurrentConfigIsInOwnTerm == 
     \A s \in Server : (state[s] = Primary) => (configTerm[s] = currentTerm[s])
+
+ConfigTermNotGreaterThanCurrentTerm == 
+    \A s \in Server : configTerm[s] <= currentTerm[s]
 
 \* A primary's current config has at least one member.
 \* This should be true since a primary cannot remove itself from its config. 
@@ -573,15 +617,32 @@ PrimaryElectionRecorded ==
             /\ e.leader = s 
             /\ e.term = currentTerm[s]
 
+
+\* If a config C exists, then it must have been created via some reconfig.
+ConfigExistenceImpliesReconfigOccurred == 
+    \A s \in Server :
+        \E rc \in reconfigs : 
+            /\ rc.configNew = config[s]
+            /\ rc.configNewVersion = configVersion[s]
+            /\ rc.configNewTerm = configTerm[s]
+
+
+\* If a config C exists, then its parent config must have been committed.
+\* TODO.
+
+
 \* Inductive invariant for proving election safety.
 \* TODO: More work to expand this to handle safety under reconfigurations.
 ElectionSafetyInd == 
     /\ ElectionSafety
     /\ PrimaryHasQuorumInElectionConfigInTermOrGreater
+    /\ PrimaryConfigsMonotonic
     /\ PrimarysCurrentConfigIsInOwnTerm
-    /\ AtMostOneActiveConfig
     /\ PrimaryConfigHasAtLeastOneMember
     /\ PrimaryElectionRecorded
+    /\ ConfigTermNotGreaterThanCurrentTerm
+    /\ AtMostOneActiveConfig
+    /\ ConfigExistenceImpliesReconfigOccurred
         
 IndInv == ElectionSafetyInd
 IInit == TypeOKRandom /\ IndInv
