@@ -111,10 +111,6 @@ TypeOK ==
 \* important property is that every quorum overlaps with every other.
 Quorum == {i \in SUBSET(Server) : Cardinality(i) * 2 > Cardinality(Server)}
 
-MajorityOnlyQuorums(S) == {i \in SUBSET(S) :
-    /\ Cardinality(i) * 2 > Cardinality(S)
-    /\ Cardinality(i) * 2 <= Cardinality(S) + 2}
-
 \* The set of all quorums of a given set.
 Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
 
