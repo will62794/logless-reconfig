@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.lamport.tla.toolbox.tool.tlc.modelCheck">
+    <stringAttribute key="TLCCmdLineParameters" value=""/>
+    <intAttribute key="collectCoverage" value="0"/>
+    <stringAttribute key="configurationName" value="Reconfig"/>
+    <booleanAttribute key="deferLiveness" value="false"/>
+    <intAttribute key="dfidDepth" value="100"/>
+    <booleanAttribute key="dfidMode" value="false"/>
+    <intAttribute key="distributedFPSetCount" value="0"/>
+    <stringAttribute key="distributedNetworkInterface" value="192.168.1.8"/>
+    <intAttribute key="distributedNodesCount" value="1"/>
+    <stringAttribute key="distributedTLC" value="off"/>
+    <stringAttribute key="distributedTLCVMArgs" value=""/>
+    <intAttribute key="fpBits" value="1"/>
+    <intAttribute key="fpIndex" value="88"/>
+    <booleanAttribute key="fpIndexRandom" value="true"/>
+    <intAttribute key="maxHeapSize" value="25"/>
+    <intAttribute key="maxSetSize" value="1000000"/>
+    <booleanAttribute key="mcMode" value="true"/>
+    <stringAttribute key="modelBehaviorInit" value=""/>
+    <stringAttribute key="modelBehaviorNext" value=""/>
+    <stringAttribute key="modelBehaviorSpec" value="Spec"/>
+    <intAttribute key="modelBehaviorSpecType" value="1"/>
+    <stringAttribute key="modelBehaviorVars" value="elections, reconfigs, log, state, immediatelyCommitted, config, currentTerm, configVersion, configTerm"/>
+    <stringAttribute key="modelComments" value=""/>
+    <booleanAttribute key="modelCorrectnessCheckDeadlock" value="false"/>
+    <listAttribute key="modelCorrectnessInvariants">
+        <listEntry value="1ElectionSafety"/>
+        <listEntry value="0AtMostOneActiveConfig"/>
+        <listEntry value="0TypeOK"/>
+        <listEntry value="1ConfigMatching"/>
+    </listAttribute>
+    <listAttribute key="modelCorrectnessProperties">
+        <listEntry value="0ElectionSafetyTemporal"/>
+    </listAttribute>
+    <intAttribute key="modelEditorOpenTabs" value="14"/>
+    <stringAttribute key="modelExpressionEval" value=""/>
+    <stringAttribute key="modelParameterActionConstraint" value=""/>
+    <listAttribute key="modelParameterConstants">
+        <listEntry value="Primary;;Primary;1;0"/>
+        <listEntry value="MaxTerm;;3;0;0"/>
+        <listEntry value="MaxConfigVersion;;3;0;0"/>
+        <listEntry value="Secondary;;Secondary;1;0"/>
+        <listEntry value="Nil;;Nil;1;0"/>
+        <listEntry value="Server;;{n1, n2, n3, n4};1;1"/>
+        <listEntry value="MaxLogLen;;0;0;0"/>
+    </listAttribute>
+    <stringAttribute key="modelParameterContraint" value="StateConstraint"/>
+    <listAttribute key="modelParameterDefinitions">
+        <listEntry value="Nat;;0..4;0;0"/>
+        <listEntry value="Seq;S:;BoundedSeq(S, 4);0;0"/>
+    </listAttribute>
+    <stringAttribute key="modelParameterModelValues" value="{}"/>
+    <stringAttribute key="modelParameterNewDefinitions" value=""/>
+    <intAttribute key="modelVersion" value="20191005"/>
+    <intAttribute key="numberOfWorkers" value="2"/>
+    <booleanAttribute key="recover" value="false"/>
+    <stringAttribute key="result.mail.address" value=""/>
+    <intAttribute key="simuAril" value="-1"/>
+    <intAttribute key="simuDepth" value="100"/>
+    <intAttribute key="simuSeed" value="-1"/>
+    <stringAttribute key="specName" value="MongoReplReconfig"/>
+    <stringAttribute key="tlcResourcesProfile" value="local custom"/>
+    <stringAttribute key="view" value="realVars"/>
+    <booleanAttribute key="visualizeStateGraph" value="false"/>
+</launchConfiguration>

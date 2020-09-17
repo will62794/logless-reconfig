@@ -1,4 +1,12 @@
-*.toolbox
+*.toolbox/Reconfig*
+*.toolbox/*aux
+*.toolbox/*.log
+*.toolbox/*.pdf
+*.toolbox/*.tex
+*.toolbox/*___Reconfig*_SnapShot*.launch
+*.toolbox/**/*.tla
+*.toolbox/**/*.out
+*.toolbox/**/MC.cfg
 latex/
 .DS_Store
 *.pdf
