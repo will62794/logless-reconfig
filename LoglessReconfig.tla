@@ -410,6 +410,15 @@ NConcurrentConfigs(n) ==
 4ConcurrentConfigs == ~NConcurrentConfigs(4)
 5ConcurrentConfigs == ~NConcurrentConfigs(5)
 
+
+\* Can one config ever have more than one parent?
+UniqueParentConfig == 
+    ~\E rc1, rc2 \in reconfigs:
+        \* New configs are both the same.
+        /\ <<rc1.configNewVersion, rc1.configNewTerm>> = <<rc2.configNewVersion, rc2.configNewTerm>>
+        \* Different old configs.
+        /\ <<rc1.configOldVersion, rc1.configOldTerm>> # <<rc2.configOldVersion, rc2.configOldTerm>>
+
 (***************************************************************************)
 (* Correctness Properties                                                  *)
 (***************************************************************************)
