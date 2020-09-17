@@ -568,6 +568,12 @@ ServerSymmetry == Permutations(Server)
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
+-------------------------------------------------------------------------------------------
+
+(***************************************************************************)
+(* Proving an inductive invariant.                                         *)
+(***************************************************************************)
+
 \* The argument to this operator is unused.
 \*RandomReconfig(x) ==
 \*    [ configOld |-> RandomElement(SUBSET Server),
