@@ -13,3 +13,4 @@ latex/
 traces/
 states/
 *.out
+graphs
