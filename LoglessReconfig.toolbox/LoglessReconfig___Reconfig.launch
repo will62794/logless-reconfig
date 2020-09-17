@@ -59,7 +59,7 @@
     <intAttribute key="simuAril" value="-1"/>
     <intAttribute key="simuDepth" value="100"/>
     <intAttribute key="simuSeed" value="-1"/>
-    <stringAttribute key="specName" value="MongoReplReconfig"/>
+    <stringAttribute key="specName" value="LoglessReconfig"/>
     <stringAttribute key="tlcResourcesProfile" value="local custom"/>
     <stringAttribute key="view" value="realVars"/>
     <booleanAttribute key="visualizeStateGraph" value="false"/>

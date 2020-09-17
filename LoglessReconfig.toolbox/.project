@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>MongoReplReconfig</name>
+	<name>LoglessReconfig</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -16,9 +16,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>MongoReplReconfig.tla</name>
+			<name>LoglessReconfig.tla</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/MongoReplReconfig.tla</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/LoglessReconfig.tla</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

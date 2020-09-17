@@ -52,7 +52,7 @@
     <intAttribute key="modelVersion" value="20191005"/>
     <intAttribute key="numberOfWorkers" value="2"/>
     <stringAttribute key="result.mail.address" value=""/>
-    <stringAttribute key="specName" value="MongoReplReconfig"/>
+    <stringAttribute key="specName" value="LoglessReconfig"/>
     <stringAttribute key="tlcResourcesProfile" value="local custom"/>
     <listAttribute key="traceExploreExpressions">
         <listEntry value="1ActiveConfigs"/>

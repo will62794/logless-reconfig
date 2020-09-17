@@ -1,4 +1,4 @@
------------------------------ MODULE MongoReplReconfig -----------------------------
+----------------------------- MODULE LoglessReconfig -----------------------------
 (***************************************************************************)
 (*                                                                         *)
 (* A specification of the logless, dynamic reconfiguration protocol in     *)
