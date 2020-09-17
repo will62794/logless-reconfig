@@ -12,7 +12,7 @@
     <stringAttribute key="distributedTLC" value="off"/>
     <stringAttribute key="distributedTLCVMArgs" value=""/>
     <intAttribute key="fpBits" value="1"/>
-    <intAttribute key="fpIndex" value="88"/>
+    <intAttribute key="fpIndex" value="0"/>
     <booleanAttribute key="fpIndexRandom" value="true"/>
     <intAttribute key="maxHeapSize" value="25"/>
     <intAttribute key="maxSetSize" value="1000000"/>
@@ -28,7 +28,6 @@
         <listEntry value="1ElectionSafety"/>
         <listEntry value="0AtMostOneActiveConfig"/>
         <listEntry value="0TypeOK"/>
-        <listEntry value="1ConfigMatching"/>
     </listAttribute>
     <listAttribute key="modelCorrectnessProperties">
         <listEntry value="0ElectionSafetyTemporal"/>
@@ -42,7 +41,7 @@
         <listEntry value="MaxConfigVersion;;3;0;0"/>
         <listEntry value="Secondary;;Secondary;1;0"/>
         <listEntry value="Nil;;Nil;1;0"/>
-        <listEntry value="Server;;{n1, n2, n3, n4};1;1"/>
+        <listEntry value="Server;;{n1, n2};1;1"/>
         <listEntry value="MaxLogLen;;0;0;0"/>
     </listAttribute>
     <stringAttribute key="modelParameterContraint" value="StateConstraint"/>
@@ -61,6 +60,6 @@
     <intAttribute key="simuSeed" value="-1"/>
     <stringAttribute key="specName" value="LoglessReconfig"/>
     <stringAttribute key="tlcResourcesProfile" value="local custom"/>
-    <stringAttribute key="view" value="realVars"/>
+    <stringAttribute key="view" value=""/>
     <booleanAttribute key="visualizeStateGraph" value="false"/>
 </launchConfiguration>
