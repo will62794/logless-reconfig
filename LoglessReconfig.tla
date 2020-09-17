@@ -68,28 +68,14 @@ vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTe
 
 -------------------------------------------------------------------------------------------
 
-SeqOf(set, n) == 
-  (***************************************************************************)
-  (* All sequences up to length n with all elements in set.  Includes empty  *)
-  (* sequence.                                                               *)
-  (***************************************************************************)
-  UNION {[1..m -> set] : m \in 0..n}
+ElectionType == [ leader : Server, 
+                  term   : Nat, 
+                  voters : SUBSET Server,
+                  config : SUBSET Server,
+                  configVersion : Nat,
+                  configTerm    : Nat]
 
-BoundedSeq(S, n) ==
-  (***************************************************************************)
-  (* An alias for SeqOf to make the connection to Sequences!Seq, which is    *)
-  (* the unbounded version of BoundedSeq.                                    *)
-  (***************************************************************************)
-  SeqOf(S, n)
-
-ElectionRecType == [ leader : Server, 
-                     term   : Nat, 
-                     voters : SUBSET Server,
-                     config : SUBSET Server,
-                     configVersion : Nat,
-                     configTerm    : Nat]
-
-ElectionType == SUBSET ElectionRecType
+ElectionsType == SUBSET ElectionType
 
 ReconfigType == [ configOld : SUBSET Server,
                   configOldVersion : Nat,
@@ -597,7 +583,7 @@ TypeOKRandom ==
     /\ configTerm \in RandomSubset(4, [Server -> Nat])
     /\ immediatelyCommitted = {}
 \*    /\ elections = {}
-    /\ elections \in RandomSetOfSubsets(12, 4, ElectionRecType)
+    /\ elections \in RandomSetOfSubsets(12, 4, ElectionType)
     \* /\ reconfigs \in RandomSubset(3, ReconfigsType)
     /\ reconfigs \in RandomSetOfSubsets(12, 4, ReconfigType)
     
