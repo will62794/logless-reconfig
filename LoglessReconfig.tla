@@ -68,6 +68,10 @@ vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTe
 
 -------------------------------------------------------------------------------------------
 
+(***************************************************************************)
+(* Define type correctness.                                                *)
+(***************************************************************************)
+
 ElectionType == [ leader : Server, 
                   term   : Nat, 
                   voters : SUBSET Server,
@@ -86,16 +90,15 @@ ReconfigType == [ configOld : SUBSET Server,
 
 ReconfigsType == SUBSET ReconfigType
 
-\* TODO: Add TypeOK invariant.
 TypeOK == 
     /\ currentTerm \in [Server -> Nat]
     /\ state \in [Server -> {Secondary, Primary}]
-    /\ log \in [Server -> Seq([term  : Nat])]
+    /\ log \in [Server -> Seq([term : Nat])]
     /\ config \in [Server -> SUBSET Server]
     /\ configVersion \in [Server -> Nat]
     /\ configTerm \in [Server -> Nat]
     /\ immediatelyCommitted \in (SUBSET [index : Nat, term : Nat, configVersion: Nat])
-    /\ elections \in ElectionType
+    /\ elections \in ElectionsType
     /\ reconfigs \in ReconfigsType
 
 -------------------------------------------------------------------------------------------

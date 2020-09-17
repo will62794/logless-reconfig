@@ -50,7 +50,7 @@
         <listEntry value="Seq;S:;BoundedSeq(S, 4);0;0"/>
     </listAttribute>
     <stringAttribute key="modelParameterModelValues" value="{}"/>
-    <stringAttribute key="modelParameterNewDefinitions" value=""/>
+    <stringAttribute key="modelParameterNewDefinitions" value="realVarsView == &lt;&lt;serverVars, log, immediatelyCommitted, config, configVersion, configTerm&gt;&gt;&#10;&#10;SeqOf(set, n) == &#10;  (***************************************************************************)&#10;  (* All sequences up to length n with all elements in set.  Includes empty  *)&#10;  (* sequence.                                                               *)&#10;  (***************************************************************************)&#10;  UNION {[1..m -&gt; set] : m \in 0..n}&#10;&#10;BoundedSeq(S, n) ==&#10;  (***************************************************************************)&#10;  (* An alias for SeqOf to make the connection to Sequences!Seq, which is    *)&#10;  (* the unbounded version of BoundedSeq.                                    *)&#10;  (***************************************************************************)&#10;  SeqOf(S, n)"/>
     <intAttribute key="modelVersion" value="20191005"/>
     <intAttribute key="numberOfWorkers" value="2"/>
     <booleanAttribute key="recover" value="false"/>
