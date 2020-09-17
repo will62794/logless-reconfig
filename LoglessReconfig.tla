@@ -1,8 +1,8 @@
 ----------------------------- MODULE LoglessReconfig -----------------------------
 (***************************************************************************)
 (*                                                                         *)
-(* A specification of the logless, dynamic reconfiguration protocol in     *)
-(* MongoDB replication.                                                    *)
+(* Specification of a logless, dynamic reconfiguration protocol for Raft   *)
+(* based replication systems.                                              *)
 (*                                                                         *)
 (***************************************************************************)
 
