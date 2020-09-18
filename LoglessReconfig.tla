@@ -434,9 +434,7 @@ NoTwoPrimariesInSameTerm == ~TwoPrimariesInSameTerm
 ElectionSafety == NoTwoPrimariesInSameTerm
 
 ElectionSafetyHist == 
-    ~\E e1, e2 \in elections : 
-        /\ e1.term = e2.term
-        /\ e1.leader # e2.leader
+    \A e1, e2 \in elections : (e1.term = e2.term) => (e1.leader = e2.leader)
 
 ConfigVersionIncreasesWithTerm ==
     ~(\E i, j \in Server :
