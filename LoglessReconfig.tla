@@ -342,13 +342,13 @@ Reconfig(i) ==
            \* are globally unique.
             LET newConfigVersion == configVersion[i] + 1 IN
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
-        /\ reconfigs' = reconfigs \cup 
+        /\ reconfigs' = reconfigs (*\cup 
                         {[ configOld |-> config[i],
                            configOldVersion |-> configVersion[i],
                            configOldTerm |-> configTerm[i],
                            configNew |-> newConfig,
                            configNewVersion |-> configVersion[i] + 1,
-                           configNewTerm |-> currentTerm[i]]}
+                           configNewTerm |-> currentTerm[i]]}*)
         /\ UNCHANGED <<serverVars, log, immediatelyCommitted, elections>>
 
 (***************************************************************************)
@@ -432,6 +432,11 @@ TwoPrimariesInSameTerm ==
 
 NoTwoPrimariesInSameTerm == ~TwoPrimariesInSameTerm
 ElectionSafety == NoTwoPrimariesInSameTerm
+
+ElectionSafetyHist == 
+    ~\E e1, e2 \in elections : 
+        /\ e1.term = e2.term
+        /\ e1.leader # e2.leader
 
 ConfigVersionIncreasesWithTerm ==
     ~(\E i, j \in Server :
