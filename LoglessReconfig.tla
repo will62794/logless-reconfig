@@ -554,7 +554,7 @@ LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 -------------------------------------------------------------------------------------------
 
 (***************************************************************************)
-(* Proving an inductive invariant.                                         *)
+(* Proving an inductive invariant.  (experimental)                         *)
 (***************************************************************************)
 
 \* The argument to this operator is unused.
