@@ -166,6 +166,9 @@ ConfigQuorumCheck(self, s) == /\ configVersion[self] = configVersion[s]
 \* Helper for saving reconfigs into a history variable.
 RecordReconfig(rc) == reconfigs \cup {rc} 
 
+\* Helper for saving elections into a history variable.
+RecordElection(e) == elections \cup {e} 
+
 -------------------------------------------------------------------------------------------
 
 (***************************************************************************)
@@ -276,10 +279,8 @@ BecomeLeader(i) ==
         /\ LET electionRec == [ leader |-> i, 
                                 term   |-> newTerm, 
                                 voters |-> voteQuorum,
-                                config |-> config[i],
-                                configVersion |-> configVersion[i],
-                                configTerm    |-> configTerm[i]] IN
-           elections' = elections \cup {electionRec}
+                                config |-> [m |-> config[i], v |-> configVersion[i], t |-> configTerm[i]]] IN
+           elections' = RecordElection(electionRec)
         /\ LET reconfigRec == [ old |-> [m |-> config[i], v |-> configVersion[i], t |-> configTerm[i]],
                                 new |-> [m |-> config[i], v |-> configVersion[i], t |-> newTerm]] IN
                reconfigs' = RecordReconfig(reconfigRec) 
@@ -612,7 +613,7 @@ PrimaryHasQuorumInConfigInTermOrGreater ==
 \* you were elected in should have your term or greater.
 PrimaryHasQuorumInElectionConfigInTermOrGreater == 
     \A e \in elections : 
-       (\E voters \in Quorums(e.config) : 
+       (\E voters \in Quorums(e.config.m) : 
          (\A v \in voters : currentTerm[v] >= e.term))
 
 \* If you are a primary, a quorum should have voted for you, so a quorum in your election config should 

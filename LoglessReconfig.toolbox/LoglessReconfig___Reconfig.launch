@@ -12,7 +12,7 @@
     <stringAttribute key="distributedTLC" value="off"/>
     <stringAttribute key="distributedTLCVMArgs" value=""/>
     <intAttribute key="fpBits" value="1"/>
-    <intAttribute key="fpIndex" value="121"/>
+    <intAttribute key="fpIndex" value="113"/>
     <booleanAttribute key="fpIndexRandom" value="true"/>
     <intAttribute key="maxHeapSize" value="25"/>
     <intAttribute key="maxSetSize" value="1000000"/>
@@ -51,6 +51,7 @@
         <listEntry value="Nat;;0..4;0;0"/>
         <listEntry value="Seq;S:;BoundedSeq(S, 4);0;0"/>
         <listEntry value="RecordReconfig;rc:;reconfigs;0;0"/>
+        <listEntry value="RecordElection;e:;elections \cup {[leader |-&gt; e.leader, term |-&gt; e.term]};0;0"/>
     </listAttribute>
     <stringAttribute key="modelParameterModelValues" value="{}"/>
     <stringAttribute key="modelParameterNewDefinitions" value="realVarsView == &lt;&lt;serverVars, log, immediatelyCommitted, config, configVersion, configTerm&gt;&gt;&#10;&#10;SeqOf(set, n) == &#10;  (***************************************************************************)&#10;  (* All sequences up to length n with all elements in set.  Includes empty  *)&#10;  (* sequence.                                                               *)&#10;  (***************************************************************************)&#10;  UNION {[1..m -&gt; set] : m \in 0..n}&#10;&#10;BoundedSeq(S, n) ==&#10;  (***************************************************************************)&#10;  (* An alias for SeqOf to make the connection to Sequences!Seq, which is    *)&#10;  (* the unbounded version of BoundedSeq.                                    *)&#10;  (***************************************************************************)&#10;  SeqOf(S, n)"/>
