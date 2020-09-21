@@ -1,11 +1,11 @@
 
 # Logless Dynamic Reconfiguration
 
-Formal specification of logless dynamic reconfiguration for Raft based replication systems.
+This repository includes a TLA+ specification of the logless dynamic reconfiguration protocol for Raft based replication systems, along with configurations for model checking various correctness properties of the protocol.
 
 ## Model Checking 
 
-To run model checking with TLC, it is assumed that the `tla2tools.jar` is installed and accessible on your CLASSPATH. You can download the latest version of the TLA+ tools [here](https://github.com/tlaplus/tlaplus/releases).
+To run model checking with TLC, it is assumed that the `tla2tools.jar` is installed and accessible on your `CLASSPATH`. You can download the latest version of the TLA+ tools [here](https://github.com/tlaplus/tlaplus/releases).
 
 To check the `ElectionSafety` property:
 ```
