@@ -81,12 +81,9 @@ ElectionType == [ leader : Server,
 
 ElectionsType == SUBSET ElectionType
 
-ReconfigType == [ configOld : SUBSET Server,
-                  configOldVersion : Nat,
-                  configOldTerm : Nat,
-                  configNew : SUBSET Server,
-                  configNewVersion : Nat,
-                  configNewTerm : Nat]
+\* Store a pair of configs as (members,version term) records.
+ReconfigType == [ old : [m : SUBSET Server, v : Nat, t : Nat],
+                  new : [m : SUBSET Server, v : Nat, t : Nat]]
 
 ReconfigsType == SUBSET ReconfigType
 
@@ -165,6 +162,9 @@ CanVoteFor(i, j, term) ==
 \* A quorum of nodes have received this config.
 ConfigQuorumCheck(self, s) == /\ configVersion[self] = configVersion[s]
                               /\ configTerm[self] = configTerm[s]
+
+\* Helper for saving reconfigs into a history variable.
+RecordReconfig(rc) == reconfigs \cup {rc} 
 
 -------------------------------------------------------------------------------------------
 
@@ -280,13 +280,9 @@ BecomeLeader(i) ==
                                 configVersion |-> configVersion[i],
                                 configTerm    |-> configTerm[i]] IN
            elections' = elections \cup {electionRec}
-        /\ reconfigs' = reconfigs \cup 
-                        {[ configOld |-> config[i],
-                          configOldVersion |-> configVersion[i],
-                          configOldTerm |-> configTerm[i],
-                          configNew |-> config[i],
-                          configNewVersion |-> configVersion[i],
-                          configNewTerm |-> newTerm]}
+        /\ LET reconfigRec == [ old |-> [m |-> config[i], v |-> configVersion[i], t |-> configTerm[i]],
+                                new |-> [m |-> config[i], v |-> configVersion[i], t |-> newTerm]] IN
+               reconfigs' = RecordReconfig(reconfigRec) 
         /\ UNCHANGED <<log, config, configVersion, immediatelyCommitted>>
 
 (***************************************************************************)
@@ -342,13 +338,9 @@ Reconfig(i) ==
            \* are globally unique.
             LET newConfigVersion == configVersion[i] + 1 IN
             configVersion' = [configVersion EXCEPT ![i] = newConfigVersion]
-        /\ reconfigs' = reconfigs (*\cup 
-                        {[ configOld |-> config[i],
-                           configOldVersion |-> configVersion[i],
-                           configOldTerm |-> configTerm[i],
-                           configNew |-> newConfig,
-                           configNewVersion |-> configVersion[i] + 1,
-                           configNewTerm |-> currentTerm[i]]}*)
+        /\ LET reconfigRec == [ old |-> [m |-> config[i], v |-> configVersion[i], t |-> configTerm[i]],
+                                new |-> [m |-> newConfig, v |-> configVersion[i]+1, t |-> currentTerm[i]]] IN
+               reconfigs' = RecordReconfig(reconfigRec)
         /\ UNCHANGED <<serverVars, log, immediatelyCommitted, elections>>
 
 (***************************************************************************)
@@ -400,9 +392,9 @@ NConcurrentConfigs(n) ==
 UniqueParentConfig == 
     ~\E rc1, rc2 \in reconfigs:
         \* New configs are both the same.
-        /\ <<rc1.configNewVersion, rc1.configNewTerm>> = <<rc2.configNewVersion, rc2.configNewTerm>>
+        /\ <<rc1.new.v, rc1.new.t>> = <<rc2.new.v, rc2.new.t>>
         \* Different old configs.
-        /\ <<rc1.configOldVersion, rc1.configOldTerm>> # <<rc2.configOldVersion, rc2.configOldTerm>>
+        /\ <<rc1.old.v, rc1.old.t>> # <<rc2.old.v, rc2.old.t>>
 
 -------------------------------------------------------------------------------------------
 
@@ -663,9 +655,9 @@ ConfigExistenceImpliesReconfigOccurred ==
     \A s \in Server :
         \* Has a config created by a reconfig.
         \/ (\E rc \in reconfigs : 
-             /\ rc.configNew = config[s]
-             /\ rc.configNewVersion = configVersion[s]
-             /\ rc.configNewTerm = configTerm[s])
+             /\ rc.new.m = config[s]
+             /\ rc.new.v = configVersion[s]
+             /\ rc.new.t = configTerm[s])
         \* Has the initial config.
         \/ /\ configVersion[s] = 0
            /\ configTerm[s] = 0      
@@ -674,20 +666,20 @@ ConfigExistenceImpliesReconfigOccurred ==
 \* TODO.
 ReconfigRequiresParentWasCommitted == 
     \A rc \in reconfigs:
-    \E configQuorum \in Quorums(rc.configOld) :
+    \E configQuorum \in Quorums(rc.old.m) :
     \* Config should have been committed by a quorum,
     \* so this quorum should have this config or a newer one. 
     \A s \in configQuorum :
         NewerOrEqualConfig(<<configVersion[s], configTerm[s]>>,
-                           <<rc.configOldVersion, rc.configOldTerm>>)
+                           <<rc.old.v, rc.old.t>>)
                            
 \* Reconfigs that are not step up reconfigs cannot change config term. 
 NormalReconfigsDoNotChangeConfigTerm == 
     \A rc \in reconfigs : 
-        \/ rc.configNewTerm = rc.configOldTerm
+        \/ rc.new.t = rc.old.t
         \* Step up reconfigs are the only case where version is not incremented.
-        \/ /\ rc.configNewTerm > rc.configNewTerm
-           /\ rc.configNewVersion = rc.configOldVersion
+        \/ /\ rc.new.t > rc.new.t
+           /\ rc.new.v = rc.old.v
 
 \* If all nodes are in the initial config <<0, 0>>, then they should all have the same config i.e.
 \* we always start out in a static config.
