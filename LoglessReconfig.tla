@@ -548,8 +548,6 @@ StateConstraint == \A s \in Server :
                     /\ Len(log[s]) <= MaxLogLen
                     /\ configVersion[s] <= MaxConfigVersion
 
-ServerSymmetry == Permutations(Server)
-
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 LogLenInvariant ==  \A s \in Server  : Len(log[s]) <= MaxLogLen
 
