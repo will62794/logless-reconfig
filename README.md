@@ -1,7 +1,7 @@
 
 # Logless Dynamic Reconfiguration
 
-This repository includes a TLA+ specification of the logless dynamic reconfiguration protocol for Raft based replication systems, along with configurations for model checking various correctness properties of the protocol.
+This repository includes a TLA+ specification of the logless dynamic reconfiguration protocol for Raft based replication systems, along with models for checking various correctness properties of the protocol with TLC.
 
 ## Model Checking 
 
