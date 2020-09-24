@@ -2,7 +2,7 @@
 <launchConfiguration type="org.lamport.tla.toolbox.tool.tlc.modelCheck">
     <stringAttribute key="TLCCmdLineParameters" value=""/>
     <intAttribute key="collectCoverage" value="0"/>
-    <stringAttribute key="configurationName" value="Reconfig"/>
+    <stringAttribute key="configurationName" value="ReconfigProving"/>
     <booleanAttribute key="deferLiveness" value="false"/>
     <intAttribute key="dfidDepth" value="100"/>
     <booleanAttribute key="dfidMode" value="false"/>
@@ -12,7 +12,7 @@
     <stringAttribute key="distributedTLC" value="off"/>
     <stringAttribute key="distributedTLCVMArgs" value=""/>
     <intAttribute key="fpBits" value="1"/>
-    <intAttribute key="fpIndex" value="113"/>
+    <intAttribute key="fpIndex" value="118"/>
     <booleanAttribute key="fpIndexRandom" value="true"/>
     <intAttribute key="maxHeapSize" value="25"/>
     <intAttribute key="maxSetSize" value="1000000"/>
@@ -22,7 +22,7 @@
     <stringAttribute key="modelBehaviorSpec" value="Spec"/>
     <intAttribute key="modelBehaviorSpecType" value="1"/>
     <stringAttribute key="modelBehaviorVars" value="elections, reconfigs, log, state, immediatelyCommitted, config, currentTerm, configVersion, configTerm"/>
-    <stringAttribute key="modelComments" value=""/>
+    <stringAttribute key="modelComments" value="For verifying intermediate lemmas and properties to gain confidence in various aspects of formal proof reasoning."/>
     <booleanAttribute key="modelCorrectnessCheckDeadlock" value="false"/>
     <listAttribute key="modelCorrectnessInvariants">
         <listEntry value="0ElectionSafety"/>
@@ -39,18 +39,18 @@
     <stringAttribute key="modelParameterActionConstraint" value=""/>
     <listAttribute key="modelParameterConstants">
         <listEntry value="Primary;;Primary;1;0"/>
-        <listEntry value="MaxTerm;;3;0;0"/>
+        <listEntry value="MaxTerm;;2;0;0"/>
         <listEntry value="MaxConfigVersion;;3;0;0"/>
         <listEntry value="Secondary;;Secondary;1;0"/>
         <listEntry value="Nil;;Nil;1;0"/>
-        <listEntry value="Server;;{n1, n2, n3};1;1"/>
+        <listEntry value="Server;;{n1, n2, n3, n4};1;1"/>
         <listEntry value="MaxLogLen;;0;0;0"/>
     </listAttribute>
     <stringAttribute key="modelParameterContraint" value="StateConstraint"/>
     <listAttribute key="modelParameterDefinitions">
         <listEntry value="Nat;;0..4;0;0"/>
         <listEntry value="Seq;S:;BoundedSeq(S, 4);0;0"/>
-        <listEntry value="RecordReconfig;rc:;reconfigs;0;0"/>
+        <listEntry value="RecordReconfig;rc:;reconfigs \cup {rc};0;0"/>
         <listEntry value="RecordElection;e:;elections \cup {[leader |-&gt; e.leader, term |-&gt; e.term]};0;0"/>
     </listAttribute>
     <stringAttribute key="modelParameterModelValues" value="{}"/>

@@ -1,6 +1,6 @@
 import graphviz
 
-f = open("LoglessReconfig.toolbox/Reconfig/graphs.txt")
+f = open("LoglessReconfig.toolbox/ReconfigPrintGraphs/graphs.txt")
 items = f.read().splitlines()
 
 items = items[100:]

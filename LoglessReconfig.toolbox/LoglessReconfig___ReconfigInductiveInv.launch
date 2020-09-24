@@ -12,7 +12,7 @@
     <stringAttribute key="modelBehaviorSpec" value="Spec"/>
     <intAttribute key="modelBehaviorSpecType" value="2"/>
     <stringAttribute key="modelBehaviorVars" value="elections, reconfigs, log, state, immediatelyCommitted, config, currentTerm, configVersion, configTerm"/>
-    <stringAttribute key="modelComments" value=""/>
+    <stringAttribute key="modelComments" value="Exploring checking an inductive invariant for the protocol with TLC."/>
     <booleanAttribute key="modelCorrectnessCheckDeadlock" value="true"/>
     <listAttribute key="modelCorrectnessInvariants">
         <listEntry value="0IndInv"/>
