@@ -1,43 +1,67 @@
-import graphviz
+import graphviz, sys
 
-f = open("LoglessReconfig.toolbox/ReconfigPrintGraphs/graphs.txt")
-items = f.read().splitlines()
+filepath = sys.argv[1]
+f = open(filepath)
+lines = f.read().splitlines()
 
-items = items[100:]
+# lines = lines[200:-90]
+lines = lines[0:]
+print lines
 dot = graphviz.Digraph(comment='The Round Table')
-dot.graph_attr['rankdir'] = 'LR'
+dot.graph_attr['rankdir'] = 'TB'
 
-reconfig_graphs = set()
+reconfig_graphs = list()
 
 # Build the unique reconfig graphs.
-for k,line in enumerate(items):
-    line = line.strip().replace("{", "").replace("}", "")
-    edges = line.replace("\"", "").split(",")
-    edges = tuple([e.strip() for e in edges])
-    # print edges
-    reconfig_graphs.add(edges)
+last_edges = None
+reconfig_graphs.append(None)
+for k,line in enumerate(lines):
+    if not (line[0]=="{" and line[-1]=="}"):
+        print "Skipping line: ", line
+        continue
+    # print line
+    if line == "{}":
+        if len(reconfig_graphs)>0 and reconfig_graphs[-1]: 
+            reconfig_graphs.append(None)
+    else:
+        print "raw,",line
+        cleaned_line = line.strip().replace("{", "").replace("}", "").replace("\"", "")
+        edges = cleaned_line.split(",")
+        print "cleaned,",cleaned_line
+        edges = tuple([e.strip() for e in edges])
+        def parse_edge(e):
+            nodes = e.split("->")
+            return (nodes[0].strip(), nodes[1].strip())
+        edges = map(parse_edge, edges)
+        # print edges
+        if last_edges and last_edges != edges:
+            reconfig_graphs.append(edges)
+        last_edges = edges
+reconfig_graphs.append(None)
 
+# reconfig_graphs = sorted(reconfig_graphs, key = lambda rc : len(rc), reverse=True)
+# reconfig_graphs = reversed(reconfig_graphs)
+
+print "*** Generating reconfig Digraph ***"
+subgraphid = 0
+curr_subgraph = graphviz.Digraph(comment='cluster')
+curr_subgraph.graph_attr['rankdir'] = 'LR'
 for k,rc in enumerate(reconfig_graphs):
-    for edge in rc:
-        print e
-        n1, n2 = (edge.split("->")[0].strip(), edge.split("->")[1].strip())
-        dot.node(str(k)+n1, label=n1)
-        dot.node(str(k)+n2, label=n2)
-        dot.edge(str(k)+n1, str(k)+n2)
-    # dot += "}"
-    # print k, dot
+    if rc is None:
+        # delineate new graph.
+        curr_subgraph.attr('node', color='red')
+        curr_subgraph.node("delimiter" + str(k), label="delimiter" + str(k))
+        # start a new subgraph.
+        subgraphid += 1
+        dot.subgraph(curr_subgraph)
+        curr_subgraph = graphviz.Digraph(comment='cluster' + str(subgraphid))
+    else:
+        print rc
+        for edge in rc:
+            n1, n2 = (edge)
+            curr_subgraph.node(str(k)+n1, label=n1)
+            curr_subgraph.node(str(k)+n2, label=n2)
+            curr_subgraph.edge(str(k)+n1, str(k)+n2)
 
 # dot.render('graphs/config-graph-' + str(k) + '.gv', view=False)
 dot.render('graphs/config-graph-FULL' + '.gv', view=False)
-
-
-
-
-    # i.strip().replace("<<", "").replace(">>", "").replace("{", "").replace("}", "")
-    # elems = [e for e in i.split(",")]
-    # elems = [e.replace("{", "").replace("}", "").strip() for e in elems]
-    # config = elems[0]
-    # configVersionOld  = elems[1]
-    # configTermOld = elems[2]
-    # print (config, configVersionOld, configTermOld)
-
