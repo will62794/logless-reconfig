@@ -209,6 +209,7 @@ UpdateTerms(i, j) ==
 
 UpdateTermsOnNodes(i, j) == /\ UpdateTerms(i, j)
                             /\ UNCHANGED <<log, immediatelyCommitted, configVars, elections, reconfigs>>
+
 (***************************************************************************)
 (* [ACTION]                                                                *)
 (*                                                                         *)
@@ -316,9 +317,6 @@ ClientRequest(i) ==
        /\ log' = [log EXCEPT ![i] = newLog]
     /\ UNCHANGED <<serverVars, immediatelyCommitted, configVars, elections, reconfigs>>
 
-\* Was an op was committed in the current config of node i.
-\* OpCommittedInConfig(i) == ENABLED CommitEntry(i)
-
 \* TODO: Fill in this definition correctly.
 OpCommittedInConfig(i) == TRUE
 
@@ -382,29 +380,11 @@ SendConfig(i, j) ==
 -------------------------------------------------------------------------------------------
 
 (***************************************************************************)
-(* Miscellaneous properties for exploring/understanding the spec.          *)
+(* Auxiliary definitions and properties for analyzing correctness.         *)
 (***************************************************************************)
 
-\* Are there two primaries in the current state.
-TwoPrimaries == \E s, t \in Server : s # t /\ state[s] = Primary /\ state[s] = state[t]
-
-NPrimaries(n) ==
-    \E prims \in SUBSET Server :
-        /\ \A s \in prims : state[s] = Primary
-        /\ Cardinality(prims) = n
-
-\* Are there 'n' concurrent, differing configs active on some set of nodes in
-\* the current state.
-NConcurrentConfigs(n) ==
-    \E S \in SUBSET Server :
-        /\ Cardinality(S) = n
-        /\ \A x, y \in S : x # y => config[x] # config[y]
-
-2ConcurrentConfigs == ~NConcurrentConfigs(2)
-3ConcurrentConfigs == ~NConcurrentConfigs(3)
-4ConcurrentConfigs == ~NConcurrentConfigs(4)
-5ConcurrentConfigs == ~NConcurrentConfigs(5)
-
+\* Do all quorums of set x and set y share at least one overlapping node.
+QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
 
 \* Can one config ever have more than one parent?
 UniqueParentConfig == 
@@ -422,29 +402,6 @@ ChildConfig(c1, c2) ==
 
 ChildrenConfigs(c) == {child \in AllHistoryConfigs : ChildConfig(c, child)}
 
-\* There cannot be more than 1 reconfig at a branch point that is the result of
-\* a Reconfig action (as opposed to a BecomeLeader action, which only increases term).   
-AtMostOneReconfigAtBranchPoint == 
-    \A c \in AllHistoryConfigs : 
-    (\E rc \in reconfigs : (rc.old = c)) =>  
-     Cardinality({x \in ChildrenConfigs(c) : x.v > c.v}) <= 1
-
-
-
-\*\* Children of a config c that are committed.
-\*CommittedChildren(c) == {child \in ChildrenConfigs(c) : Committed(child)}
-\*
-\*AtMostOneBranchCommits == 
-\*    \A c \in AllHistoryConfigs : Cardinality(CommittedChildren(c)) <= 1
-\*
-\*BranchReconfigs == {rcBranch \in SUBSET reconfigs : \A rc1, rc2 \in rcBranch : rc1.old = rc2.old}        
-\*
-\*ConfigVersionsMonotonic == 
-\*    [][\A s \in Server : configVersion'[s] >= configVersion[s]]_vars
-
-
-\**********************************************************************************
-
 \* The set of all configs in the history that have more than one child.
 BranchPointConfigs == 
     {c \in AllHistoryConfigs : Cardinality(ChildrenConfigs(c)) > 1}
@@ -458,7 +415,7 @@ Paths == {p \in Seq(AllHistoryConfigs) :
 Path(ci, cj) == \E p \in Paths : p[1] = ci /\ p[Len(p)] = cj
 
 \* Is config ci an ancestor of cj.
- (ci, cj) == Path(ci, cj)
+Ancestor(ci, cj) == Path(ci, cj)
 
 \* Is config ci a descendant of cj.
 Descendant(ci, cj) == Path(cj, ci)
@@ -507,12 +464,6 @@ AtMostOneCommittedConfigPerBranch ==
          /\ Committed(child1) 
          /\ Committed(child2)) => ~Sibling(child1, child2)
 
--------------------------------------------------------------------------------------------
-
-(***************************************************************************)
-(* Correctness Properties                                                  *)
-(***************************************************************************)
-
 \* The set of all log entries in a given log i.e. the set of all <<index, term>>
 \* pairs that appear in the log.
 LogEntries(xlog) == {<<i, xlog[i].term>> : i \in DOMAIN xlog}
@@ -524,6 +475,15 @@ EntryInLog(xlog, index, term) == <<index, term>> \in LogEntries(xlog)
 IsPrefix(xlog, ylog) ==
     /\ Len(xlog) <= Len(ylog)
     /\ xlog = SubSeq(ylog, 1, Len(xlog))
+
+\* At any time, some node can always become a leader.
+ElectableNodeExists == \E s \in Server : ENABLED BecomeLeader(s)
+
+-------------------------------------------------------------------------------------------
+
+(***************************************************************************)
+(* Safety Properties                                                       *)
+(***************************************************************************)
 
 \* There should be at most one leader per term.
 TwoPrimariesInSameTerm ==
@@ -539,13 +499,6 @@ ElectionSafety == NoTwoPrimariesInSameTerm
 ElectionSafetyHist == 
     \A e1, e2 \in elections : (e1.term = e2.term) => (e1.leader = e2.leader)
 
-ConfigVersionIncreasesWithTerm ==
-    ~(\E i, j \in Server :
-        /\ i # j
-        /\ configVersion[i] > configVersion[j]
-        /\ configTerm[i] < configTerm[j]
-    )
-
 \* Only uncommitted entries are allowed to be deleted from logs.
 RollbackCommitted == \E s \in Server :
                      \E e \in immediatelyCommitted :
@@ -555,34 +508,6 @@ RollbackCommitted == \E s \in Server :
 
 NeverRollbackCommitted == [][~RollbackCommitted]_vars
 
-\* At any time, some node can always become a leader.
-ElectableNodeExists == \E s \in Server : ENABLED BecomeLeader(s)
-
-\* The set of all currently installed configs in the system.
-InstalledConfigs == Range(config)
-
-\* Do all quorums of set x and set y share at least one overlapping node.
-QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
-
-\* Is a given config "active" i.e. can it form a quorum to be elected.
-ActiveConfig(i) == 
-    \E Q \in Quorums(config[i]) : 
-    \A s \in Q : 
-        /\ IsNewerConfig(i, s)
-
-\* The set of all active configs.
-\*ActiveConfigs == {c \in InstalledConfigs : ActiveConfig(c)}
-ActiveConfigNodes == {i \in Server : ActiveConfig(i)}
-ActiveConfigs == {config[i] : i \in ActiveConfigNodes}
-
-\* For all installed configs, do their quorums overlap.
-InstalledConfigsOverlap == \A x,y \in InstalledConfigs : QuorumsOverlap(x, y)
-
-\* For all active configs, do their quorums overlap.
-ActiveConfigsOverlap == \A x,y \in ActiveConfigs : QuorumsOverlap(x, y)
-
-\* Property asserting that there is never more than 1 active config at a time.
-AtMostOneActiveConfig == Cardinality(ActiveConfigs) <= 1
 
 (***************************************************************************)
 (* Liveness properties                                                     *)
