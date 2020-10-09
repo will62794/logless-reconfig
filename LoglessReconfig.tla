@@ -446,12 +446,11 @@ Deactivated(c) ==
     \E s \in Q : 
         NewerConfig(<<configVersion[s],configTerm[s]>>, <<c.v,c.t>>)
 
-\* An election cannot succeed in term T in a config that is a descendant of another config that
-\* already completed an election in term T.
+\* If an election occurs in term T in config C, no descendant of C can host a
+\* successful election in term T.
 SinglePathElectionSafety == 
     \A e1, e2 \in elections : 
-        Ancestor(e1.config, e2.config) => 
-        ((e1.term = e2.term) => (e1.leader = e2.leader))
+        Ancestor(e1.config, e2.config) => (e1.term # e2.term)
         
 \* Once a config on a branch has committed, all sibling branhes are deactivated
 \* and new sibling branches cannot be created.
