@@ -446,12 +446,12 @@ Deactivated(c) ==
     \E s \in Q : 
         NewerConfig(<<configVersion[s],configTerm[s]>>, <<c.v,c.t>>)
 
-\* Two primaries cannot be elected in the same term if one of their configs
-\* is an ancestor of the other.
+\* An election cannot succeed in term T in a config that is a descendant of another config that
+\* already completed an election in term T.
 SinglePathElectionSafety == 
-    \A e1, e2 \in elections :
-        (/\ e1.term = e2.term
-         /\ Ancestor(e1.config, e2.config)) => e1.leader # e2.leader
+    \A e1, e2 \in elections : 
+        Ancestor(e1.config, e2.config) => 
+        ((e1.term = e2.term) => (e1.leader = e2.leader))
         
 \* Once a config on a branch has committed, all sibling branhes are deactivated
 \* and new sibling branches cannot be created.
