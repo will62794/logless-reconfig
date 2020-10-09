@@ -490,19 +490,9 @@ ElectableNodeExists == \E s \in Server : ENABLED BecomeLeader(s)
 (* Safety Properties                                                       *)
 (***************************************************************************)
 
-\* There should be at most one leader per term.
-TwoPrimariesInSameTerm ==
-    \E i, j \in Server :
-        /\ i # j
-        /\ currentTerm[i] = currentTerm[j]
-        /\ state[i] = Primary
-        /\ state[j] = Primary
-
-NoTwoPrimariesInSameTerm == ~TwoPrimariesInSameTerm
-ElectionSafety == NoTwoPrimariesInSameTerm
-
-ElectionSafetyHist == 
-    \A e1, e2 \in elections : (e1.term = e2.term) => (e1.leader = e2.leader)
+ElectionSafety == 
+    \A e1, e2 \in elections : 
+        (e1.term = e2.term) => (e1.leader = e2.leader)
 
 \* Only uncommitted entries are allowed to be deleted from logs.
 RollbackCommitted == \E s \in Server :
