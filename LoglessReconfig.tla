@@ -160,8 +160,14 @@ CanVoteFor(i, j, term) ==
     /\ logOk
     
 \* A quorum of nodes have received this config.
-ConfigQuorumCheck(self, s) == /\ configVersion[self] = configVersion[s]
-                              /\ configTerm[self] = configTerm[s]
+\*ConfigQuorumCheck(self, s) == /\ configVersion[self] = configVersion[s]
+\*                              /\ configTerm[self] = configTerm[s]
+
+ConfigQuorumCheck(self, s) == 
+    \* Equal configs.
+    \/ (/\ configVersion[self] = configVersion[s]
+        /\ configTerm[self] = configTerm[s])
+    \/ IsNewerConfig(s, self)
 
 \* Helper for saving reconfigs into a history variable.
 RecordReconfig(rc) == reconfigs \cup {rc} 
