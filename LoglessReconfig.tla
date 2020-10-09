@@ -446,6 +446,13 @@ Deactivated(c) ==
     \E s \in Q : 
         NewerConfig(<<configVersion[s],configTerm[s]>>, <<c.v,c.t>>)
 
+\* Two primaries cannot be elected in the same term if one of their configs
+\* is an ancestor of the other.
+SinglePathElectionSafety == 
+    \A e1, e2 \in elections :
+        (/\ e1.term = e2.term
+         /\ Ancestor(e1.config, e2.config)) => e1.leader # e2.leader
+        
 \* Once a config on a branch has committed, all sibling branhes are deactivated
 \* and new sibling branches cannot be created.
 CommittedBranchDeactivatesSiblings == 
@@ -453,16 +460,14 @@ CommittedBranchDeactivatesSiblings ==
         Committed(c) => (\A s \in Siblings(c) : Deactivated(s))
    
 \* At any branch point, at most one branch can contain a committed config.
-\* TODO.
 AtMostOneCommittedConfigPerBranch == 
-    \A b \in BranchPointConfigs :
-    \A child1, child2 \in AllHistoryConfigs :
-        \* If two descendants of the branch point are both committed, then they 
+    \A b, ci, cj \in AllHistoryConfigs :
+        \* If a config 'b' has two descendants that are both committed, then they 
         \* must be on the same branch.
-        (/\ Descendant(b, child1) 
-         /\ Descendant(b, child2)
-         /\ Committed(child1) 
-         /\ Committed(child2)) => ~Sibling(child1, child2)
+        (/\ Descendant(b, ci) 
+         /\ Descendant(b, cj)
+         /\ Committed(ci) 
+         /\ Committed(cj)) => ~Sibling(ci, cj)
 
 \* The set of all log entries in a given log i.e. the set of all <<index, term>>
 \* pairs that appear in the log.
