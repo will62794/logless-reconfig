@@ -145,6 +145,17 @@ IsNewerConfig(i, j) ==
     \/ configTerm[i] > configTerm[j]
     \/ /\ configTerm[i] = configTerm[j]
        /\ configVersion[i] >= configVersion[j]
+
+\* Compares two configs given as <<configVersion, configTerm>> tuples.
+NewerConfig(ci, cj) ==
+    \* Compare configTerm first.
+    \/ ci[2] > cj[2] 
+    \* Compare configVersion if terms are equal.
+    \/ /\ ci[2] = cj[2]
+       /\ ci[1] > cj[1]  
+
+\* Compares two configs given as <<configVersion, configTerm>> tuples.
+NewerOrEqualConfig(ci, cj) == NewerConfig(ci, cj) \/ ci = cj
        
 \* Can node 'i' currently cast a vote for node 'j' in term 'term'.
 CanVoteFor(i, j, term) ==
@@ -403,6 +414,99 @@ UniqueParentConfig ==
         \* Different old configs.
         /\ <<rc1.old.v, rc1.old.t>> # <<rc2.old.v, rc2.old.t>>
 
+\* Set of all configs that have ever existed in the history.
+AllHistoryConfigs == UNION { {rc.old, rc.new} : rc \in reconfigs}
+        
+ChildConfig(c1, c2) == 
+    \E rc \in reconfigs : rc = [old |-> c1, new |-> c2]   
+
+ChildrenConfigs(c) == {child \in AllHistoryConfigs : ChildConfig(c, child)}
+
+\* There cannot be more than 1 reconfig at a branch point that is the result of
+\* a Reconfig action (as opposed to a BecomeLeader action, which only increases term).   
+AtMostOneReconfigAtBranchPoint == 
+    \A c \in AllHistoryConfigs : 
+    (\E rc \in reconfigs : (rc.old = c)) =>  
+     Cardinality({x \in ChildrenConfigs(c) : x.v > c.v}) <= 1
+
+
+
+\*\* Children of a config c that are committed.
+\*CommittedChildren(c) == {child \in ChildrenConfigs(c) : Committed(child)}
+\*
+\*AtMostOneBranchCommits == 
+\*    \A c \in AllHistoryConfigs : Cardinality(CommittedChildren(c)) <= 1
+\*
+\*BranchReconfigs == {rcBranch \in SUBSET reconfigs : \A rc1, rc2 \in rcBranch : rc1.old = rc2.old}        
+\*
+\*ConfigVersionsMonotonic == 
+\*    [][\A s \in Server : configVersion'[s] >= configVersion[s]]_vars
+
+
+\**********************************************************************************
+
+\* The set of all configs in the history that have more than one child.
+BranchPointConfigs == 
+    {c \in AllHistoryConfigs : Cardinality(ChildrenConfigs(c)) > 1}
+
+\* Set of all paths in the history graph.
+Paths == {p \in Seq(AllHistoryConfigs) :
+             /\ p # << >>
+             /\ \A i \in 1..(Len(p)-1) : [old |-> p[i], new |-> p[i+1]] \in reconfigs}
+
+\* Is there a path from config ci to cj in the history.
+Path(ci, cj) == \E p \in Paths : p[1] = ci /\ p[Len(p)] = cj
+
+\* Is config ci an ancestor of cj.
+ (ci, cj) == Path(ci, cj)
+
+\* Is config ci a descendant of cj.
+Descendant(ci, cj) == Path(cj, ci)
+
+\* Is config ci a sibling of cj i.e. are they on different branches with a common
+\* ancestor.
+Sibling(ci, cj) == 
+    /\ \E a \in AllHistoryConfigs : Ancestor(a, ci) /\ Ancestor(a, cj)
+    /\ ~Ancestor(ci, cj)
+    /\ ~Ancestor(cj, ci)
+
+Siblings(c) == {cfg \in AllHistoryConfigs : Sibling(cfg, c)}
+
+\* A config C with term T is committed if a quorum of nodes in C have installed 
+\* C or a newer config and every node in the quorum has current term equal to T. 
+Committed(c) == 
+    \E quorum \in Quorums(c.m) : 
+    \A s \in quorum : 
+        /\ NewerOrEqualConfig(<<configVersion[s], configTerm[s]>>,<<c.v,c.t>>)
+        \* The current term of the node's is equal to the term of the primary that
+        \* created the config.
+        /\ currentTerm[s] = c.t
+ 
+\* A config is deactivated if it is prevented from holding elections now or in the future.
+\* That is, no quorum in the config could hold a successful election.
+Deactivated(c) == 
+    \A Q \in Quorums(c.m) : 
+    \E s \in Q : 
+        NewerConfig(<<configVersion[s],configTerm[s]>>, <<c.v,c.t>>)
+
+\* Once a config on a branch has committed, all sibling branhes are deactivated
+\* and new sibling branches cannot be created.
+CommittedBranchDeactivatesSiblings == 
+    \A c \in AllHistoryConfigs : 
+        Committed(c) => (\A s \in Siblings(c) : Deactivated(s))
+   
+\* At any branch point, at most one branch can contain a committed config.
+\* TODO.
+AtMostOneCommittedConfigPerBranch == 
+    \A b \in BranchPointConfigs :
+    \A child1, child2 \in AllHistoryConfigs :
+        \* If two descendants of the branch point are both committed, then they 
+        \* must be on the same branch.
+        (/\ Descendant(b, child1) 
+         /\ Descendant(b, child2)
+         /\ Committed(child1) 
+         /\ Committed(child2)) => ~Sibling(child1, child2)
+
 -------------------------------------------------------------------------------------------
 
 (***************************************************************************)
@@ -460,11 +564,16 @@ InstalledConfigs == Range(config)
 \* Do all quorums of set x and set y share at least one overlapping node.
 QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
 
-\* Is a given config "active" i.e. can it form a quorum.
-ActiveConfig(cfg) == \E Q \in Quorums(cfg) : \A s \in Q : config[s] = cfg
+\* Is a given config "active" i.e. can it form a quorum to be elected.
+ActiveConfig(i) == 
+    \E Q \in Quorums(config[i]) : 
+    \A s \in Q : 
+        /\ IsNewerConfig(i, s)
 
 \* The set of all active configs.
-ActiveConfigs == {c \in InstalledConfigs : ActiveConfig(c)}
+\*ActiveConfigs == {c \in InstalledConfigs : ActiveConfig(c)}
+ActiveConfigNodes == {i \in Server : ActiveConfig(i)}
+ActiveConfigs == {config[i] : i \in ActiveConfigNodes}
 
 \* For all installed configs, do their quorums overlap.
 InstalledConfigsOverlap == \A x,y \in InstalledConfigs : QuorumsOverlap(x, y)
@@ -590,17 +699,6 @@ TypeOKRandom ==
     \* /\ reconfigs \in RandomSubset(3, ReconfigsType)
     /\ reconfigs \in RandomSetOfSubsets(12, 4, ReconfigType)
     
-
-\* Compares two configs given as <<configVersion, configTerm>> tuples.
-NewerConfig(ci, cj) ==
-    \* Compare configTerm first.
-    \/ ci[2] > cj[2] 
-    \* Compare configVersion if terms are equal.
-    \/ /\ ci[2] = cj[2]
-       /\ ci[1] > cj[1]  
-
-\* Compares two configs given as <<configVersion, configTerm>> tuples.
-NewerOrEqualConfig(ci, cj) == NewerConfig(ci, cj) \/ ci = cj
 
 
 \*
