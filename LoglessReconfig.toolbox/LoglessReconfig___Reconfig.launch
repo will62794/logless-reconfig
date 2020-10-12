@@ -4,7 +4,7 @@
     <intAttribute key="collectCoverage" value="0"/>
     <stringAttribute key="configurationName" value="Reconfig"/>
     <booleanAttribute key="deferLiveness" value="false"/>
-    <intAttribute key="dfidDepth" value="100"/>
+    <intAttribute key="dfidDepth" value="40"/>
     <booleanAttribute key="dfidMode" value="false"/>
     <intAttribute key="distributedFPSetCount" value="0"/>
     <stringAttribute key="distributedNetworkInterface" value="192.168.1.8"/>
@@ -12,7 +12,7 @@
     <stringAttribute key="distributedTLC" value="off"/>
     <stringAttribute key="distributedTLCVMArgs" value=""/>
     <intAttribute key="fpBits" value="1"/>
-    <intAttribute key="fpIndex" value="0"/>
+    <intAttribute key="fpIndex" value="14"/>
     <booleanAttribute key="fpIndexRandom" value="true"/>
     <intAttribute key="maxHeapSize" value="25"/>
     <intAttribute key="maxSetSize" value="1000000"/>
@@ -25,14 +25,15 @@
     <stringAttribute key="modelComments" value="For verifying the high level ElectionSafety property as efficiently as possible."/>
     <booleanAttribute key="modelCorrectnessCheckDeadlock" value="false"/>
     <listAttribute key="modelCorrectnessInvariants">
-        <listEntry value="0ElectionSafety"/>
-        <listEntry value="0AtMostOneActiveConfig"/>
         <listEntry value="0TypeOK"/>
         <listEntry value="0UniqueParentConfig"/>
-        <listEntry value="1ElectionSafetyHist"/>
+        <listEntry value="0ElectionSafety"/>
+        <listEntry value="1SinglePathElectionSafety"/>
     </listAttribute>
-    <listAttribute key="modelCorrectnessProperties"/>
-    <intAttribute key="modelEditorOpenTabs" value="10"/>
+    <listAttribute key="modelCorrectnessProperties">
+        <listEntry value="0ConfigVersionsMonotonic"/>
+    </listAttribute>
+    <intAttribute key="modelEditorOpenTabs" value="14"/>
     <stringAttribute key="modelExpressionEval" value=""/>
     <stringAttribute key="modelParameterActionConstraint" value=""/>
     <listAttribute key="modelParameterConstants">
@@ -41,15 +42,14 @@
         <listEntry value="MaxConfigVersion;;3;0;0"/>
         <listEntry value="Secondary;;Secondary;1;0"/>
         <listEntry value="Nil;;Nil;1;0"/>
-        <listEntry value="Server;;{n1, n2, n3, n4};1;1"/>
+        <listEntry value="Server;;{n1, n2, n3};1;1"/>
         <listEntry value="MaxLogLen;;0;0;0"/>
     </listAttribute>
     <stringAttribute key="modelParameterContraint" value="StateConstraint"/>
     <listAttribute key="modelParameterDefinitions">
         <listEntry value="Nat;;0..4;0;0"/>
         <listEntry value="Seq;S:;BoundedSeq(S, 4);0;0"/>
-        <listEntry value="RecordReconfig;rc:;reconfigs;0;0"/>
-        <listEntry value="RecordElection;e:;elections \cup {[leader |-&gt; e.leader, term |-&gt; e.term]};0;0"/>
+        <listEntry value="RecordReconfig;rc:;reconfigs \cup {rc};0;0"/>
     </listAttribute>
     <stringAttribute key="modelParameterModelValues" value="{}"/>
     <stringAttribute key="modelParameterNewDefinitions" value="realVarsView == &lt;&lt;serverVars, log, immediatelyCommitted, config, configVersion, configTerm&gt;&gt;&#10;&#10;SeqOf(set, n) == &#10;  (***************************************************************************)&#10;  (* All sequences up to length n with all elements in set.  Includes empty  *)&#10;  (* sequence.                                                               *)&#10;  (***************************************************************************)&#10;  UNION {[1..m -&gt; set] : m \in 0..n}&#10;&#10;BoundedSeq(S, n) ==&#10;  (***************************************************************************)&#10;  (* An alias for SeqOf to make the connection to Sequences!Seq, which is    *)&#10;  (* the unbounded version of BoundedSeq.                                    *)&#10;  (***************************************************************************)&#10;  SeqOf(S, n)"/>
@@ -58,10 +58,14 @@
     <booleanAttribute key="recover" value="false"/>
     <stringAttribute key="result.mail.address" value=""/>
     <intAttribute key="simuAril" value="-1"/>
-    <intAttribute key="simuDepth" value="100"/>
+    <intAttribute key="simuDepth" value="40"/>
     <intAttribute key="simuSeed" value="-1"/>
     <stringAttribute key="specName" value="LoglessReconfig"/>
     <stringAttribute key="tlcResourcesProfile" value="local custom"/>
+    <listAttribute key="traceExploreExpressions">
+        <listEntry value="1ActiveConfigs"/>
+    </listAttribute>
+    <setAttribute key="traceExploreExtends"/>
     <stringAttribute key="view" value=""/>
     <booleanAttribute key="visualizeStateGraph" value="false"/>
 </launchConfiguration>

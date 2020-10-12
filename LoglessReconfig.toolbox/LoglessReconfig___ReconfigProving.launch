@@ -12,7 +12,7 @@
     <stringAttribute key="distributedTLC" value="off"/>
     <stringAttribute key="distributedTLCVMArgs" value=""/>
     <intAttribute key="fpBits" value="1"/>
-    <intAttribute key="fpIndex" value="118"/>
+    <intAttribute key="fpIndex" value="67"/>
     <booleanAttribute key="fpIndexRandom" value="true"/>
     <intAttribute key="maxHeapSize" value="25"/>
     <intAttribute key="maxSetSize" value="1000000"/>
@@ -25,11 +25,12 @@
     <stringAttribute key="modelComments" value="For verifying intermediate lemmas and properties to gain confidence in various aspects of formal proof reasoning."/>
     <booleanAttribute key="modelCorrectnessCheckDeadlock" value="false"/>
     <listAttribute key="modelCorrectnessInvariants">
-        <listEntry value="0ElectionSafety"/>
-        <listEntry value="0AtMostOneActiveConfig"/>
         <listEntry value="0TypeOK"/>
-        <listEntry value="0UniqueParentConfig"/>
-        <listEntry value="1ElectionSafetyHist"/>
+        <listEntry value="1ElectionSafety"/>
+        <listEntry value="0AtMostOneBranchCommits"/>
+        <listEntry value="0ElectionCommitDisablesSiblings"/>
+        <listEntry value="0CommittedBranchDeactivatesSiblings"/>
+        <listEntry value="1AtMostOneCommittedConfigPerBranch"/>
     </listAttribute>
     <listAttribute key="modelCorrectnessProperties">
         <listEntry value="0ElectionSafetyTemporal"/>
@@ -39,7 +40,7 @@
     <stringAttribute key="modelParameterActionConstraint" value=""/>
     <listAttribute key="modelParameterConstants">
         <listEntry value="Primary;;Primary;1;0"/>
-        <listEntry value="MaxTerm;;2;0;0"/>
+        <listEntry value="MaxTerm;;3;0;0"/>
         <listEntry value="MaxConfigVersion;;3;0;0"/>
         <listEntry value="Secondary;;Secondary;1;0"/>
         <listEntry value="Nil;;Nil;1;0"/>
@@ -51,7 +52,7 @@
         <listEntry value="Nat;;0..4;0;0"/>
         <listEntry value="Seq;S:;BoundedSeq(S, 4);0;0"/>
         <listEntry value="RecordReconfig;rc:;reconfigs \cup {rc};0;0"/>
-        <listEntry value="RecordElection;e:;elections \cup {[leader |-&gt; e.leader, term |-&gt; e.term]};0;0"/>
+        <listEntry value="RecordElection;e:;elections;0;0"/>
     </listAttribute>
     <stringAttribute key="modelParameterModelValues" value="{}"/>
     <stringAttribute key="modelParameterNewDefinitions" value="realVarsView == &lt;&lt;serverVars, log, immediatelyCommitted, config, configVersion, configTerm&gt;&gt;&#10;&#10;SeqOf(set, n) == &#10;  (***************************************************************************)&#10;  (* All sequences up to length n with all elements in set.  Includes empty  *)&#10;  (* sequence.                                                               *)&#10;  (***************************************************************************)&#10;  UNION {[1..m -&gt; set] : m \in 0..n}&#10;&#10;BoundedSeq(S, n) ==&#10;  (***************************************************************************)&#10;  (* An alias for SeqOf to make the connection to Sequences!Seq, which is    *)&#10;  (* the unbounded version of BoundedSeq.                                    *)&#10;  (***************************************************************************)&#10;  SeqOf(S, n)"/>
@@ -64,6 +65,11 @@
     <intAttribute key="simuSeed" value="-1"/>
     <stringAttribute key="specName" value="LoglessReconfig"/>
     <stringAttribute key="tlcResourcesProfile" value="local custom"/>
+    <listAttribute key="traceExploreExpressions">
+        <listEntry value="0AllHistoryConfigs"/>
+        <listEntry value="0[s \in Server |-&gt; Deactivated([m|-&gt;config[s], v |-&gt; configVersion[s], t |-&gt; configTerm[s]])]"/>
+        <listEntry value="1[s \in Server |-&gt; Siblings([m|-&gt;config[s], v |-&gt; configVersion[s], t |-&gt; configTerm[s]])]"/>
+    </listAttribute>
     <stringAttribute key="view" value=""/>
     <booleanAttribute key="visualizeStateGraph" value="false"/>
 </launchConfiguration>

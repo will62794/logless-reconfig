@@ -29,6 +29,9 @@
         <listEntry value="0AtMostOneActiveConfig"/>
         <listEntry value="0TypeOK"/>
         <listEntry value="0UniqueParentConfig"/>
+        <listEntry value="0\A s \in Server : configVersion[s] &lt;= 3"/>
+        <listEntry value="0ElectionSafetyHist"/>
+        <listEntry value="0~(\E c \in AllHistoryConfigs : Cardinality(ChildrenConfigs(c)) &gt; 1)"/>
     </listAttribute>
     <listAttribute key="modelCorrectnessProperties">
         <listEntry value="0ElectionSafetyTemporal"/>
@@ -38,18 +41,19 @@
     <stringAttribute key="modelParameterActionConstraint" value=""/>
     <listAttribute key="modelParameterConstants">
         <listEntry value="Primary;;Primary;1;0"/>
-        <listEntry value="MaxTerm;;6;0;0"/>
-        <listEntry value="MaxConfigVersion;;6;0;0"/>
+        <listEntry value="MaxTerm;;7;0;0"/>
+        <listEntry value="MaxConfigVersion;;3;0;0"/>
         <listEntry value="Secondary;;Secondary;1;0"/>
         <listEntry value="Nil;;Nil;1;0"/>
-        <listEntry value="Server;;{n1, n2, n3, n4, n5};1;1"/>
+        <listEntry value="Server;;{n1, n2, n3, n4};1;1"/>
         <listEntry value="MaxLogLen;;0;0;0"/>
     </listAttribute>
     <stringAttribute key="modelParameterContraint" value="StateConstraint"/>
     <listAttribute key="modelParameterDefinitions">
         <listEntry value="Nat;;0..4;0;0"/>
         <listEntry value="Seq;S:;BoundedSeq(S, 4);0;0"/>
-        <listEntry value="ReconfigAction;;\E s \in Server : &#10;&#9;/\ Reconfig(s) &#10;&#9;/\ PrintT({LET oldStr == ToString(rc.old.v) \o ToString(rc.old.t) newStr == ToString(rc.new.v) \o ToString(rc.new.t) IN oldStr \o &quot;-&gt;&quot; \o newStr : rc \in reconfigs});0;0"/>
+        <listEntry value="ReconfigAction;;\E s \in Server : &#10;&#9;/\ Reconfig(s) &#10;&#9;/\ PrintT({LET oldStr == ToString(rc.old.v) \o ToString(rc.old.t) &#10;&#9;               newStr == ToString(rc.new.v) \o ToString(rc.new.t) IN &#10;&#9;               \*ToString(rc.old.m) \o &quot;_v&quot; \o ToString(rc.old.v) \o &quot;-&gt;&quot; \o ToString(rc.new.m) \o &quot;_v&quot; \o ToString(rc.new.v) : rc \in reconfigs})&#10;&#9;               oldStr \o &quot;-&gt;&quot; \o newStr : rc \in reconfigs'});0;0"/>
+        <listEntry value="BecomeLeaderAction;;\E s \in Server : &#10;&#9;/\ BecomeLeader(s)&#10;&#9;\*/\ PrintT({LET oldStr == ToString(rc.old.v) \o ToString(rc.old.t)  newStr == ToString(rc.new.v) \o ToString(rc.new.t) IN oldStr \o &quot;-&gt;&quot; \o newStr : rc \in reconfigs});0;0"/>
     </listAttribute>
     <stringAttribute key="modelParameterModelValues" value="{}"/>
     <stringAttribute key="modelParameterNewDefinitions" value="realVarsView == &lt;&lt;serverVars, log, immediatelyCommitted, config, configVersion, configTerm&gt;&gt;&#10;&#10;SeqOf(set, n) == &#10;  (***************************************************************************)&#10;  (* All sequences up to length n with all elements in set.  Includes empty  *)&#10;  (* sequence.                                                               *)&#10;  (***************************************************************************)&#10;  UNION {[1..m -&gt; set] : m \in 0..n}&#10;&#10;BoundedSeq(S, n) ==&#10;  (***************************************************************************)&#10;  (* An alias for SeqOf to make the connection to Sequences!Seq, which is    *)&#10;  (* the unbounded version of BoundedSeq.                                    *)&#10;  (***************************************************************************)&#10;  SeqOf(S, n)"/>
