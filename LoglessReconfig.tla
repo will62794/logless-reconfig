@@ -450,7 +450,8 @@ Deactivated(c) ==
 \* successful election in term T.
 SinglePathElectionSafety == 
     \A e1, e2 \in elections : 
-        Ancestor(e1.config, e2.config) => (e1.term # e2.term)
+        (/\ e1.config # e2.config
+         /\ Ancestor(e1.config, e2.config)) => (e1.term # e2.term)
         
 \* Once a config on a branch has committed, all sibling branhes are deactivated
 \* and new sibling branches cannot be created.
