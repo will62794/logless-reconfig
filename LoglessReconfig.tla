@@ -170,6 +170,9 @@ CanVoteFor(i, j, term) ==
     /\ IsNewerConfig(j, i)
     /\ logOk
     
+\* Do all quorums of set x and set y share at least one overlapping node.
+QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
+    
 \* A quorum of nodes have received this config.
 \*ConfigQuorumCheck(self, s) == /\ configVersion[self] = configVersion[s]
 \*                              /\ configTerm[self] = configTerm[s]
@@ -342,9 +345,7 @@ Reconfig(i) ==
         /\ state[i] = Primary
         \* Only allow a new config to be installed if the current config is "safe".
         /\ ConfigIsSafe(i)
-        \* Add or remove a single node. (OPTIONALLY ENABLE)
-        /\ \/ \E n \in newConfig : newConfig \ {n} = config[i]  \* add 1.
-           \/ \E n \in config[i] : config[i] \ {n} = newConfig  \* remove 1.
+        /\ QuorumsOverlap(config[i], newConfig)
         /\ i \in newConfig
         \* The config on this node takes effect immediately
         /\ config' = [config EXCEPT ![i] = newConfig]
@@ -382,9 +383,6 @@ SendConfig(i, j) ==
 (***************************************************************************)
 (* Auxiliary definitions and properties for analyzing correctness.         *)
 (***************************************************************************)
-
-\* Do all quorums of set x and set y share at least one overlapping node.
-QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
 
 \* Can one config ever have more than one parent?
 UniqueParentConfig == 
