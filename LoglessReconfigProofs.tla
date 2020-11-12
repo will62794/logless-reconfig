@@ -31,9 +31,9 @@ TypeOKRandom ==
     /\ configTerm \in RandomSubset(4, [Server -> Nat])
     /\ immediatelyCommitted = {}
 \*    /\ elections = {}
-    /\ elections \in RandomSetOfSubsets(12, 4, ElectionType)
+    /\ elections \in RandomSetOfSubsets(5, 4, ElectionType)
     \* /\ reconfigs \in RandomSubset(3, ReconfigsType)
-    /\ reconfigs \in RandomSetOfSubsets(12, 4, ReconfigType)
+    /\ reconfigs \in RandomSetOfSubsets(5, 4, ReconfigType)
 
 \*
 \* Decompose the inductive invariant into subcomponents for easier reasoning.
@@ -64,9 +64,9 @@ PrimaryHasQuorumInElectionConfigInTermOrGreater ==
 
 PrimaryConfigsMonotonic == 
     \A e \in elections : 
-        \/ configTerm[e.leader] >= e.configTerm
-        \/ /\ configTerm[e.leader] = e.configTerm
-           /\ configVersion[e.leader] >= e.configVersion
+        \/ configTerm[e.leader] >= e.config.t
+        \/ /\ configTerm[e.leader] = e.config.t
+           /\ configVersion[e.leader] >= e.config.v
         
 \* The config term of a primary should be equal to its current term.
 PrimarysCurrentConfigIsInOwnTerm == 
@@ -133,13 +133,15 @@ ElectionSafetyInd ==
     /\ PrimarysCurrentConfigIsInOwnTerm
     /\ PrimaryConfigHasAtLeastOneMember
     /\ PrimaryElectionRecorded
-    /\ ConfigTermNotGreaterThanCurrentTerm
+    (*/\ ConfigTermNotGreaterThanCurrentTerm
     /\ ConfigExistenceImpliesReconfigOccurred
-    /\ ReconfigRequiresParentWasCommitted
+    /\ ReconfigRequiresParentWasCommitted*)
+    
     \* /\ AllNodesInInitialConfigImpliesAllNodesHaveSameConfig
     \* /\ NormalReconfigsDoNotChangeConfigTerm
-        
-IndInv == ElectionSafetyInd
+
+IndInv == ElectionSafeAtTerm
+\*IndInv == ElectionSafetyInd
 IInit == TypeOKRandom /\ IndInv
 INext == Next
 
