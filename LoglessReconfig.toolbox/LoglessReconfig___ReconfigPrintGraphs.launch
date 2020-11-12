@@ -7,7 +7,7 @@
     <intAttribute key="dfidDepth" value="100"/>
     <booleanAttribute key="dfidMode" value="false"/>
     <intAttribute key="distributedFPSetCount" value="0"/>
-    <stringAttribute key="distributedNetworkInterface" value="192.168.1.8"/>
+    <stringAttribute key="distributedNetworkInterface" value="192.168.1.7"/>
     <intAttribute key="distributedNodesCount" value="1"/>
     <stringAttribute key="distributedTLC" value="off"/>
     <stringAttribute key="distributedTLCVMArgs" value=""/>
@@ -41,7 +41,7 @@
     <stringAttribute key="modelParameterActionConstraint" value=""/>
     <listAttribute key="modelParameterConstants">
         <listEntry value="Primary;;Primary;1;0"/>
-        <listEntry value="MaxTerm;;7;0;0"/>
+        <listEntry value="MaxTerm;;5;0;0"/>
         <listEntry value="MaxConfigVersion;;3;0;0"/>
         <listEntry value="Secondary;;Secondary;1;0"/>
         <listEntry value="Nil;;Nil;1;0"/>
@@ -52,7 +52,7 @@
     <listAttribute key="modelParameterDefinitions">
         <listEntry value="Nat;;0..4;0;0"/>
         <listEntry value="Seq;S:;BoundedSeq(S, 4);0;0"/>
-        <listEntry value="ReconfigAction;;\E s \in Server : &#10;&#9;/\ Reconfig(s) &#10;&#9;/\ PrintT({LET oldStr == ToString(rc.old.v) \o ToString(rc.old.t) &#10;&#9;               newStr == ToString(rc.new.v) \o ToString(rc.new.t) IN &#10;&#9;               \*ToString(rc.old.m) \o &quot;_v&quot; \o ToString(rc.old.v) \o &quot;-&gt;&quot; \o ToString(rc.new.m) \o &quot;_v&quot; \o ToString(rc.new.v) : rc \in reconfigs})&#10;&#9;               oldStr \o &quot;-&gt;&quot; \o newStr : rc \in reconfigs'});0;0"/>
+        <listEntry value="ReconfigAction;;\E s \in Server : &#10;&#9;/\ Reconfig(s) &#10;&#9;/\ PrintT({LET oldStr == ToString(rc.old.v) \o ToString(rc.old.t) &#10;&#9;               newStr == ToString(rc.new.v) \o ToString(rc.new.t) IN &#10;&#9;               \*ToString(rc.old.m) \o &quot;_v&quot; \o ToString(rc.old.v) \o &quot;-&gt;&quot; \o ToString(rc.new.m) \o &quot;_v&quot; \o ToString(rc.new.v) : rc \in reconfigs})&#10;&#9;               oldStr \o &quot;-&gt;&quot; \o newStr : rc \in reconfigs'})&#10;&#9;/\ LET committedConfigs == {cfg \in AllHistoryConfigs : Committed(cfg)} IN&#10;&#9;   PrintT({ToString(c.v) \o ToString(c.t) : c \in committedConfigs});0;0"/>
         <listEntry value="BecomeLeaderAction;;\E s \in Server : &#10;&#9;/\ BecomeLeader(s)&#10;&#9;\*/\ PrintT({LET oldStr == ToString(rc.old.v) \o ToString(rc.old.t)  newStr == ToString(rc.new.v) \o ToString(rc.new.t) IN oldStr \o &quot;-&gt;&quot; \o newStr : rc \in reconfigs});0;0"/>
     </listAttribute>
     <stringAttribute key="modelParameterModelValues" value="{}"/>

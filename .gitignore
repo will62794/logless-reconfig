@@ -4,6 +4,7 @@
 *.toolbox/*.pdf
 *.toolbox/*.tex
 *.toolbox/*___Reconfig*_SnapShot*.launch
+*.toolbox/*___Inductive*_SnapShot*.launch
 *.toolbox/**/*.tla
 *.toolbox/**/*.out
 *.toolbox/**/MC.cfg
