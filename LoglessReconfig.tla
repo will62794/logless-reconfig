@@ -75,7 +75,7 @@ vars == <<serverVars, log, immediatelyCommitted, config, configVersion, configTe
 ElectionType == [ leader : Server, 
                   term   : Nat, 
                   voters : SUBSET Server,
-                  config : SUBSET Server,
+                  config : [m : SUBSET Server, v : Nat, t : Nat],
                   configVersion : Nat,
                   configTerm    : Nat]
 
@@ -456,6 +456,11 @@ SinglePathElectionSafety ==
 CommittedBranchDeactivatesSiblings == 
     \A c \in AllHistoryConfigs : 
         Committed(c) => (\A s \in Siblings(c) : Deactivated(s))
+        
+\* If a config is committed, no sibling configs with greater terms can exist.
+CommittedConfigImpliesNoSiblingsWithGreaterTerms == 
+    \A c \in AllHistoryConfigs : 
+        Committed(c) => (\A s \in Siblings(c) : s.t <= c.t)
    
 \* At any branch point, at most one branch can contain a committed config.
 AtMostOneCommittedConfigPerBranch == 
@@ -481,6 +486,37 @@ IsPrefix(xlog, ylog) ==
 
 \* At any time, some node can always become a leader.
 ElectableNodeExists == \E s \in Server : ENABLED BecomeLeader(s)
+
+\* The set of all currently installed configs in the system.
+InstalledConfigs == Range(config)
+
+\* Is the config of node i currently active i.e. can it form a quorum to get elected.
+ActiveConfig(i) == 
+    \E Q \in Quorums(config[i]) : 
+    \A s \in Q : 
+        \* The config is equal or older.
+        ~NewerConfig(<<configVersion[s], configTerm[s]>>,<<configVersion[i], configTerm[i]>>)
+        
+\* Is a given config "active" i.e. can it form a quorum.
+\*ActiveConfig(cfg) == \E Q \in Quorums(cfg) : \A s \in Q : config[s] = cfg
+
+\* The set of all nodes with active configs.
+ActiveConfigNodes == {i \in Server : ActiveConfig(i)}
+ActiveConfigs == {config[i] : i \in ActiveConfigNodes}
+
+\* For all installed configs, do their quorums overlap.
+InstalledConfigsOverlap == \A x,y \in InstalledConfigs : QuorumsOverlap(x, y)
+
+\* For all active configs, do their quorums overlap.
+ActiveConfigsOverlap == \A x,y \in ActiveConfigs : QuorumsOverlap(x, y)
+
+\* Property asserting that there is never more than 1 active config at a time.
+AtMostOneActiveConfig == Cardinality(ActiveConfigs) <= 1
+
+\* If an election in term T has occurred, then any active config must overlap with at least some node in term >= T.
+ElectionSafeAtTerm == 
+    \A e \in elections, c \in ActiveConfigs : 
+        \A Q \in Quorums(c) : \E s \in Q : currentTerm[s] >= e.term
 
 -------------------------------------------------------------------------------------------
 
