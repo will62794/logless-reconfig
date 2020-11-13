@@ -19,7 +19,7 @@ VARIABLE config
 
 serverVars == <<currentTerm, state>>
 configVars == <<configVersion, configTerm, config>>
-vars == <<serverVars, configVersion, configTerm>>
+vars == <<serverVars, configVersion, configTerm, config>>
 
 (***************************************************************************)
 (* Helper operators.                                                       *)
@@ -166,10 +166,7 @@ ElectionSafety == \A x,y \in Server :
 
 -------------------------------------------------------------------------------------------
 
-(**************************************************************************************************)
-(* State Constraint. Used for model checking only.                                                *)
-(**************************************************************************************************)
-
+\* State Constraint. Used for model checking only.                                                *)
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 
 StateConstraint == \A s \in Server :
@@ -182,5 +179,8 @@ MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 \* Refinement definition.
 SR == INSTANCE StaticRaft
 Refinement == SR!Spec
+
+\* The refinement relation to verify.
+THEOREM Spec => SR!Spec
 
 =============================================================================
