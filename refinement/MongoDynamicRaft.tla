@@ -1,20 +1,13 @@
----- MODULE ConfigStateMachine ----
-\* The Config State Machine protocol.
-\*
-\* This should refine MongoDynamicRaft.
+---- MODULE MongoDynamicRaft ----
+\* The logless, dynamic Raft protocol for reconfiguration.
 
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 
 CONSTANTS Server
 CONSTANTS Secondary, Primary, Nil
 
-(***************************************************************************)
-(* Replication related variables.                                          *)
-(***************************************************************************)
-
 VARIABLE currentTerm
 VARIABLE state
-\* Config state machine.
 VARIABLE configVersion
 VARIABLE configTerm
 VARIABLE config
@@ -148,9 +141,6 @@ SendConfig(i, j) ==
 
 csmVars == <<configVersion, configTerm, config>>
 
-\*
-\* Config State Machine spec.
-\*
 Init == 
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
@@ -180,13 +170,5 @@ StateConstraint == \A s \in Server :
                     /\ configVersion[s] <= MaxConfigVersion
 
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
-
-
-\* Refinement definition.
-SR == INSTANCE StaticRaft
-Refinement == SR!Spec
-
-\* The refinement relation to verify.
-THEOREM Spec => SR!Spec
 
 =============================================================================

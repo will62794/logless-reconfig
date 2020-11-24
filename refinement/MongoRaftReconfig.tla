@@ -53,7 +53,7 @@ osmVars == <<log>>
 csmVars == <<configVersion, configTerm, config>>
 
 \* The config state machine.
-CSM == INSTANCE ConfigStateMachine 
+CSM == INSTANCE MongoDynamicRaft 
         WITH currentTerm <- currentTerm,
              state <- state,
              configVersion <- configVersion,
