@@ -1,6 +1,8 @@
------------------------------ MODULE ReconfigComposition -----------------------------
+----------------------------- MODULE MongoRaftReconfig -----------------------------
 
-\* Logless, Dynamic Raft specification, with reconfig.
+\*
+\* MongoDB replication protocol that allows for logless, dynamic reconfiguration.
+\*
 
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 
@@ -62,7 +64,7 @@ CSM == INSTANCE ConfigStateMachine
              MaxConfigVersion <- MaxConfigVersion
 
 \* The oplog state machine.
-OSM == INSTANCE OplogStateMachine 
+OSM == INSTANCE MongoStaticRaft 
         WITH currentTerm <- currentTerm,
              state <- state,
              log <- log,
@@ -70,12 +72,18 @@ OSM == INSTANCE OplogStateMachine
              MaxLogLen <- MaxLogLen,
              MaxTerm <- MaxTerm,
              MaxConfigVersion <- MaxConfigVersion
-
-InitComposed == 
+\*
+\* This protocol is specified as a composition of a Config State Machine (which
+\* runs MongoDynamicRaft) and an Oplog State Machine (which runs
+\* MongoStaticRaft). The composition is asynchronous except for the election
+\* action i.e. both protocols need to execute their election action
+\* simultaneously.
+\*
+Init == 
     /\ CSM!Init 
     /\ OSM!Init
 
-NextComposed == 
+Next == 
     \/ (OSM!Next /\ UNCHANGED csmVars)
     \/ (CSM!Next /\ UNCHANGED osmVars)
     \* Synchronized election action that must be executed by both state machines jointly.
@@ -83,7 +91,7 @@ NextComposed ==
         /\ CSM!BecomeLeaderConfig(s, Q)
         /\ OSM!BecomeLeaderOplog(s, Q)
 
-Spec == InitComposed /\ [][NextComposed]_vars
+Spec == Init /\ [][Next]_vars
 
 ElectionSafety == \A x,y \in Server : 
     (/\ (state[x] = Primary) /\ (state[y] = Primary) 
@@ -91,19 +99,11 @@ ElectionSafety == \A x,y \in Server :
 
 -------------------------------------------------------------------------------------------
 
-\* State Constraint. Used for model checking only.                                                *)
+\* State Constraint. Used for model checking only.
 StateConstraint == \A s \in Server :
                     /\ currentTerm[s] <= MaxTerm
                     /\ configVersion[s] <= MaxConfigVersion
 
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
-
-
-\* Refinement definition.
-SR == INSTANCE StaticRaft
-Refinement == SR!Spec
-
-\* The refinement relation to verify.
-THEOREM Spec => SR!Spec
 
 =============================================================================

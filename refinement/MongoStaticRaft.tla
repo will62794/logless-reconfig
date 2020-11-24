@@ -1,20 +1,15 @@
----- MODULE OplogStateMachine ----
-\* The Oplog State Machine protocol.
+---- MODULE MongoStaticRaft ----
 \*
-\* This should refine MongoStaticRaft.
+\* Basic, static version of MongoDB Raft protocol. No reconfiguration is allowed.
+\*
 
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 
 CONSTANTS Server
 CONSTANTS Secondary, Primary, Nil
 
-(***************************************************************************)
-(* Replication related variables.                                          *)
-(***************************************************************************)
-
 VARIABLE currentTerm
 VARIABLE state
-\* Oplog state machine.
 VARIABLE log
 VARIABLE config
 
@@ -148,10 +143,6 @@ BecomeLeaderOplog(i, voteQuorum) ==
 \* For model checking.
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 
-
-osmVars == <<log>>
-csmVars == <<config>>
-
 \*
 \* Oplog State Machine spec.
 \*
@@ -171,6 +162,11 @@ ElectionSafety == \A x,y \in Server :
     (/\ (state[x] = Primary) /\ (state[y] = Primary) 
      /\  currentTerm[x] = currentTerm[y]) => (x = y)
 
+\* TODO: Fill in definition of state machine safety.
+StateMachineSafety == TRUE
+
+THEOREM Spec => StateMachineSafety
+
 -------------------------------------------------------------------------------------------
 
 \* State Constraint. Used for model checking only.                                                *)
@@ -180,6 +176,3 @@ StateConstraint == \A s \in Server :
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 
 =============================================================================
-
-
-====

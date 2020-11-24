@@ -1,23 +1,23 @@
 # Safety of MongoDB Reconfig
 
-The standard MongoDB replication protocol, without any reconfiguration, is specified by the temporal formula $MongoStaticRaft$. This protocol is based on the standard Raft protocol and satisfies the same fundamental safety properties. The main safety property of Raft is the *state machine safety* property, which ensures that, if a log entry has been marked committed at a certain index, no conflicting log entry will ever be marked committed at the same index. We define this safety property as a temporal property $Safety$. The following theorem holds:
+The standard MongoDB replication protocol, without any reconfiguration, is specified by the [`MongoStaticRaft`](MongoStaticRaft.tla) specification. This protocol is based on the standard Raft protocol and satisfies the same fundamental safety properties. The main safety property of Raft is the *state machine safety* property, which ensures that, if a log entry has been marked committed at a certain index, no conflicting log entry will ever be marked committed at the same index. We define this safety property as a temporal property `Safety`. The following theorem holds:
 
-$$
-MongoStaticRaft \Rightarrow Safety
-$$
+```tla
+THEOREM MongoStaticRaft => Safety
+```
 
-which was proven in the original Raft dissertation.
+This was proven in the original Raft dissertation.
 
 
-The new MongoDB reconfiguration protocol, which is specified by $MongoRaftReconfig$, extends $MongoStaticRaft$ to allow for reconfiguration changes. We want $MongoRaftReconfig$ to satisfy the same property $Safety$. That is, we want to show that
+The new MongoDB reconfiguration protocol, which is specified in [`MongoRaftReconfig`](MongoRaftReconfig.tla), extends `MongoStaticRaft` to allow for reconfiguration changes. We want `MongoRaftReconfig` to satisfy the same property `Safety`. That is, we want the following theorem to hold
 
-$$
-MongoRaftReconfig \Rightarrow Safety
-$$
+```tla
+THEOREM MongoRaftReconfig => Safety
+```
 
-$MongoRaftReconfig$ is based on $MongoStaticRaft$, but its behavior diverges in subtle but important ways, since reconfigurations may change the definition of the quorums used by different nodes.
+`MongoRaftReconfig` is based on `MongoStaticRaft`, but its behavior diverges in subtle but important ways, since reconfigurations may change the definition of the quorums used by different nodes.
 
-At a high level, $MongoRaftReconfig$ is a composition of two conceptually distinct Raft state machines. We refer to these as the *oplog state machine (OSM)* and the *config state machine (CSM)*. The former is responsible for managing user data and the latter responsible for managing configuration state of the replica set. Both state machines run their protocols independently, but synchronize on some actions. The CSM runs a protocol described by a temporal specification $MongoDynamicRaft$, which is a [Raft protocol](MongoRaftReconfig.tla) that allows for operations of the state machine to change the definition of a quorum. The OSM runs the $MongoStaticRaft$ protocol. $MongoRaftReconfig$ is then a composition of these two protocols. The protocols share some state, though, related to node state and elections, so the composition is not fully asynchronous. Specifically, they synchronize on the election action i.e. both protocol must take an election step jointly.
+At a high level, `MongoRaftReconfig` is a composition of two conceptually distinct Raft state machines. We refer to these as the *oplog state machine (OSM)* and the *config state machine (CSM)*. The former is responsible for managing user data and the latter responsible for managing configuration state of the replica set. Both state machines run their protocols independently, but synchronize on some actions. The CSM runs a protocol described by a temporal specification [`MongoDynamicRaft`](MongoDynamicRaft.tla), which is a Raft protocol that allows for operations of the state machine to change the definition of a quorum. The OSM runs the `MongoStaticRaft` protocol. `MongoRaftReconfig` is then a composition of these two protocols. The protocols share some state, though, related to node state and elections, so the composition is not fully asynchronous. Specifically, they synchronize on the election action i.e. both protocol must take an election step jointly. This composition is expressed formally in the [initial state predicate](MongoRaftReconfig.tla#L82) and [next state relation](MongoRaftReconfig.tla#86) of the specification of the `MongoRaftReconfig` specification.
 
 Since we consider the OSM to be the "externally visible" state machine, we ultimately want to make sure that it behaves correctly when composed with the CSM.
 
@@ -35,8 +35,7 @@ MongoDynamicRaft \Rightarrow Safety \\
 $$
 
 
-
-### The Protocols
+### Protocol Glossary
 
 ```graphviz
 digraph{
