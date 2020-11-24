@@ -1,5 +1,7 @@
 ---- MODULE OplogStateMachine ----
-\* Oplog State Machine protocol.
+\* The Oplog State Machine protocol.
+\*
+\* This should refine MongoStaticRaft.
 
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 

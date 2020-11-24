@@ -1,5 +1,7 @@
 ---- MODULE ConfigStateMachine ----
-\* The config state machine protocol.
+\* The Config State Machine protocol.
+\*
+\* This should refine MongoDynamicRaft.
 
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 
