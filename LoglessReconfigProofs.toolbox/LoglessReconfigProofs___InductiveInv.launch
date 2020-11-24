@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.lamport.tla.toolbox.tool.tlc.modelCheck">
+    <stringAttribute key="configurationName" value="InductiveInv"/>
+    <intAttribute key="distributedFPSetCount" value="0"/>
+    <stringAttribute key="distributedNetworkInterface" value="192.168.1.7"/>
+    <intAttribute key="distributedNodesCount" value="1"/>
+    <stringAttribute key="distributedTLC" value="off"/>
+    <intAttribute key="fpIndex" value="101"/>
+    <intAttribute key="maxHeapSize" value="25"/>
+    <stringAttribute key="modelBehaviorInit" value="IInit"/>
+    <stringAttribute key="modelBehaviorNext" value="INext"/>
+    <stringAttribute key="modelBehaviorSpec" value="Spec"/>
+    <intAttribute key="modelBehaviorSpecType" value="2"/>
+    <stringAttribute key="modelBehaviorVars" value="elections, reconfigs, log, state, immediatelyCommitted, config, currentTerm, configVersion, configTerm"/>
+    <stringAttribute key="modelComments" value=""/>
+    <booleanAttribute key="modelCorrectnessCheckDeadlock" value="false"/>
+    <listAttribute key="modelCorrectnessInvariants">
+        <listEntry value="1IndInv"/>
+    </listAttribute>
+    <listAttribute key="modelCorrectnessProperties"/>
+    <intAttribute key="modelEditorOpenTabs" value="10"/>
+    <stringAttribute key="modelExpressionEval" value=""/>
+    <stringAttribute key="modelParameterActionConstraint" value=""/>
+    <listAttribute key="modelParameterConstants">
+        <listEntry value="Primary;;Primary;1;0"/>
+        <listEntry value="MaxTerm;;3;0;0"/>
+        <listEntry value="MaxConfigVersion;;3;0;0"/>
+        <listEntry value="Secondary;;Secondary;1;0"/>
+        <listEntry value="Nil;;Nil;1;0"/>
+        <listEntry value="Server;;{n1, n2};1;1"/>
+        <listEntry value="MaxLogLen;;0;0;0"/>
+    </listAttribute>
+    <stringAttribute key="modelParameterContraint" value=""/>
+    <listAttribute key="modelParameterDefinitions">
+        <listEntry value="Seq;S:;BoundedSeq(S, MaxLogLen);0;0"/>
+        <listEntry value="Nat;;0..2;0;0"/>
+    </listAttribute>
+    <stringAttribute key="modelParameterModelValues" value="{}"/>
+    <stringAttribute key="modelParameterNewDefinitions" value="SeqOf(set, n) == &#10;  (***************************************************************************)&#10;  (* All sequences up to length n with all elements in set.  Includes empty  *)&#10;  (* sequence.                                                               *)&#10;  (***************************************************************************)&#10;  UNION {[1..m -&gt; set] : m \in 0..n}&#10;&#10;BoundedSeq(S, n) ==&#10;  (***************************************************************************)&#10;  (* An alias for SeqOf to make the connection to Sequences!Seq, which is    *)&#10;  (* the unbounded version of BoundedSeq.                                    *)&#10;  (***************************************************************************)&#10;  SeqOf(S, n)"/>
+    <intAttribute key="modelVersion" value="20191005"/>
+    <intAttribute key="numberOfWorkers" value="2"/>
+    <stringAttribute key="result.mail.address" value=""/>
+    <stringAttribute key="specName" value="LoglessReconfigProofs"/>
+    <stringAttribute key="tlcResourcesProfile" value="local custom"/>
+</launchConfiguration>
