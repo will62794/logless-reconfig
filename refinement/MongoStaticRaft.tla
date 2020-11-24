@@ -165,7 +165,7 @@ ElectionSafety == \A x,y \in Server :
 \* TODO: Fill in definition of state machine safety.
 StateMachineSafety == TRUE
 
-THEOREM Spec => StateMachineSafety
+THEOREM MongoStaticRaftSafety == Spec => StateMachineSafety
 
 -------------------------------------------------------------------------------------------
 

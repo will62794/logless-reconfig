@@ -1,19 +1,6 @@
 # Safety of MongoDB Reconfig
 
-The standard MongoDB replication protocol, without any reconfiguration, is specified by the [`MongoStaticRaft`](MongoStaticRaft.tla) specification. This protocol is based on the standard Raft protocol and satisfies the same fundamental safety properties. The main safety property of Raft is the *state machine safety* property, which ensures that, if a log entry has been marked committed at a certain index, no conflicting log entry will ever be marked committed at the same index. We define this safety property as a temporal property `Safety`. The following theorem holds:
-
-```tla
-THEOREM MongoStaticRaft!Spec => Safety
-```
-
-This was proven in the original Raft dissertation.
-
-
-The new MongoDB reconfiguration protocol, which is specified in [`MongoRaftReconfig`](MongoRaftReconfig.tla), extends `MongoStaticRaft` to allow for reconfiguration changes. We want `MongoRaftReconfig` to satisfy the same property `Safety`. That is, we want the following theorem to hold
-
-```tla
-THEOREM MongoRaftReconfig!Spec => Safety
-```
+The standard MongoDB replication protocol, without any reconfiguration, is specified by the [`MongoStaticRaft`](MongoStaticRaft.tla) specification. This protocol is based on the standard Raft protocol and satisfies the same fundamental safety properties. The main safety property of Raft is the *state machine safety* property, which ensures that, if a log entry has been marked committed at a certain index, no conflicting log entry will ever be marked committed at the same index. We define this safety property as a temporal property `StateMachineSafety`. The theorem [`MongoStaticRaftSafety`](MongoStaticRaft.tla#L168) should hold i.e. it follows from the safety proof from the original Raft disseration. The new MongoDB reconfiguration protocol, which is specified in [`MongoRaftReconfig`](MongoRaftReconfig.tla), extends `MongoStaticRaft` to allow for reconfiguration changes. We want `MongoRaftReconfig` to satisfy the same property `Safety`. That is, we want the theorem [`MongoRaftReconfigSafety`](MongoRaftReconfig.tla#L103) to hold.
 
 At a high level, the `MongoRaftReconfig` protocol is a composition of two conceptually distinct Raft state machines. We refer to these as the *oplog state machine (OSM)* and the *config state machine (CSM)*. The former is responsible for managing user data and the latter responsible for managing configuration state of the replica set. Both state machines run their protocols independently, but synchronize on some actions. The CSM runs a protocol described by the specification [`MongoDynamicRaft`](MongoDynamicRaft.tla), which is a Raft protocol that allows for operations of the state machine to change the definition of a quorum. The OSM runs the `MongoStaticRaft` protocol. `MongoRaftReconfig` is then a composition of these two protocols, where both protocols operate over a subset of a common, global set of variables. The protocols share some state, related to terms and elections, so the composition is not fully asynchronous. They synchronize on the election action i.e. both protocol must take an election step jointly. This composition is expressed formally in the [initial state predicate](MongoRaftReconfig.tla#L82-L84) and [next state relation](MongoRaftReconfig.tla#L86-L92) of the specification of the `MongoRaftReconfig` specification.
 

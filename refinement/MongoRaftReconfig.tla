@@ -97,6 +97,11 @@ ElectionSafety == \A x,y \in Server :
     (/\ (state[x] = Primary) /\ (state[y] = Primary) 
      /\  currentTerm[x] = currentTerm[y]) => (x = y)
 
+\* TODO: Fill in.
+StateMachineSafety == TRUE
+
+THEOREM MongoRaftReconfigSafety == Spec => StateMachineSafety
+
 -------------------------------------------------------------------------------------------
 
 \* State Constraint. Used for model checking only.
