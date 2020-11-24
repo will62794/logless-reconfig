@@ -17,15 +17,15 @@ $$
 
 $MongoRaftReconfig$ is based on $MongoStaticRaft$, but its behavior diverges in subtle but important ways, since reconfigurations may change the definition of the quorums used by different nodes.
 
-At a high level, $MongoRaftReconfig$ is a composition of two conceptually distinct Raft state machines. We refer to these as the *oplog state machine (OSM)* and the *config state machine (CSM)*. The former is responsible for managing user data and the latter responsible for managing configuration state of the replica set. Both state machines run their protocols independently, but synchronize on some actions. The CSM runs a protocol described by a temporal specification $MongoDynamicRaft$, which is a Raft protocol that allows for operations of the state machine to change the definition of a quorum. The OSM runs the $MongoStaticRaft$ protocol. $MongoRaftReconfig$ is then a composition of these two protocols. The protocols share some state, though, related to node state and elections, so the composition is not fully asynchronous. Specifically, they synchronize on the election action i.e. both protocol must take an election step jointly.
+At a high level, $MongoRaftReconfig$ is a composition of two conceptually distinct Raft state machines. We refer to these as the *oplog state machine (OSM)* and the *config state machine (CSM)*. The former is responsible for managing user data and the latter responsible for managing configuration state of the replica set. Both state machines run their protocols independently, but synchronize on some actions. The CSM runs a protocol described by a temporal specification $MongoDynamicRaft$, which is a [Raft protocol](MongoRaftReconfig.tla) that allows for operations of the state machine to change the definition of a quorum. The OSM runs the $MongoStaticRaft$ protocol. $MongoRaftReconfig$ is then a composition of these two protocols. The protocols share some state, though, related to node state and elections, so the composition is not fully asynchronous. Specifically, they synchronize on the election action i.e. both protocol must take an election step jointly.
 
 Since we consider the OSM to be the "externally visible" state machine, we ultimately want to make sure that it behaves correctly when composed with the CSM.
 
 $$
-\begin{align}
+\begin{aligned}
 MongoRaftReconfig &\Rightarrow MongoWeakRaft \\
 MongoRaftReconfig &\Rightarrow QC_2
-\end{align}
+\end{aligned}
 $$ 
 
 In order to establish the correctness of $MongoRaftReconfig$, we need to ensure that the CSM operates correctly i.e. we need to establish that
