@@ -217,7 +217,9 @@ ElectionSafety ==
     \A e1, e2 \in elections : 
         (e1.term = e2.term) => (e1.leader = e2.leader)
 
+StateMachineSafety == TRUE
 
+THEOREM Spec /\ []WeakQuorumIntersection => StateMachineSafety
 
 -------------------------------------------------------------------------------------------
 
