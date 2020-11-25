@@ -172,17 +172,24 @@ ChangeConfig(i) ==
     /\ \E newConfig \in SUBSET Server : config' = [config EXCEPT ![i] = newConfig]
     /\ UNCHANGED <<currentTerm, state, log, committed, elections>>
 
-\* Any two election quorums must overlap, and any vote quorum and election quorum must overlap. 
-StrictQuorumIntersection == 
-    /\ \A e1,e2 \in elections : e1.quorum \cap e2.quorum # {}
-    /\ \A c \in committed, e \in elections : c.quorum \cap e.quorum # {}
+\* Is node 'i' currently electable with quorum 'q'.
+Electable(i, q) == ENABLED BecomeLeader(i, q)
+
+\* If a node is electable, its quorum must overlap with at least one node from
+\* all previous vote quorums and all previous commit quorums.
+StrictQuorumCondition == 
+    \A s \in Server : 
+    \A quorum \in SUBSET Server : 
+        Electable(s, quorum) => 
+            /\ \A e \in elections : (quorum \cap e.quorum) # {}
+            /\ \A c \in committed : (quorum \cap c.quorum) # {}
 
 \*
 \* For any node that could be elected or could commit a write, all of its quorums must:
 \*      1. Overlap with some node with term >=T for all elections that occurred in term T.
 \*      2. Overlap with some node containing an entry E for all previously committed entries E.
 \*
-WeakQuorumIntersection == 
+WeakQuorumCondition == 
     \A s \in Server :
     \A quorum \in QuorumsAt(s) :
         \* Overlaps with some node that contains term of election, for all previous elections.
@@ -211,7 +218,10 @@ Next ==
     \/ \E s \in Server : ChangeConfig(s)
 
 Spec == Init /\ [][Next]_vars
-\* Spec == Init /\ [][Next /\ QuorumInvariant']_vars
+
+\* Variants of the spec that satisfy different quorum conditions.
+SpecStrictQuorums ==   Init /\ [][Next /\ StrictQuorumCondition']_vars
+SpecWeakQuorums ==     Init /\ [][Next /\ WeakQuorumCondition']_vars
 
 ElectionSafety == 
     \A e1, e2 \in elections : 
@@ -219,7 +229,16 @@ ElectionSafety ==
 
 StateMachineSafety == TRUE
 
-THEOREM Spec /\ []WeakQuorumIntersection => StateMachineSafety
+
+\* This weak protocol should not be safe.
+THEOREM ~(Spec => []StateMachineSafety)
+
+\* Using the strict or weak quorum condition should ensure safety.
+THEOREM SpecStrictQuorums => []StateMachineSafety
+THEOREM SpecWeakQuorums => []StateMachineSafety
+
+\* The strict quorum condition should imply the weak quorum condition.
+THEOREM SpecStrictQuorums => []WeakQuorumCondition
 
 -------------------------------------------------------------------------------------------
 

@@ -14,12 +14,12 @@ To summarize the above protocols:
 Ensuring that `MongoRaftReconfig` behaves safely ultimately means that we need to ensure that the OSM, which we consider as the "externally visible" state machine, 
 operates safely when composed with the CSM. In order to do this, however, we first need to ensure that the CSM behaves correctly i.e. we need to establish that `MongoDynamicRaft` upholds state machine safety. The `MongoDynamicRaft` protocol is based on the `MongoStaticRaft` protocol, but it breaks some key assumptions necessary for ensuring safety of the static protocol. Thus, it is not a direct implementation of the `MongoStaticRaft` protocol, so it does not inherit its safety properties directly. 
 
-More precisely, `MongoStaticRaft` relies on an assumption, which we refer to as `StrictQuorumIntersection`, that any quorums used by different nodes will always intersect in at least one node. The set of quorums permitted for use by any node is based on the current configuration of that node, and since the configuration on all nodes is the same and never modified in `MongoStaticRaft`, use of a simple majority quorum system satisfies this condition. `MongoDynamicRaft` clearly violates this assumption, since the configurations on nodes may change in arbitrary ways. We can, however, consider a weaker, more general condition, which we call `WeakQuorumIntersection`, that is sufficient to guarantee safety. This condition is derived from the fact that quorum overlap in standard Raft, for both voting and commitment, is not in and of itself necessary, but rather, is used as a mechanism to ensure that future candidates always contact at least some node that participated in a past election or log entry commitment. In order to consider protocols that can satisfy `WeakQuorumIntersection` without necessarily satisfying `StrictQuorumIntersection`, we define a more general version of the `MongoStaticRaft` protocol, which removes assumptions about what quorums can be used by separate nodes. This protocol is specified as [`MongoWeakRaft`](MongoWeakRaft.tla), and includes a formal definition of the [`StrictQuorumIntersection`](MongoWeakRaft.tla#L175-L178) and [`WeakQuorumIntersection`](MongoWeakRaft.tla#L180-L191) properties, which are both specified as state predicates.
+More precisely, `MongoStaticRaft` relies on an assumption, which we refer to as `StrictQuorumCondition`, that any quorums used by different nodes will always intersect in at least one node. The set of quorums permitted for use by any node is based on the current configuration of that node, and since the configuration on all nodes is the same and never modified in `MongoStaticRaft`, use of a simple majority quorum system satisfies this condition. `MongoDynamicRaft` clearly violates this assumption, since the configurations on nodes may change in arbitrary ways. We can, however, consider a weaker, more general condition, which we call `WeakQuorumCondition`, that is sufficient to guarantee safety. This condition is derived from the fact that quorum overlap in standard Raft, for both voting and commitment, is not in and of itself necessary, but rather, is used as a mechanism to ensure that future candidates always contact at least some node that participated in a past election or log entry commitment. In order to consider protocols that can satisfy `WeakQuorumCondition` without necessarily satisfying `StrictQuorumCondition`, we define a more general version of the `MongoStaticRaft` protocol, which removes assumptions about what quorums can be used by separate nodes. This protocol is specified as [`MongoWeakRaft`](MongoWeakRaft.tla), and includes a formal definition of the [`StrictQuorumCondition`](MongoWeakRaft.tla#L175-L178) and [`WeakQuorumCondition`](MongoWeakRaft.tla#L180-L191) properties, which are both specified as state predicates.
 
-Our claim is that any protocol that implements `MongoWeakRaft` and satisfies `WeakQuorumIntersection` satisfies `StateMachineSafety`. That is:
+Our claim is that any protocol that implements `MongoWeakRaft` and satisfies `WeakQuorumCondition` satisfies `StateMachineSafety`. That is:
 
 ```tla
-MongoWeakRaft!Spec /\ []WeakQuorumIntersection => Safety
+MongoWeakRaft!Spec /\ []WeakQuorumCondition => Safety
 ```
 
 We can also note that 
@@ -27,13 +27,13 @@ We can also note that
 ```tla
 MongoStaticRaft!Spec => MongoWeakRaft!Spec
 ```
-and that satisfaction of `StrictQuorumIntersection` implies satisfaction of `WeakQuorumIntersection`.
+and that satisfaction of `StrictQuorumCondition` implies satisfaction of `WeakQuorumCondition`.
 
 So, if we can show that
 
 ```tla
 MongoDynamicRaft!Spec => MongoWeakRaft!Spec        (refinement)
-MongoDynamicRaft!Spec => WeakQuorumIntersection    (invariance)
+MongoDynamicRaft!Spec => WeakQuorumCondition    (invariance)
 ```
 then this should be sufficient to imply
 
@@ -43,7 +43,7 @@ MongoDynamicRaft!Spec => Safety
 
 Refinement: We can show that `MongoDynamicRaft!Spec => MongoWeakRaft!Spec`, through a series of stepwise refinements between `MongoDynamicRaft` and `MongoWeakRaft` (TODO: Elaborate on these refinement steps). 
 
-Invariance: We can show that `WeakQuorumIntersection` is upheld by `MongoDynamicRaft` via an inductive invariance proof, which also utilizes the theorem `MongoStaticRaftSafety` theorem. 
+Invariance: We can show that `WeakQuorumCondition` is upheld by `MongoDynamicRaft` via an inductive invariance proof, which also utilizes the theorem `MongoStaticRaftSafety` theorem. 
 
 
 ### Protocol Glossary
