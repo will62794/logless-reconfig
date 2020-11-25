@@ -234,11 +234,11 @@ StateMachineSafety == TRUE
 THEOREM ~(Spec => []StateMachineSafety)
 
 \* Using the strict or weak quorum condition should ensure safety.
-THEOREM SpecStrictQuorums => []StateMachineSafety
-THEOREM SpecWeakQuorums => []StateMachineSafety
+THEOREM StrictQuorumSafety == SpecStrictQuorums => []StateMachineSafety
+THEOREM WeakQuorumSafety == SpecWeakQuorums => []StateMachineSafety
 
 \* The strict quorum condition should imply the weak quorum condition.
-THEOREM SpecStrictQuorums => []WeakQuorumCondition
+THEOREM StrictQuorumImpliesWeakQuorum == SpecStrictQuorums => []WeakQuorumCondition
 
 -------------------------------------------------------------------------------------------
 
