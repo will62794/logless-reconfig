@@ -162,6 +162,8 @@ CommitEntry(i, commitQuorum) ==
         /\ Len(log[s]) >= ind
         /\ log[s][ind] = log[i][ind]        \* they have the entry.
         /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
+    \* Don't mark an entry as committed more than once.
+    /\ ~\E c \in committed : c.entry = <<ind, currentTerm[i]>>
     /\ committed' = committed \cup
             {[ entry  |-> <<ind, currentTerm[i]>>,
                quorum |-> commitQuorum]}
@@ -227,8 +229,9 @@ ElectionSafety ==
     \A e1, e2 \in elections : 
         (e1.term = e2.term) => (e1.leader = e2.leader)
 
-StateMachineSafety == TRUE
-
+\* If two entries are committed at the same index, they must be the same entry.
+StateMachineSafety == 
+    \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
 
 \* This weak protocol should not be safe.
 THEOREM ~(Spec => []StateMachineSafety)
@@ -248,5 +251,7 @@ StateConstraint == \A s \in Server :
                     /\ Len(log[s]) <= MaxLogLen
 
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
+
+ServerSymmetry == Permutations(Server)
 
 =============================================================================
