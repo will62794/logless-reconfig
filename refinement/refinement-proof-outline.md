@@ -8,29 +8,36 @@ At a high level, the `MongoRaftReconfig` protocol is a composition of two concep
 
 Since we consider the OSM to be the "externally visible" state machine, we ultimately want to make sure that it behaves correctly when composed with the CSM. Before we do this, however, we also need to make sure that the CSM behaves correctly i.e. we need to establish that `MongoDynamicRaft` upholds state machine safety. The `MongoDynamicRaft` protocol is based on the `MongoStaticRaft` protocol, but it breaks some key assumptions necessary for `MongoStaticRaft` to ensure safety. Thus, it is not a direct implementation of the `MongoStaticRaft` protocol, so it cannot inherit its safety properties directly. 
 
-More precisely, `MongoStaticRaft` relies on an assumption, call it `QC1`, that any quorums used by different nodes will always intersect in at least one node. The set of quorums permitted for use by any node is based on the current configuration of that node, and since the configuration on all nodes is the same and never modified in `MongoStaticRaft`, use of a simple majority quorum system satisfies the `QC1` condition. `MongoDynamicRaft` clearly violates `QC1` since the configurations on nodes may change in arbitrary ways. We can, however, consider a weaker condition than `QC1`, which we call `QC2`, that is still sufficient to guarantee safety. This condition is derived from the fact that quorum overlap in standard Raft, for both voting and commitment, is not in and of itself a strict requirement, but rather, is used as a mechanism to ensure that future candidates always intersect with at least some node that participated in a past election or log entry commitment. In order to consider protocols that can satisfy `QC2` without necessarily satisfying `QC1`, we define a more general version of the `MongoStaticRaft` protocol, which removes all assumptions about what quorums can be used by separate nodes. This protocol is specified as [`MongoWeakRaft`](MongoWeakRaft.tla). Our claim, then, is that 
+More precisely, `MongoStaticRaft` relies on an assumption, `QuorumsOverlap`, that any quorums used by different nodes will always intersect in at least one node. The set of quorums permitted for use by any node is based on the current configuration of that node, and since the configuration on all nodes is the same and never modified in `MongoStaticRaft`, use of a simple majority quorum system satisfies this condition. `MongoDynamicRaft` clearly violates this assumption, since the configurations on nodes may change in arbitrary ways. We can, however, consider a more general condition, which we call `QuorumInvariant`, that is sufficient to guarantee safety without requiring `QuorumsOverlap`. This condition is derived from the fact that quorum overlap in standard Raft, for both voting and commitment, is not in and of itself necessary, but rather, is used as a mechanism to ensure that future candidates always contact at least some node that participated in a past election or log entry commitment. In order to consider protocols that can satisfy `QuorumInvariant` without necessarily satisfying `QuorumsOverlap`, we define a more general version of the `MongoStaticRaft` protocol, which removes assumptions about what quorums can be used by separate nodes. This protocol is specified as [`MongoWeakRaft`](MongoWeakRaft.tla), and includes a [formal definition](MongoWeakRaft.tla#L181-L187) of `QuorumInvariant`.
+
+Our claim, then, is that any protocol that implements `MongoWeakRaft` and satisfies `QuorumInvariant` will guarantee safety. That is:
 
 ```tla
-MongoWeakRaft!Spec /\ QC2
+MongoWeakRaft!Spec /\ QuorumInvariant => Safety
 ```
 
-is sufficient to guarantee `StateMachineSafety`, and, furthermore, that `MongoStaticRaft` is a refinement of `MongoWeakRaft`
+We can also note that 
 
 ```tla
-MongoStaticRaft => MongoWeakRaft
+MongoStaticRaft!Spec => MongoWeakRaft!Spec
+```
+and that satisfaction of `QuorumsOverlap` implies satisfaction of `QuorumInvariant`.
+
+So, if we can show that
+
+```tla
+MongoDynamicRaft!Spec => MongoWeakRaft!Spec
+MongoDynamicRaft!Spec => QuorumInvariant
+```
+then this should be sufficient to imply
+
+```tla
+MongoDynamicRaft!Spec => Safety
 ```
 
-TODO: Finish.
+We can show that `MongoDynamicRaft!Spec => MongoWeakRaft!Spec`, through a series of stepwise refinements between `MongoDynamicRaft` and `MongoWeakRaft`. We can show that `QuorumInvariant` is upheld by `MongoDynamicRaft` via an inductive proof. 
 
 
-
-<!-- 
-$$
-\begin{aligned}
-MongoRaftReconfig &\Rightarrow MongoWeakRaft \\
-MongoRaftReconfig &\Rightarrow QC_2
-\end{aligned}
-$$  -->
 
 ### Protocol Glossary
 
