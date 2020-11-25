@@ -37,6 +37,16 @@ Refinement: We can show that `MongoDynamicRaft!Spec => MongoWeakRaft!Spec`, thro
 Invariance: We can show that `WeakQuorumCondition` is upheld by `MongoDynamicRaft` via an inductive invariance proof, which also utilizes the theorem `MongoStaticRaftSafety` theorem. 
 
 
+## The Oplog State Machine
+
+Once we have shown that the CSM is safe, we can then show that the OSM behaves correctly when composed with the CSM. That is, we want to show that
+
+```tla
+MongoRaftReconfig!Spec => MongoWeakRaft
+MongoRaftReconfig!Spec => []WeakQuorumCondition
+```
+which is sufficient to prove that `MongoRaftReconfig!Spec` is safe. Since elections are shared between the OSM and CSM, we already know that the election related condition of `WeakQuorumCondition` holds for the `MongoRaftReconfig` spec, but we will need to show the log related condition holds. Since we know that the CSM operates as a correct Raft state machine, and we know that a committed log entry must be committed in a current config before a reconfig is allowed, we should be able to show this fairly easily, by reasoning over the history of configs in the CSM.
+
 ### Protocol Glossary
 
 ```graphviz
