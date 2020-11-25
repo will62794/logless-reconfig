@@ -223,6 +223,7 @@ QuorumOverlapCondition ==
 \* State Constraint. Used for model checking only.
 StateConstraint == \A s \in Server :
                     /\ currentTerm[s] <= MaxTerm
+                    /\ Len(log[s]) <= MaxLogLen
 
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 

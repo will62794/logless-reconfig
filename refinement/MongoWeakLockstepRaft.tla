@@ -10,7 +10,10 @@ VARIABLE currentTerm
 VARIABLE state
 VARIABLE log
 
-vars == <<currentTerm, state, log>>
+VARIABLE config
+
+VARIABLE elections
+VARIABLE committed
 
 MWR == INSTANCE MongoWeakRaft 
     WITH MaxTerm <- MaxTerm,
@@ -22,34 +25,32 @@ MWR == INSTANCE MongoWeakRaft
          Nil <- Nil,
          currentTerm <- currentTerm,
          state <- state,
-         log <- log
+         config <- config,
+         elections <- elections,
+         committed <- committed
 
-\* Is the last log entry of node i currently committed.
+\* Is the last log entry of node 'i' currently committed.
 LastIsCommitted(i) == 
     \/ Len(log[i]) = 0 \* consider an empty log as being committed.
-    \/ \E quorum \in MWR!Quorums :
-        /\ Len(log[i]) > 0
-        \* This node is leader and its last entry was written by it.
-        /\ state[i] = Primary
-        /\ log[i][Len(log[i])].term = currentTerm[i]
-        \* All nodes in quorum this log entry and are in the term of the leader.
-        /\ \A j \in quorum :
-           \E k \in DOMAIN log[j] : 
-                /\ k = Len(log[i])
-                /\ log[j][k] = log[i][Len(log[i])]        \* they have the entry.
-                /\ currentTerm[j] = currentTerm[i]  \* they are in the same term.
+    \/ /\ Len(log[i]) > 0
+       /\ \E c \in committed : 
+            c.entry = <<Len(log[i]), log[i][Len(log[i])].term>>
 
 Init == MWR!Init
 Next == 
     \* Strengthen the client request precondition so that the current entry must be committed.
-    \/ \E s \in Server : 
-        /\ LastIsCommitted(s)
-        /\ MWR!ClientRequest(s)
+    \/ \E s \in Server : LastIsCommitted(s) /\ MWR!ClientRequest(s)
     \/ \E s, t \in Server : MWR!GetEntries(s, t)
     \/ \E s, t \in Server : MWR!RollbackEntries(s, t)
-    \/ \E s \in Server : \E Q \in MWR!Quorums : MWR!BecomeLeader(s, Q)
+    \/ \E s \in Server : \E Q \in MWR!QuorumsAt(s) : MWR!BecomeLeader(s, Q)
+    \/ \E s \in Server : MWR!CommitEntry(s)
+    \* TODO: Might want to allow this to change synchronously with any other action.
+    \/ \E s \in Server : MWR!ChangeConfig(s)
 
-Spec == Init /\ [][Next]_vars
+Spec == Init /\ [][Next]_(MWR!vars)
+
+ElectionSafety == MWR!ElectionSafety
+QuorumInvariant == MWR!QuorumInvariant
 
 RefinementProperty == MWR!Spec
 
