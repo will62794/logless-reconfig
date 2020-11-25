@@ -14,18 +14,32 @@ VARIABLE currentTerm
 VARIABLE state
 VARIABLE log
 
+\* VARIABLE config
+
+\* Each node has a set of quorums it can choose from. It can use any one of these
+\* for an election or commit.
+
+VARIABLE elections
+VARIABLE committed
+
 serverVars == <<currentTerm, state, log>>
-vars == <<currentTerm, state, log>>
+vars == <<currentTerm, state, log, elections, committed>>
 
 (***************************************************************************)
 (* Helper operators.                                                       *)
 (***************************************************************************)
 
 \* The set of all quorums. This satisfies no property of overlap between two quorums.
-Quorums == SUBSET Server
+\* Quorums == SUBSET Server
+
+Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
+QuorumsAt(i) == SUBSET Server
+\* QuorumsAt(i) == Quorums(Server)
+    
+\* Do all quorums of set x and set y share at least one overlapping node.
+QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
 
 \* Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
-
 \* QuorumsAt(i) == Quorums(config[i])
 
 Min(s) == CHOOSE x \in s : \A y \in s : x <= y
@@ -41,6 +55,9 @@ Empty(s) == Len(s) = 0
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)].term
 GetTerm(xlog, index) == IF index = 0 THEN 0 ELSE xlog[index].term
 LogTerm(i, index) == GetTerm(log[i], index)
+
+\* Is log entry e = <<index, term>> in the log of node 'i'.
+InLog(e, i) == \E x \in DOMAIN log[i] : x = e[1] /\ log[i][x] = e[2]
    
 \* Is it possible for log 'i' to roll back against log 'j'. 
 \* If this is true, it implies that log 'i' should remove entries from the end of its log.
@@ -61,7 +78,6 @@ CanVoteForOplog(i, j, term) ==
            /\ Len(log[j]) >= Len(log[i]) IN
     /\ currentTerm[i] < term
     /\ logOk
-
     
 -------------------------------------------------------------------------------------------
 
@@ -80,17 +96,13 @@ UpdateTerms(i, j) ==
 
 UpdateTermsOnNodes(i, j) == /\ UpdateTerms(i, j)
 
-
-\*
-\* Oplog State Machine actions.
-\*
-
 \*  Node 'i' rolls back against the log of node 'j'.  
 RollbackEntries(i, j) ==
     /\ CanRollback(i, j)
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
     /\ UpdateTerms(i, j)
+    /\ UNCHANGED <<elections, committed>>
 
 \* Node 'i' gets a new log entry from node 'j'.
 GetEntries(i, j) ==
@@ -111,6 +123,7 @@ GetEntries(i, j) ==
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
     /\ UpdateTerms(i, j)
+    /\ UNCHANGED <<elections, committed>>
 
 \* Node 'i', a primary, handles a new client request and places the entry 
 \* in its log.                                                            
@@ -119,7 +132,7 @@ ClientRequest(i) ==
     /\ LET entry == [term  |-> currentTerm[i]]
        newLog == Append(log[i], entry) IN
        /\ log' = [log EXCEPT ![i] = newLog]
-    /\ UNCHANGED <<currentTerm, state>>
+    /\ UNCHANGED <<currentTerm, state, elections, committed>>
 
 BecomeLeader(i, voteQuorum) == 
     \* Primaries make decisions based on their current configuration.
@@ -132,35 +145,57 @@ BecomeLeader(i, voteQuorum) ==
                     IF s = i THEN Primary
                     ELSE IF s \in voteQuorum THEN Secondary \* All voters should revert to secondary state.
                     ELSE state[s]]
-    \* Update config's term on step-up.
-    /\ UNCHANGED <<log>>    
+    /\ elections' = elections \cup 
+        {[ leader  |-> i, 
+            term   |-> newTerm, 
+            voters |-> voteQuorum]}
+    /\ UNCHANGED <<log, committed>>   
+
+\*
+\* For any node that could be elected or could commit a write, all of its quorums must:
+\*      1. Overlap with some node with term >=T for all elections that occurred in term T.
+\*      2. Overlap with some node containing an entry E for all previously committed entries E.
+\*
+QuorumInvariant == 
+    \A s \in Server :
+    \A quorum \in QuorumsAt(s) :
+        \* Overlaps with some node that contains term of election, for all previous elections.
+        /\ \A e \in elections : \E t \in quorum : currentTerm[t] >= e.term 
+        \* Overlaps with some node containing entry E, for all committed entries E.
+        /\ \A w \in committed : \E t \in quorum : InLog(w, log[t])
 
 \* For model checking.
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 
-\*
-\* Oplog State Machine spec.
-\*
 Init ==
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
     /\ log = [i \in Server |-> <<>>]
+    /\ elections = {}
+    /\ committed = {}
 
 Next == 
     \/ \E s \in Server : ClientRequest(s)
     \/ \E s, t \in Server : GetEntries(s, t)
     \/ \E s, t \in Server : RollbackEntries(s, t)
-    \/ \E s \in Server : \E Q \in Quorums : BecomeLeader(s, Q)
+    \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
 
 Spec == Init /\ [][Next]_vars
 
-ElectionSafety == \A x,y \in Server : 
-    (/\ (state[x] = Primary) /\ (state[y] = Primary) 
-     /\  currentTerm[x] = currentTerm[y]) => (x = y)
+ElectionSafety == 
+    \A e1, e2 \in elections : 
+        (e1.term = e2.term) => (e1.leader = e2.leader)
+
+\* Any two quorums (used by any election or commit) must overlap. 
+\* TODO. Enforce this over time, not just in current state.
+\* QuorumCondition1 == 
+\*     \A s \in Server:
+\*     \A quorum \in 
+\*     /\ \A s,t \in Server : QuorumsOverlap(config[s], config[t])
 
 -------------------------------------------------------------------------------------------
 
-\* State Constraint. Used for model checking only.                                                *)
+\* State Constraint. Used for model checking only.
 StateConstraint == \A s \in Server :
                     /\ currentTerm[s] <= MaxTerm
 
