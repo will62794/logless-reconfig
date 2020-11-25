@@ -84,7 +84,7 @@ Init ==
     /\ OSM!Init
 
 Next == 
-    \/ (OSM!Next /\ UNCHANGED csmVars)
+    \/ (OSM!Next /\ UNCHANGED csmVars) \* TODO: Include OpCommittedInConfig precondition for the Reconfig action.
     \/ (CSM!Next /\ UNCHANGED osmVars)
     \* Synchronized election action that must be executed by both state machines jointly.
     \/ \E s \in Server : \E Q \in Quorums(config[s]) : 
