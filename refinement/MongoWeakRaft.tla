@@ -16,9 +16,6 @@ VARIABLE log
 
 VARIABLE config
 
-\* Each node has a set of quorums it can choose from. It can use any one of these
-\* for an election or commit.
-
 VARIABLE elections
 VARIABLE committed
 
