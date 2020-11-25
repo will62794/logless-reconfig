@@ -146,39 +146,43 @@ BecomeLeader(i, voteQuorum) ==
     /\ elections' = elections \cup 
         {[ leader  |-> i, 
             term   |-> newTerm, 
-            voters |-> voteQuorum]}
+            quorum |-> voteQuorum]}
     /\ UNCHANGED <<log, committed, config>>   
 
-CommitEntry(i) ==
+CommitEntry(i, commitQuorum) ==
     LET ind == Len(log[i]) IN
-    \E commitQuorum \in QuorumsAt(i) :
-        \* Must have some entries to commit.
-        /\ ind > 0
-        \* This node is leader.
-        /\ state[i] = Primary
-        \* The entry was written by this leader.
-        /\ log[i][ind].term = currentTerm[i]
-        \* all nodes have this log entry and are in the term of the leader.
-        /\ \A s \in commitQuorum :
-            /\ Len(log[s]) >= ind
-            /\ log[s][ind] = log[i][ind]        \* they have the entry.
-            /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
-        /\ committed' = committed \cup
-             {[ entry  |-> <<ind, currentTerm[i]>>,
-                quorum |-> commitQuorum]}
-        /\ UNCHANGED <<currentTerm, state, log, elections, config>>
+    \* Must have some entries to commit.
+    /\ ind > 0
+    \* This node is leader.
+    /\ state[i] = Primary
+    \* The entry was written by this leader.
+    /\ log[i][ind].term = currentTerm[i]
+    \* all nodes have this log entry and are in the term of the leader.
+    /\ \A s \in commitQuorum :
+        /\ Len(log[s]) >= ind
+        /\ log[s][ind] = log[i][ind]        \* they have the entry.
+        /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
+    /\ committed' = committed \cup
+            {[ entry  |-> <<ind, currentTerm[i]>>,
+               quorum |-> commitQuorum]}
+    /\ UNCHANGED <<currentTerm, state, log, elections, config>>
 
 \* Arbitrarily change the config of some node.
 ChangeConfig(i) == 
     /\ \E newConfig \in SUBSET Server : config' = [config EXCEPT ![i] = newConfig]
     /\ UNCHANGED <<currentTerm, state, log, committed, elections>>
 
+\* Any two election quorums must overlap, and any vote quorum and election quorum must overlap. 
+StrictQuorumIntersection == 
+    /\ \A e1,e2 \in elections : e1.quorum \cap e2.quorum # {}
+    /\ \A c \in committed, e \in elections : c.quorum \cap e.quorum # {}
+
 \*
 \* For any node that could be elected or could commit a write, all of its quorums must:
 \*      1. Overlap with some node with term >=T for all elections that occurred in term T.
 \*      2. Overlap with some node containing an entry E for all previously committed entries E.
 \*
-QuorumInvariant == 
+WeakQuorumIntersection == 
     \A s \in Server :
     \A quorum \in QuorumsAt(s) :
         \* Overlaps with some node that contains term of election, for all previous elections.
@@ -202,7 +206,7 @@ Next ==
     \/ \E s, t \in Server : GetEntries(s, t)
     \/ \E s, t \in Server : RollbackEntries(s, t)
     \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
-    \/ \E s \in Server : CommitEntry(s)
+    \/ \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
     \* TODO: Might want to allow this to change synchronously with any other action.
     \/ \E s \in Server : ChangeConfig(s)
 
@@ -213,10 +217,7 @@ ElectionSafety ==
     \A e1, e2 \in elections : 
         (e1.term = e2.term) => (e1.leader = e2.leader)
 
-\* Any two quorums (used by any election or commit) must overlap. 
-\* TODO. Consider enforcing this over time, not just in current state.
-QuorumOverlapCondition == 
-    /\ \A s,t \in Server : QuorumsOverlap(config[s], config[t])
+
 
 -------------------------------------------------------------------------------------------
 
