@@ -14,7 +14,7 @@ VARIABLE currentTerm
 VARIABLE state
 VARIABLE log
 
-\* VARIABLE config
+VARIABLE config
 
 \* Each node has a set of quorums it can choose from. It can use any one of these
 \* for an election or commit.
@@ -23,7 +23,7 @@ VARIABLE elections
 VARIABLE committed
 
 serverVars == <<currentTerm, state, log>>
-vars == <<currentTerm, state, log, elections, committed>>
+vars == <<currentTerm, state, log, elections, committed, config>>
 
 (***************************************************************************)
 (* Helper operators.                                                       *)
@@ -33,7 +33,8 @@ vars == <<currentTerm, state, log, elections, committed>>
 \* Quorums == SUBSET Server
 
 Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
-QuorumsAt(i) == SUBSET Server
+QuorumsAt(i) == Quorums(config[i])
+\* QuorumsAt(i) == SUBSET config[i]
 \* QuorumsAt(i) == Quorums(Server)
     
 \* Do all quorums of set x and set y share at least one overlapping node.
@@ -102,7 +103,7 @@ RollbackEntries(i, j) ==
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
     /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<elections, committed>>
+    /\ UNCHANGED <<elections, committed, config>>
 
 \* Node 'i' gets a new log entry from node 'j'.
 GetEntries(i, j) ==
@@ -123,7 +124,7 @@ GetEntries(i, j) ==
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
     /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<elections, committed>>
+    /\ UNCHANGED <<elections, committed, config>>
 
 \* Node 'i', a primary, handles a new client request and places the entry 
 \* in its log.                                                            
@@ -132,7 +133,7 @@ ClientRequest(i) ==
     /\ LET entry == [term  |-> currentTerm[i]]
        newLog == Append(log[i], entry) IN
        /\ log' = [log EXCEPT ![i] = newLog]
-    /\ UNCHANGED <<currentTerm, state, elections, committed>>
+    /\ UNCHANGED <<currentTerm, state, elections, committed, config>>
 
 BecomeLeader(i, voteQuorum) == 
     \* Primaries make decisions based on their current configuration.
@@ -149,7 +150,12 @@ BecomeLeader(i, voteQuorum) ==
         {[ leader  |-> i, 
             term   |-> newTerm, 
             voters |-> voteQuorum]}
-    /\ UNCHANGED <<log, committed>>   
+    /\ UNCHANGED <<log, committed, config>>   
+
+\* Arbitrarily change the config of some node.
+ChangeConfig(i) == 
+    /\ \E newConfig \in SUBSET Server : config' = [config EXCEPT ![i] = newConfig]
+    /\ UNCHANGED <<currentTerm, state, log, committed, elections>>
 
 \*
 \* For any node that could be elected or could commit a write, all of its quorums must:
@@ -164,6 +170,7 @@ QuorumInvariant ==
         \* Overlaps with some node containing entry E, for all committed entries E.
         /\ \A w \in committed : \E t \in quorum : InLog(w, log[t])
 
+
 \* For model checking.
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 
@@ -171,6 +178,7 @@ Init ==
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
     /\ log = [i \in Server |-> <<>>]
+    /\ \E initConfig \in SUBSET Server : config = [i \in Server |-> initConfig]
     /\ elections = {}
     /\ committed = {}
 
@@ -179,19 +187,20 @@ Next ==
     \/ \E s, t \in Server : GetEntries(s, t)
     \/ \E s, t \in Server : RollbackEntries(s, t)
     \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
+    \* TODO: Might want to allow this to change synchronously with any other action.
+    \/ \E s \in Server : ChangeConfig(s)
 
 Spec == Init /\ [][Next]_vars
+\* Spec == Init /\ [][Next /\ QuorumInvariant']_vars
 
 ElectionSafety == 
     \A e1, e2 \in elections : 
         (e1.term = e2.term) => (e1.leader = e2.leader)
 
 \* Any two quorums (used by any election or commit) must overlap. 
-\* TODO. Enforce this over time, not just in current state.
-\* QuorumCondition1 == 
-\*     \A s \in Server:
-\*     \A quorum \in 
-\*     /\ \A s,t \in Server : QuorumsOverlap(config[s], config[t])
+\* TODO. Consider enforcing this over time, not just in current state.
+QuorumOverlapCondition == 
+    /\ \A s,t \in Server : QuorumsOverlap(config[s], config[t])
 
 -------------------------------------------------------------------------------------------
 
