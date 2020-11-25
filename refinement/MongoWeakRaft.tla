@@ -58,7 +58,7 @@ GetTerm(xlog, index) == IF index = 0 THEN 0 ELSE xlog[index].term
 LogTerm(i, index) == GetTerm(log[i], index)
 
 \* Is log entry e = <<index, term>> in the log of node 'i'.
-InLog(e, i) == \E x \in DOMAIN log[i] : x = e[1] /\ log[i][x] = e[2]
+InLog(e, i) == \E x \in DOMAIN log[i] : x = e[1] /\ log[i][x].term = e[2]
    
 \* Is it possible for log 'i' to roll back against log 'j'. 
 \* If this is true, it implies that log 'i' should remove entries from the end of its log.
@@ -152,6 +152,25 @@ BecomeLeader(i, voteQuorum) ==
             voters |-> voteQuorum]}
     /\ UNCHANGED <<log, committed, config>>   
 
+CommitEntry(i) ==
+    LET ind == Len(log[i]) IN
+    \E commitQuorum \in QuorumsAt(i) :
+        \* Must have some entries to commit.
+        /\ ind > 0
+        \* This node is leader.
+        /\ state[i] = Primary
+        \* The entry was written by this leader.
+        /\ log[i][ind].term = currentTerm[i]
+        \* all nodes have this log entry and are in the term of the leader.
+        /\ \A s \in commitQuorum :
+            /\ Len(log[s]) >= ind
+            /\ log[s][ind] = log[i][ind]        \* they have the entry.
+            /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
+        /\ committed' = committed \cup
+             {[ entry  |-> <<ind, currentTerm[i]>>,
+                quorum |-> commitQuorum]}
+        /\ UNCHANGED <<currentTerm, state, log, elections, config>>
+
 \* Arbitrarily change the config of some node.
 ChangeConfig(i) == 
     /\ \E newConfig \in SUBSET Server : config' = [config EXCEPT ![i] = newConfig]
@@ -168,8 +187,7 @@ QuorumInvariant ==
         \* Overlaps with some node that contains term of election, for all previous elections.
         /\ \A e \in elections : \E t \in quorum : currentTerm[t] >= e.term 
         \* Overlaps with some node containing entry E, for all committed entries E.
-        /\ \A w \in committed : \E t \in quorum : InLog(w, log[t])
-
+        /\ \A w \in committed : \E t \in quorum : InLog(w.entry, t)
 
 \* For model checking.
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
@@ -187,6 +205,7 @@ Next ==
     \/ \E s, t \in Server : GetEntries(s, t)
     \/ \E s, t \in Server : RollbackEntries(s, t)
     \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
+    \/ \E s \in Server : CommitEntry(s)
     \* TODO: Might want to allow this to change synchronously with any other action.
     \/ \E s \in Server : ChangeConfig(s)
 
