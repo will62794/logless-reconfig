@@ -50,12 +50,12 @@ Range(f) == {f[x] : x \in DOMAIN f}
 Empty(s) == Len(s) = 0
 
 \* The term of the last entry in a log, or 0 if the log is empty.
-LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)].term
-GetTerm(xlog, index) == IF index = 0 THEN 0 ELSE xlog[index].term
+LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)]
+GetTerm(xlog, index) == IF index = 0 THEN 0 ELSE xlog[index]
 LogTerm(i, index) == GetTerm(log[i], index)
 
 \* Is log entry e = <<index, term>> in the log of node 'i'.
-InLog(e, i) == \E x \in DOMAIN log[i] : x = e[1] /\ log[i][x].term = e[2]
+InLog(e, i) == \E x \in DOMAIN log[i] : x = e[1] /\ log[i][x] = e[2]
    
 \* Is it possible for log 'i' to roll back against log 'j'. 
 \* If this is true, it implies that log 'i' should remove entries from the end of its log.
@@ -127,9 +127,7 @@ GetEntries(i, j) ==
 \* in its log.                                                            
 ClientRequest(i) ==
     /\ state[i] = Primary
-    /\ LET entry == [term  |-> currentTerm[i]]
-       newLog == Append(log[i], entry) IN
-       /\ log' = [log EXCEPT ![i] = newLog]
+    /\ log' = [log EXCEPT ![i] = Append(log[i], currentTerm[i])]
     /\ UNCHANGED <<currentTerm, state, elections, committed, config>>
 
 BecomeLeader(i, voteQuorum) == 
@@ -156,7 +154,7 @@ CommitEntry(i, commitQuorum) ==
     \* This node is leader.
     /\ state[i] = Primary
     \* The entry was written by this leader.
-    /\ log[i][ind].term = currentTerm[i]
+    /\ log[i][ind] = currentTerm[i]
     \* all nodes have this log entry and are in the term of the leader.
     /\ \A s \in commitQuorum :
         /\ Len(log[s]) >= ind
