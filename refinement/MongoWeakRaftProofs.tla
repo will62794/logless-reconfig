@@ -72,6 +72,23 @@ INext_ElectionSafety == NextStrict
 
 -------------------------------------------------------------------------------------
 
+(*** LogMatching ***)
+
+\* Inductive invariant.
+LogMatchingInd == 
+    /\ LogMatching
+
+\* Check inductive invariance.
+IInit_LogMatching ==  
+    /\ TypeOKRandom 
+    /\ StricterQuorumCondition 
+    /\ ElectionSafety \* we assume that this invariant holds.
+    /\ LogMatchingInd
+
+INext_LogMatching == NextStrict
+
+-------------------------------------------------------------------------------------
+
 (*** StateMachineSafety ***)
 
 
