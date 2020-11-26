@@ -37,7 +37,7 @@ CommittedType ==
 TypeOKRandom == 
     /\ currentTerm \in RandomSubset(5, [Server -> Nat])
     /\ state \in RandomSubset(5, [Server -> {Secondary, Primary}])
-    /\ log \in RandomSubset(5, [Server -> Seq([term  : Nat])])
+    /\ log \in RandomSubset(5, [Server -> Seq(Nat)])
     /\ config \in RandomSubset(1, [Server -> SUBSET Server])
     /\ committed \in RandomSetOfSubsets(5, 1, CommittedType)
     /\ elections \in RandomSetOfSubsets(5, 1, ElectionType)
