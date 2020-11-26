@@ -98,18 +98,21 @@ CommittedEntryPresentInLogs ==
     \A c \in committed : \A s \in c.quorum : InLog(c.entry, s)
 
 \* A node must have committed a log entry using some quorum of the global config.
-CommitMustUseValidConfig == 
+CommitMustUseValidQuorum == 
     \A c \in committed : c.quorum \in Quorums(Server)
 
 StateMachineSafetyInd == 
     /\ StateMachineSafety
     /\ CommittedEntryPresentInLogs
-    /\ CommitMustUseValidConfig
+    /\ CommitMustUseValidQuorum
 
+IInit_StateMachineSafety ==  
+    /\ TypeOKRandom 
+    /\ StricterQuorumCondition 
+    /\ LogMatching \* assume this invariant holds.
+    /\ StateMachineSafetyInd
 
-IndInv == StateMachineSafetyInd
-IInit ==  TypeOKRandom /\ StricterQuorumCondition /\ IndInv
-INext == NextStrict
+INext_StateMachineSafety == NextStrict
 
 
 =============================================================================
