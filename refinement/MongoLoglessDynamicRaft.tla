@@ -1,4 +1,4 @@
----- MODULE MongoDynamicRaft ----
+---- MODULE MongoLoglessDynamicRaft ----
 \* The logless, dynamic Raft protocol for reconfiguration.
 
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC

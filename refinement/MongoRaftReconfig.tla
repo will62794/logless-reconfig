@@ -53,7 +53,7 @@ osmVars == <<log>>
 csmVars == <<configVersion, configTerm, config>>
 
 \* The config state machine.
-CSM == INSTANCE MongoDynamicRaft 
+CSM == INSTANCE MongoLoglessDynamicRaft 
         WITH currentTerm <- currentTerm,
              state <- state,
              configVersion <- configVersion,
@@ -74,7 +74,7 @@ OSM == INSTANCE MongoStaticRaft
              MaxConfigVersion <- MaxConfigVersion
 \*
 \* This protocol is specified as a composition of a Config State Machine (which
-\* runs MongoDynamicRaft) and an Oplog State Machine (which runs
+\* runs MongoLoglessDynamicRaft) and an Oplog State Machine (which runs
 \* MongoStaticRaft). The composition is asynchronous except for the election
 \* action i.e. both protocols need to execute their election action
 \* simultaneously.
