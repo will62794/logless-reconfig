@@ -164,7 +164,8 @@ CommitEntry(i, commitQuorum) ==
     /\ ~\E c \in committed : c.entry = <<ind, currentTerm[i]>>
     /\ committed' = committed \cup
             {[ entry  |-> <<ind, currentTerm[i]>>,
-               quorum |-> commitQuorum]}
+               quorum |-> commitQuorum,
+               term  |-> currentTerm[i]]}
     /\ UNCHANGED <<currentTerm, state, log, elections, config>>
 
 \* Arbitrarily change the config of some node.

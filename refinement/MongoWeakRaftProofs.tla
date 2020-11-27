@@ -33,12 +33,13 @@ ElectionType == [ leader : Server,
 
 CommittedType == 
     [ entry  : PositiveNat \times PositiveNat,
-      quorum : SUBSET Server]
+      quorum : SUBSET Server,
+      term : Nat]
 
 TypeOKRandom == 
-    /\ currentTerm \in RandomSubset(5, [Server -> Nat])
-    /\ state \in RandomSubset(5, [Server -> {Secondary, Primary}])
-    /\ log \in RandomSubset(5, [Server -> Seq(PositiveNat)])
+    /\ currentTerm \in RandomSubset(7, [Server -> Nat])
+    /\ state \in RandomSubset(8, [Server -> {Secondary, Primary}])
+    /\ log \in RandomSubset(7, [Server -> Seq(PositiveNat)])
     \* Make config constant for all nodes.
     /\ config = [i \in Server |-> Server]
     /\ committed \in RandomSetOfSubsets(6, 1, CommittedType)
@@ -91,7 +92,6 @@ INext_LogMatching == NextStrict
 
 (*** StateMachineSafety ***)
 
-
 \* If a log entry is committed by a quorum Q, it must be present in the log of each node
 \* in Q.
 CommittedEntryPresentInLogs == 
@@ -101,10 +101,26 @@ CommittedEntryPresentInLogs ==
 CommitMustUseValidQuorum == 
     \A c \in committed : c.quorum \in Quorums(Server)
 
+
+\* If a node is currently primary in term T, an election in term T must have been recorded.
+PrimaryNodeImpliesElectionRecorded == 
+    \A s \in Server : state[s] = Primary => (\E e \in elections : 
+                                                /\ e.term = currentTerm[s]
+                                                /\ e.leader = s)
+
+\* If a node is primary, it must contain all committed entries from previous terms in its log.
+LeaderLogContainsPastCommittedEntries ==
+    \A s \in Server : 
+        (state[s] = Primary) =>
+            (\A c \in committed : c.term < currentTerm[s] => InLog(c.entry, s))
+
+\* Inductive invariant.
 StateMachineSafetyInd == 
     /\ StateMachineSafety
     /\ CommittedEntryPresentInLogs
     /\ CommitMustUseValidQuorum
+    /\ PrimaryNodeImpliesElectionRecorded
+    /\ LeaderLogContainsPastCommittedEntries
 
 IInit_StateMachineSafety ==  
     /\ TypeOKRandom 
