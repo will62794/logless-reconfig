@@ -49,7 +49,7 @@ which is sufficient to prove that `MongoRaftReconfig!Spec` is safe. Since electi
 
 ### Protocol Glossary
 
-```graphviz
+<!-- ```graphviz
 digraph{
 	MongoWeakRaft -> MongoStaticRaft;
 	MongoWeakRaft -> MongoLockstepWeakRaft;
@@ -57,13 +57,14 @@ digraph{
 	MongoLoglessLockstepWeakRaft -> MongoLoglessDynamicRaft;
 }
 
-```
+``` -->
 
-- $MongoStaticRaft$ - The existing replication protocol used by MongoDB that is based on Raft. It does not allow for dynamic reconfiguration and it satisfies all the same safety properties as standard Raft, as described in the Raft dissertation.
-- $MongoWeakRaft$ - A very general, weak protocol that places no restrictions on quorums used by nodes.
-- $MongoLockstepWeakRaft$ - Weak quorum protocol but requires a log entry be committed in a node's own quorum before writing a new entry.
-- $MongoLoglessLockstepWeakRaft$ - Logless version of  $MongoLockstepWeakRaft$.
-- $MongoRaftReconfig$ - The new MongoDB protocol that allows for dynamic reconfiguration. Behaves as a composition of $MongoLoglessDynamicRaft$ running on the CSM and $MongoStaticRaft$ running on the OSM.
+- `MongoWeakRaft` - A very general, weak protocol that places no restrictions on quorums used by nodes.
+- `MongoStaticRaft` - The existing replication protocol used by MongoDB that is based on Raft. It does not allow for dynamic reconfiguration and it satisfies all the same safety properties as standard Raft, as described in the Raft dissertation. It implements `MongoWeakRaft` and should satisfy `StrictQuorumCondition`.
+- `MongoLockstepWeakRaft` - Weak quorum protocol but requires a log entry be committed in a node's own quorum before writing a new entry.
+- `MongoDynamicRaft` - A variant of `MongoStaticRaft` that allows for state machine operations to modify the configuration. This protocol keeps an explicit log and is closest to the Raft dissertation reconfig algorithm.
+- `MongoLoglessDynamicRaft` - A variant of `MongoDynamicRaft` that optimizes away the log, and only stores the latest config on each node. The goal is to have this refine `MongoDynamicRaft`.
+- `MongoRaftReconfig` - The new MongoDB protocol that allows for dynamic reconfiguration. Behaves as a composition of `MongoLoglessDynamicRaft` which runs the CSM and `MongoStaticRaft` which runs the OSM.
 
 
 
