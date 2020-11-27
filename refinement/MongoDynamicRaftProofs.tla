@@ -47,6 +47,10 @@ TypeOKRandom ==
 
 -------------------------------------------------------------------------------------
 
+\* The newest config log entry on a node is equivalent to its current config.
+LatestConfigLogEntryMatchesConfig == 
+    \A s \in Server : (configLog[s] # <<>>) => configLog[s][Len(configLog[s])] = config[s]
+
 \* Assume this for now to prevent out of bounds errors. We could prove it separately.
 LogAndConfigLogSameLengths ==
     \A s \in Server : Len(log[s]) = Len(configLog[s])
@@ -55,9 +59,17 @@ LogAndConfigLogSameLengths ==
 WeakQuorumConditionInd == 
     /\ MWR!WeakQuorumCondition
 
+\* Assumed or previously proved invariants that we use to make the inductive step
+\* simpler.
+Assumptions == 
+    /\ LogAndConfigLogSameLengths 
+    /\ LatestConfigLogEntryMatchesConfig
+    /\ LogMatching
+    /\ StateMachineSafety
+
 IInit ==  
     /\ TypeOKRandom 
-    /\ LogAndConfigLogSameLengths \* we assume it holds.
+    /\ Assumptions
     /\ WeakQuorumConditionInd
 
 INext == Next

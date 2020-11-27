@@ -195,9 +195,11 @@ WeakQuorumCondition ==
     \A quorum \in QuorumsAt(s) :
         Electable(s, quorum) =>
         \* Overlaps with some node that contains term of election, for all previous elections.
-        ( /\ \A e \in elections : \E t \in quorum : currentTerm[t] >= e.term 
+        ( 
+          /\ \A e \in elections : \E t \in quorum : currentTerm[t] >= e.term 
           \* Overlaps with some node containing entry E, for all committed entries E.
-          /\ \A w \in committed : \E t \in quorum : InLog(w.entry, t)  )
+        \*   /\ \A w \in committed : \E t \in quorum : InLog(w.entry, t) 
+        )
 
 \* For model checking.
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion

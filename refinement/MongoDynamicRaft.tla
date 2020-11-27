@@ -230,6 +230,7 @@ MWR == INSTANCE MongoWeakRaft
          committed <- committed
 
 ElectionSafety == MWR!ElectionSafety
+LogMatching == MWR!LogMatching
 StateMachineSafety == MWR!StateMachineSafety
 
 -------------------------------------------------------------------------------------------
