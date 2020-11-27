@@ -37,13 +37,13 @@ CommittedType ==
       term : Nat]
 
 TypeOKRandom == 
-    /\ currentTerm \in RandomSubset(7, [Server -> Nat])
+    /\ currentTerm \in RandomSubset(10, [Server -> Nat])
     /\ state \in RandomSubset(8, [Server -> {Secondary, Primary}])
-    /\ log \in RandomSubset(7, [Server -> Seq(PositiveNat)])
+    /\ log \in RandomSubset(10, [Server -> Seq(PositiveNat)])
     \* Make config constant for all nodes.
     /\ config = [i \in Server |-> Server]
-    /\ committed \in RandomSetOfSubsets(6, 1, CommittedType)
-    /\ elections \in RandomSetOfSubsets(6, 1, ElectionType)
+    /\ committed \in RandomSetOfSubsets(10, 1, CommittedType)
+    /\ elections \in RandomSetOfSubsets(10, 1, ElectionType)
 
 \* Condition that all nodes have the same config. For these proofs we assume this,
 \* which essentially makes the protocol we're proving MongoStaticRaft.
@@ -109,11 +109,27 @@ PrimaryNodeImpliesElectionRecorded ==
                                                 /\ e.term = currentTerm[s]
                                                 /\ e.leader = s)
 
+\* A server's current term is always at least as large as the terms in its log.
+\* This is LEMMA 6 from the Raft dissertation.
+CurrentTermAtLeastAsLargeAsLogTerms == 
+    \A s \in Server : \A i \in DOMAIN log[s] : currentTerm[s] >= log[s][i]
+
+\* The terms of entries grow monotonically in each log.
+\* This is LEMMA 7 from the Raft dissertation.
+TermsOfEntriesGrowMonotonically ==
+    \A s \in Server : \A i \in 1..(Len(log[s])-1) : log[s][i] <= log[s][i+1] 
+
 \* If a node is primary, it must contain all committed entries from previous terms in its log.
 LeaderLogContainsPastCommittedEntries ==
     \A s \in Server : 
         (state[s] = Primary) =>
             (\A c \in committed : c.term < currentTerm[s] => InLog(c.entry, s))
+
+
+\* If a log entry in term T exists, it must have been created by a leader in term T. So
+\* an election in term T must exist.
+LogEntryInTermImpliesElectionInTerm == 
+    \A s \in Server : \A i \in DOMAIN log[s] : (\E e \in elections : e.term = log[s][i])
 
 \* Inductive invariant.
 StateMachineSafetyInd == 
@@ -122,6 +138,10 @@ StateMachineSafetyInd ==
     /\ CommitMustUseValidQuorum
     /\ PrimaryNodeImpliesElectionRecorded
     /\ LeaderLogContainsPastCommittedEntries
+    /\ CurrentTermAtLeastAsLargeAsLogTerms
+    /\ TermsOfEntriesGrowMonotonically
+    /\ ElectionImpliesQuorumInTerm
+    /\ LogEntryInTermImpliesElectionInTerm
 
 \* Assumptions or previously proven invariants that we use to help make
 \* inductive proof easier. These follow from the rule that, if Inv1, Inv2, etc. is known to hold,
@@ -139,5 +159,26 @@ IInit_StateMachineSafety ==
 
 INext_StateMachineSafety == NextStrict
 
+\*
+\* For easier error diagnosis.
+\*
+StateStr(st) == 
+    IF st = Primary THEN "P" ELSE "S"
+
+ServerStr(s) == 
+    IF s = Nil THEN "--------------" ELSE
+    "t" \o ToString(currentTerm[s]) \o " " \o StateStr(state[s]) \o " " \o
+    ToString(log[s])
+
+Alias == 
+    [
+        \* currentTerm |-> currentTerm,
+        \* state |-> state,
+        \* log |-> log,
+        \* config |-> config,
+        elections |-> elections,
+        committed |-> committed,
+        nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)]
+    ]
 
 =============================================================================
