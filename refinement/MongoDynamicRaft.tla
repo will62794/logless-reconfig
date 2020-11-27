@@ -99,6 +99,9 @@ RollbackEntries(i, j) ==
     /\ CanRollback(i, j)
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
+    \* TODO: Figure out how to roll back configs.
+
+    \* If we are rolling back a config, it should be an uncommitted one.
     /\ UpdateTerms(i, j)
     /\ UNCHANGED <<elections, committed, config>>
 
@@ -210,7 +213,7 @@ CommitEntryAction == \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q
 Next == 
     \/ \E s \in Server : \E newConfig \in SUBSET Server : ClientRequest(s, newConfig)
     \/ \E s, t \in Server : GetEntries(s, t)
-    \/ \E s, t \in Server : RollbackEntries(s, t)
+    \* \/ \E s, t \in Server : RollbackEntries(s, t)
     \/ BecomeLeaderAction
     \/ CommitEntryAction
 
