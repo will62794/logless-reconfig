@@ -16,11 +16,13 @@ VARIABLE log
 
 VARIABLE config
 
+VARIABLE configLog \* shadow of 'log' variable which stores config at a log index.
+
 VARIABLE elections
 VARIABLE committed
 
 serverVars == <<currentTerm, state, log>>
-vars == <<currentTerm, state, log, elections, committed, config>>
+vars == <<currentTerm, state, log, elections, committed, config, configLog>>
 
 (***************************************************************************)
 (* Helper operators.                                                       *)
@@ -99,11 +101,11 @@ RollbackEntries(i, j) ==
     /\ CanRollback(i, j)
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
-    \* TODO: Figure out how to roll back configs.
-
-    \* If we are rolling back a config, it should be an uncommitted one.
+    /\ configLog' = [configLog EXCEPT ![i] = SubSeq(configLog[i], 1, Len(configLog[i])-1)]
+    \* Roll back your config state as well.
+    /\ config' = [config EXCEPT ![i] = configLog[i-1]]
     /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<elections, committed, config>>
+    /\ UNCHANGED <<elections, committed>>
 
 \* Node 'i' gets a new log entry from node 'j'.
 GetEntries(i, j) ==
@@ -123,6 +125,7 @@ GetEntries(i, j) ==
               newEntry      == log[j][newEntryIndex]
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
+              /\ configLog' = [configLog EXCEPT ![i] = Append(configLog[i], configLog[j][newEntryIndex])]
     /\ UpdateTerms(i, j)
     \* We also propagate the config via logs. Conceptually, the current config is determined by the 
     \* last log entry, so we can just update the config on the receiving node directly to the config
@@ -147,6 +150,7 @@ ClientRequest(i, newConfig) ==
     /\ i \in newConfig \* don't remove yourself from config.
     /\ log' = [log EXCEPT ![i] = Append(log[i], currentTerm[i])]
     /\ config' = [config EXCEPT ![i] = newConfig]
+    /\ configLog' = [configLog EXCEPT ![i] = Append(configLog[i], newConfig)]
     /\ UNCHANGED <<currentTerm, state, elections, committed>>
 
 BecomeLeader(i, voteQuorum) == 
@@ -166,6 +170,8 @@ BecomeLeader(i, voteQuorum) ==
             quorum |-> voteQuorum]}
     \* Write a new no-op on step up that must be committed before a config change can occur.
     /\ log' = [log EXCEPT ![i] = Append(log[i], newTerm)]
+    \* The config does not change but we write a dummy log entry.
+    /\ configLog' = [configLog EXCEPT ![i] = Append(configLog[i], config[i])]
     /\ UNCHANGED <<committed, config>>   
 
 CommitEntry(i, commitQuorum) ==
@@ -187,7 +193,7 @@ CommitEntry(i, commitQuorum) ==
             {[ entry  |-> <<ind, currentTerm[i]>>,
                quorum |-> commitQuorum,
                term  |-> currentTerm[i]]}
-    /\ UNCHANGED <<currentTerm, state, log, elections, config>>
+    /\ UNCHANGED <<currentTerm, state, log, elections, config, configLog>>
 
 \* Is node 'i' currently electable with quorum 'q'.
 Electable(i, q) == ENABLED BecomeLeader(i, q)
@@ -198,10 +204,12 @@ CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 Init ==
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
-    /\ log = [i \in Server |-> <<>>]
+    \* Let every log start with an entry representing the initial config.
+    /\ log = [i \in Server |-> <<0>>]
     /\ \E initConfig \in SUBSET Server : 
         /\ initConfig # {}
         /\ config = [i \in Server |-> initConfig]
+        /\ configLog = [i \in Server |-> <<initConfig>>]
     /\ elections = {}
     /\ committed = {}
 
