@@ -121,14 +121,30 @@ GetEntries(i, j) ==
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
     /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<elections, committed, config>>
+    \* We also propagate the config via logs. Conceptually, the current config is determined by the 
+    \* last log entry, so we can just update the config on the receiving node directly to the config
+    \* of the sender.
+    /\ config' = [config EXCEPT ![j] = config[i]]
+    /\ UNCHANGED <<elections, committed>>
+
+\* Is the last log entry of node 'i' currently committed.
+LastIsCommitted(i) == 
+    \/ Len(log[i]) = 0 \* consider an empty log as being committed.
+    \/ /\ Len(log[i]) > 0
+       /\ \E c \in committed : 
+            c.entry = <<Len(log[i]), log[i][Len(log[i])]>>
 
 \* Node 'i', a primary, handles a new client request and places the entry 
-\* in its log.                                                            
-ClientRequest(i) ==
+\* in its log. It also executes a reconfig.                                                         
+ClientRequest(i, newConfig) ==
     /\ state[i] = Primary
+    \* Make sure the current log entry is committed before reconfiguring.
+    /\ LastIsCommitted(i)
+    /\ QuorumsOverlap(config[i], newConfig)
+    /\ i \in newConfig \* don't remove yourself from config.
     /\ log' = [log EXCEPT ![i] = Append(log[i], currentTerm[i])]
-    /\ UNCHANGED <<currentTerm, state, elections, committed, config>>
+    /\ config' = [config EXCEPT ![i] = newConfig]
+    /\ UNCHANGED <<currentTerm, state, elections, committed>>
 
 BecomeLeader(i, voteQuorum) == 
     \* Primaries make decisions based on their current configuration.
@@ -145,7 +161,9 @@ BecomeLeader(i, voteQuorum) ==
         {[ leader  |-> i, 
             term   |-> newTerm, 
             quorum |-> voteQuorum]}
-    /\ UNCHANGED <<log, committed, config>>   
+    \* Write a new no-op on step up that must be committed before a config change can occur.
+    /\ log' = [log EXCEPT ![i] = Append(log[i], newTerm)]
+    /\ UNCHANGED <<committed, config>>   
 
 CommitEntry(i, commitQuorum) ==
     LET ind == Len(log[i]) IN
@@ -168,10 +186,6 @@ CommitEntry(i, commitQuorum) ==
                term  |-> currentTerm[i]]}
     /\ UNCHANGED <<currentTerm, state, log, elections, config>>
 
-Reconfig(i) == 
-    /\ \E newConfig \in SUBSET Server : config' = [config EXCEPT ![i] = newConfig]
-    /\ UNCHANGED <<currentTerm, state, log, committed, elections>>
-
 \* Is node 'i' currently electable with quorum 'q'.
 Electable(i, q) == ENABLED BecomeLeader(i, q)
 
@@ -182,37 +196,41 @@ Init ==
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
     /\ log = [i \in Server |-> <<>>]
-    /\ \E initConfig \in SUBSET Server : config = [i \in Server |-> initConfig]
+    /\ \E initConfig \in SUBSET Server : 
+        /\ initConfig # {}
+        /\ config = [i \in Server |-> initConfig]
     /\ elections = {}
     /\ committed = {}
 
+
+\* Defined separately to improve error reporting when model checking.
+BecomeLeaderAction == \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
+CommitEntryAction == \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
+
 Next == 
-    \/ \E s \in Server : ClientRequest(s)
+    \/ \E s \in Server : \E newConfig \in SUBSET Server : ClientRequest(s, newConfig)
     \/ \E s, t \in Server : GetEntries(s, t)
     \/ \E s, t \in Server : RollbackEntries(s, t)
-    \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
-    \/ \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
-    \* TODO: Might want to allow this to change synchronously with any other action.
-    \/ \E s \in Server : Reconfig(s)
+    \/ BecomeLeaderAction
+    \/ CommitEntryAction
 
 Spec == Init /\ [][Next]_vars
 
+MWR == INSTANCE MongoWeakRaft 
+    WITH MaxTerm <- MaxTerm,
+         MaxLogLen <- MaxLogLen,
+         MaxConfigVersion <- MaxConfigVersion,
+         Server <- Server,
+         Secondary <- Secondary,
+         Primary <- Primary,
+         Nil <- Nil,
+         currentTerm <- currentTerm,
+         state <- state,
+         config <- config,
+         elections <- elections,
+         committed <- committed
 
-\* ElectionSafety == 
-\*     \A e1, e2 \in elections : 
-\*         (e1.term = e2.term) => (e1.leader = e2.leader)
-
-\* \* <<index, term>> pairs uniquely identify log prefixes.
-\* LogMatching == 
-\*     \A s,t \in Server : 
-\*     \A i \in DOMAIN log[s] :
-\*         (\E j \in DOMAIN log[t] : i = j /\ log[s][i] = log[t][j]) => 
-\*         (SubSeq(log[s],1,i) = SubSeq(log[t],1,i)) \* prefixes must be the same.
-
-\* \* If two entries are committed at the same index, they must be the same entry.
-\* StateMachineSafety == 
-\*     \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
-
+ElectionSafety == MWR!ElectionSafety
 
 -------------------------------------------------------------------------------------------
 
