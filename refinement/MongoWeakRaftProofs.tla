@@ -23,6 +23,25 @@ BoundedSeq(S, n) ==
   SeqOf(S, n)
 
 
+\* Note from Randomization.tla
+(***************************************************************************)
+(* RandomSetOfSubsets(k, n, S) equals a pseudo-randomly chosen set of      *)
+(* subsets of S -- that is, a randomly chosen subset of SUBSET S .  Thus,  *)
+(* each element T of this set is a subset of S.  Each such T is chosen so  *)
+(* that each element of S has a probability n / Cardinality(S) of being in *)
+(* T.  Thus, the average number of elements in each chosen subset T is n.  *)
+(* The set RandomSetOfSubsets(k, n, S) is obtained by making k such        *)
+(* choices of T .  Because this can produce duplicate choices, the number  *)
+(* of elements T in this set may be less than k.  The average number of    *)
+(* elements in RandomSetOfSubsets(k, n, S) seems to be difficult to        *)
+(* compute in general.  However, there is very little variation in the     *)
+(* actual number of elements in the chosen set for fixed values of k, n,   *)
+(* and Cardinality(S).  You can therefore use the operator                 *)
+(* TestRandomSetOfSubsets defined below to find out approximately how      *)
+(* close to k the cardinality of the chosen set of subsets is.             *)
+(***************************************************************************)
+
+
 BoundedSeqFin(S) == BoundedSeq(S, MaxLogLen)
 NatFinite == 0..3
 PositiveNat == 1..3
@@ -38,12 +57,13 @@ CommittedType ==
 
 TypeOKRandom == 
     /\ currentTerm \in RandomSubset(10, [Server -> Nat])
-    /\ state \in RandomSubset(8, [Server -> {Secondary, Primary}])
-    /\ log \in RandomSubset(10, [Server -> Seq(PositiveNat)])
+    /\ state \in RandomSubset(15, [Server -> {Secondary, Primary}])
+    /\ log \in RandomSubset(30, [Server -> Seq(PositiveNat)])
     \* Make config constant for all nodes.
     /\ config = [i \in Server |-> Server]
-    /\ committed \in RandomSetOfSubsets(10, 1, CommittedType)
-    /\ elections \in RandomSetOfSubsets(10, 1, ElectionType)
+    \* /\ elections \in RandomSetOfSubsets(15, 1, ElectionType)
+    /\ elections = {}
+    /\ committed \in RandomSetOfSubsets(15, 1, CommittedType)
 
 \* Condition that all nodes have the same config. For these proofs we assume this,
 \* which essentially makes the protocol we're proving MongoStaticRaft.
@@ -136,12 +156,14 @@ StateMachineSafetyInd ==
     /\ StateMachineSafety
     /\ CommittedEntryPresentInLogs
     /\ CommitMustUseValidQuorum
-    /\ PrimaryNodeImpliesElectionRecorded
     /\ LeaderLogContainsPastCommittedEntries
     /\ CurrentTermAtLeastAsLargeAsLogTerms
     /\ TermsOfEntriesGrowMonotonically
-    /\ ElectionImpliesQuorumInTerm
-    /\ LogEntryInTermImpliesElectionInTerm
+
+    \* Election related invariants.
+    \* /\ PrimaryNodeImpliesElectionRecorded
+    \* /\ ElectionImpliesQuorumInTerm
+    \* /\ LogEntryInTermImpliesElectionInTerm
 
 \* Assumptions or previously proven invariants that we use to help make
 \* inductive proof easier. These follow from the rule that, if Inv1, Inv2, etc. is known to hold,
@@ -150,6 +172,7 @@ StateMachineSafetyInd ==
 Assumptions == 
     /\ ElectionSafety
     /\ LogMatching
+    /\ ElectionQuorumsValid
 
 IInit_StateMachineSafety ==  
     /\ TypeOKRandom 
