@@ -45,7 +45,8 @@ TypeOKRandom ==
     /\ committed \in RandomSetOfSubsets(6, 1, CommittedType)
     /\ elections \in RandomSetOfSubsets(6, 1, ElectionType)
 
-\* Condition that all nodes have the same config.
+\* Condition that all nodes have the same config. For these proofs we assume this,
+\* which essentially makes the protocol we're proving MongoStaticRaft.
 StricterQuorumCondition == \A s \in Server : config[s] = Server
 NextStrict == Next /\ StricterQuorumCondition'
 
@@ -122,10 +123,18 @@ StateMachineSafetyInd ==
     /\ PrimaryNodeImpliesElectionRecorded
     /\ LeaderLogContainsPastCommittedEntries
 
+\* Assumptions or previously proven invariants that we use to help make
+\* inductive proof easier. These follow from the rule that, if Inv1, Inv2, etc. is known to hold,
+\* then it suffices to show that Inv1 /\ Inv2 /\ IndInv /\ Next => IndInv' for the
+\* inductive step.
+Assumptions == 
+    /\ ElectionSafety
+    /\ LogMatching
+
 IInit_StateMachineSafety ==  
     /\ TypeOKRandom 
     /\ StricterQuorumCondition 
-    /\ LogMatching \* assume this invariant holds.
+    /\ Assumptions
     /\ StateMachineSafetyInd
 
 INext_StateMachineSafety == NextStrict
