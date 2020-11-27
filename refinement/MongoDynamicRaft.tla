@@ -6,10 +6,6 @@ EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 CONSTANTS Server
 CONSTANTS Secondary, Primary, Nil
 
-(***************************************************************************)
-(* Replication related variables.                                          *)
-(***************************************************************************)
-
 VARIABLE currentTerm
 VARIABLE state
 VARIABLE log
@@ -28,19 +24,11 @@ vars == <<currentTerm, state, log, elections, committed, config, configLog>>
 (* Helper operators.                                                       *)
 (***************************************************************************)
 
-\* The set of all quorums. This satisfies no property of overlap between two quorums.
-\* Quorums == SUBSET Server
-
 Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
 QuorumsAt(i) == Quorums(config[i])
-\* QuorumsAt(i) == SUBSET config[i]
-\* QuorumsAt(i) == Quorums(Server)
     
 \* Do all quorums of set x and set y share at least one overlapping node.
 QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
-
-\* Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
-\* QuorumsAt(i) == Quorums(config[i])
 
 Min(s) == CHOOSE x \in s : \A y \in s : x <= y
 Max(s) == CHOOSE x \in s : \A y \in s : x >= y
