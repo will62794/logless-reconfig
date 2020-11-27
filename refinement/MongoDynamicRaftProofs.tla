@@ -49,7 +49,9 @@ TypeOKRandom ==
 
 \* The newest config log entry on a node is equivalent to its current config.
 LatestConfigLogEntryMatchesConfig == 
-    \A s \in Server : (configLog[s] # <<>>) => configLog[s][Len(configLog[s])] = config[s]
+    \A s \in Server : 
+        \/ configLog[s] = <<>> /\ log[s] = <<>>
+        \/ configLog[s] # <<>> /\ configLog[s][Len(configLog[s])] = config[s]
 
 \* Assume this for now to prevent out of bounds errors. We could prove it separately.
 LogAndConfigLogSameLengths ==
