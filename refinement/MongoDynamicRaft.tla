@@ -91,7 +91,7 @@ RollbackEntries(i, j) ==
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
     /\ configLog' = [configLog EXCEPT ![i] = SubSeq(configLog[i], 1, Len(configLog[i])-1)]
     \* Roll back your config state as well.
-    /\ config' = [config EXCEPT ![i] = configLog[i-1]]
+    /\ config' = [config EXCEPT ![i] = configLog[i][Len(configLog[i])-1]]
     /\ UpdateTerms(i, j)
     /\ UNCHANGED <<elections, committed>>
 
@@ -209,7 +209,7 @@ CommitEntryAction == \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q
 Next == 
     \/ \E s \in Server : \E newConfig \in SUBSET Server : ClientRequest(s, newConfig)
     \/ \E s, t \in Server : GetEntries(s, t)
-    \* \/ \E s, t \in Server : RollbackEntries(s, t)
+    \/ \E s, t \in Server : RollbackEntries(s, t)
     \/ BecomeLeaderAction
     \/ CommitEntryAction
 
@@ -232,6 +232,9 @@ MWR == INSTANCE MongoWeakRaft
 ElectionSafety == MWR!ElectionSafety
 LogMatching == MWR!LogMatching
 StateMachineSafety == MWR!StateMachineSafety
+
+\* TODO: Verify this.
+RefinementProperty == MWR!Spec
 
 -------------------------------------------------------------------------------------------
 
