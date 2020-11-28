@@ -1,8 +1,8 @@
------------------------------ MODULE MongoWeakRaftProofs -----------------------------
+----------------------------- MODULE MongoStaticRaftProofs -----------------------------
 
-\* Proving inductive invariance for dynamic Raft reconfiguration. (experimental)
+\* Finding inductive invariants for MongoStaticRaft protocol.
 
-EXTENDS MongoWeakRaft, Randomization
+EXTENDS MongoStaticRaft, Randomization
 
 (***************************************************************************)
 (* Proving an inductive invariant.  (experimental)                         *)
@@ -46,6 +46,11 @@ BoundedSeqFin(S) == BoundedSeq(S, MaxLogLen)
 NatFinite == 0..3
 PositiveNat == 1..3
 
+\* Re-define some things locally for convenience.
+Quorums(S) == MWR!Quorums(S)
+InLog(e,i) == MWR!InLog(e,i)
+LastTerm(l) == MWR!LastTerm(l)
+
 ElectionType == [ leader : Server, 
                   term   : Nat, 
                   quorum : SUBSET Server]
@@ -67,8 +72,9 @@ TypeOKRandom ==
 
 \* Condition that all nodes have the same config. For these proofs we assume this,
 \* which essentially makes the protocol we're proving MongoStaticRaft.
-StricterQuorumCondition == \A s \in Server : config[s] = Server
-NextStrict == Next /\ StricterQuorumCondition'
+\* StricterQuorumCondition == \A s \in Server : config[s] = Server
+\* NextStrict == Next /\ StricterQuorumCondition'
+\* SpecStricterQuorums ==   Init /\ [][Next /\ StricterQuorumCondition']_vars
 
 -------------------------------------------------------------------------------------
 
@@ -89,8 +95,8 @@ ElectionSafetyInd ==
     /\ ElectionQuorumsValid
 
 \* Check inductive invariance.
-IInit_ElectionSafety ==  TypeOKRandom /\ StricterQuorumCondition /\ ElectionSafetyInd
-INext_ElectionSafety == NextStrict
+IInit_ElectionSafety ==  TypeOKRandom /\ ElectionSafetyInd
+INext_ElectionSafety == Next
 
 -------------------------------------------------------------------------------------
 
@@ -98,16 +104,15 @@ INext_ElectionSafety == NextStrict
 
 \* Inductive invariant.
 LogMatchingInd == 
-    /\ LogMatching
+    /\ MWR!LogMatching
 
 \* Check inductive invariance.
 IInit_LogMatching ==  
     /\ TypeOKRandom 
-    /\ StricterQuorumCondition 
     /\ ElectionSafety \* we assume that this invariant holds.
     /\ LogMatchingInd
 
-INext_LogMatching == NextStrict
+INext_LogMatching == Next
 
 -------------------------------------------------------------------------------------
 
@@ -124,16 +129,16 @@ PresentElectionSafety ==
 PrimaryImpliesQuorumInTerm == 
     \A s \in Server : 
         (state[s] = Primary) => 
-        \E Q \in Quorums(Server) : \A q \in Q : currentTerm[q] >= currentTerm[s]
+        \E Q \in MWR!Quorums(Server) : \A q \in Q : currentTerm[q] >= currentTerm[s]
 
 \* If a log entry is committed by a quorum Q, it must be present in the log of each node
 \* in Q.
 CommittedEntryPresentInLogs == 
-    \A c \in committed : \A s \in c.quorum : InLog(c.entry, s)
+    \A c \in committed : \A s \in c.quorum : MWR!InLog(c.entry, s)
 
 \* A node must have committed a log entry using some quorum of the global config.
 CommitMustUseValidQuorum == 
-    \A c \in committed : c.quorum \in Quorums(Server)
+    \A c \in committed : c.quorum \in MWR!Quorums(Server)
 
 
 \* If a node is currently primary in term T, an election in term T must have been recorded.
@@ -242,15 +247,14 @@ StateMachineSafetyInd ==
 \* inductive step.
 Assumptions == 
     /\ PresentElectionSafety
-    /\ LogMatching
+    /\ MWR!LogMatching
 
 IInit_StateMachineSafety ==  
     /\ TypeOKRandom 
-    /\ StricterQuorumCondition 
     /\ Assumptions
     /\ StateMachineSafetyInd
 
-INext_StateMachineSafety == NextStrict
+INext_StateMachineSafety == Next
 
 -------------------------------------------------------------------------------------
 
