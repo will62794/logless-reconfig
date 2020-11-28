@@ -47,17 +47,9 @@ MongoRaftReconfig!Spec => []WeakQuorumCondition
 ```
 which is sufficient to prove that `MongoRaftReconfig!Spec` is safe. Since elections are shared between the OSM and CSM, we already know that the election related condition of `WeakQuorumCondition` holds for the `MongoRaftReconfig` spec, but we will need to show the log related condition holds. Since we know that the CSM operates as a correct Raft state machine, and we know that a committed log entry must be committed in a current config before a reconfig is allowed, we should be able to show this fairly easily, by reasoning over the history of configs in the CSM.
 
-### Protocol Glossary
+### Protocols Overview and Refinements
 
-<!-- ```graphviz
-digraph{
-	MongoWeakRaft -> MongoStaticRaft;
-	MongoWeakRaft -> MongoLockstepWeakRaft;
-	MongoLockstepWeakRaft -> MongoLoglessLockstepWeakRaft;
-	MongoLoglessLockstepWeakRaft -> MongoLoglessDynamicRaft;
-}
-
-``` -->
+![](refinements.png)
 
 - `MongoWeakRaft` - A very general, weak protocol that places no restrictions on quorums used by nodes.
 - `MongoStaticRaft` - The existing replication protocol used by MongoDB that is based on Raft. It does not allow for dynamic reconfiguration and it satisfies all the same safety properties as standard Raft, as described in the Raft dissertation. It implements `MongoWeakRaft` and should satisfy `StrictQuorumCondition`.

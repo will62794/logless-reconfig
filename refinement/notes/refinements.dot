@@ -1,0 +1,7 @@
+digraph{
+	MongoWeakRaft -> MongoStaticRaft;
+	MongoWeakRaft -> MongoLockstepWeakRaft;
+	// MongoLockstepWeakRaft -> MongoLoglessLockstepWeakRaft;
+    MongoLockstepWeakRaft -> MongoDynamicRaft;
+    MongoDynamicRaft -> MongoLoglessDynamicRaft;
+}
