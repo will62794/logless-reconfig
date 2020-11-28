@@ -71,15 +71,26 @@ MWR == INSTANCE MongoWeakRaft
          elections <- elections,
          committed <- committed
 
+\* The core protocol actions of StaticRaft are the same as in WeakRaft. However,
+\* we do not allow the config to be changed. The config for each node starts out as 
+\* the set of all servers and is never modified.
+ClientRequest(s) == MWR!ClientRequest(s)
+GetEntries(s,t) == MWR!GetEntries(s,t)
+RollbackEntries(s, t) == MWR!RollbackEntries(s, t)
+BecomeLeader(s, Q) == MWR!BecomeLeader(s, Q)
+CommitEntry(s, Q) == MWR!CommitEntry(s, Q)
+
 Init ==
     /\ MWR!Init 
     \* All nodes have a fixed config, which is the set of all nodes.
     /\ \A s \in Server : config[s] = Server 
 
 Next == 
-    /\ MWR!Next
-    \* We do not allow configs to be changed in the static protocol.
-    /\ \A s \in Server : config'[s] = config[s]
+    \/ \E s \in Server : ClientRequest(s)
+    \/ \E s, t \in Server : GetEntries(s, t)
+    \/ \E s, t \in Server : RollbackEntries(s, t)
+    \/ \E s \in Server : \E Q \in MWR!QuorumsAt(s) : BecomeLeader(s, Q)
+    \/ \E s \in Server :  \E Q \in MWR!QuorumsAt(s) : CommitEntry(s, Q)
 
 Spec == Init /\ [][Next]_MWR!vars
 

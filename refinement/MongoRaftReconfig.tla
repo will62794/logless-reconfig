@@ -83,6 +83,7 @@ Init ==
     /\ CSM!Init 
     /\ OSM!Init
 
+\* TODO: Fix the write up of this composition.
 Next == 
     \/ (OSM!Next /\ UNCHANGED csmVars) \* TODO: Include OpCommittedInConfig precondition for the Reconfig action.
     \/ (CSM!Next /\ UNCHANGED osmVars)
