@@ -56,14 +56,14 @@ CommittedType ==
       term : Nat]
 
 TypeOKRandom == 
-    /\ currentTerm \in RandomSubset(10, [Server -> Nat])
-    /\ state \in RandomSubset(15, [Server -> {Secondary, Primary}])
+    /\ currentTerm \in RandomSubset(20, [Server -> Nat])
+    /\ state \in RandomSubset(20, [Server -> {Secondary, Primary}])
     /\ log \in RandomSubset(30, [Server -> Seq(PositiveNat)])
     \* Make config constant for all nodes.
     /\ config = [i \in Server |-> Server]
     \* /\ elections \in RandomSetOfSubsets(15, 1, ElectionType)
     /\ elections = {}
-    /\ committed \in RandomSetOfSubsets(15, 1, CommittedType)
+    /\ committed \in RandomSetOfSubsets(20, 1, CommittedType)
 
 \* Condition that all nodes have the same config. For these proofs we assume this,
 \* which essentially makes the protocol we're proving MongoStaticRaft.
@@ -113,6 +113,19 @@ INext_LogMatching == NextStrict
 
 (*** StateMachineSafety ***)
 
+\* Election safety holds in the current state.
+PresentElectionSafety == 
+    \A s,t \in Server : 
+        (/\ state[s] = Primary 
+         /\ state[t] = Primary
+         /\ s # t) => currentTerm[s] # currentTerm[t]
+
+\* If a primary exists in term T, it implies a quorum of node reached term >= T.
+PrimaryImpliesQuorumInTerm == 
+    \A s \in Server : 
+        (state[s] = Primary) => 
+        \E Q \in Quorums(Server) : \A q \in Q : currentTerm[q] >= currentTerm[s]
+
 \* If a log entry is committed by a quorum Q, it must be present in the log of each node
 \* in Q.
 CommittedEntryPresentInLogs == 
@@ -143,15 +156,73 @@ TermsOfEntriesGrowMonotonically ==
 LeaderLogContainsPastCommittedEntries ==
     \A s \in Server : 
         (state[s] = Primary) =>
-            (\A c \in committed : c.term < currentTerm[s] => InLog(c.entry, s))
+        (\A c \in committed : c.term <= currentTerm[s] => InLog(c.entry, s))
 
-
-\* If a log entry in term T exists, it must have been created by a leader in term T. So
-\* an election in term T must exist.
+\* If a log entry in term T exists, it must have been created by a leader in term T. So,
+\* there must exist a quorum in terms >= T since an election must have occurred in T.
 LogEntryInTermImpliesElectionInTerm == 
-    \A s \in Server : \A i \in DOMAIN log[s] : (\E e \in elections : e.term = log[s][i])
+    \A s \in Server : 
+    \A i \in DOMAIN log[s] : 
+    (\E Q \in Quorums(Server) : \A q \in Q : currentTerm[q] >= log[s][i])
 
-\* Inductive invariant.
+
+
+\* Could a node with log 'li' cast a vote for a node with log 'lj'.
+LogCouldVote(li, lj) == 
+    \/ LastTerm(lj) > LastTerm(li)
+    \/ /\ LastTerm(lj) = LastTerm(li)
+           /\ Len(lj) >= Len(li)
+
+\* If a node is currently primary, it means that it must have won election with the log it
+\* had at the time it was elected, which is its current log ignoring any entries  
+\* in its current term.
+CurrentPrimaryImpliesWinningLog == 
+    \A s \in Server :
+    (state[s] = Primary) => 
+    (\E Q \in Quorums(Server) : \A q \in Q : 
+        \* Consider the other log but without any entries >= T, since we expect
+        \* those could have only been created after this election occurred.
+        LET logAtElection == SelectSeq(log[s], LAMBDA e : e # currentTerm[s])
+            otherLog == SelectSeq(log[q], LAMBDA e : e < currentTerm[s]) IN
+        LogCouldVote(otherLog, logAtElection))
+
+\* If a node's log contains an entry in term U, it must contain all entries committed in terms
+\* T < U.
+NewerLogMustContainPastCommittedEntries == 
+    \A s \in Server : 
+    \A c \in committed : 
+        (\E i \in DOMAIN log[s] : log[s][i] > c.term) => InLog(c.entry, s)
+
+CommittedEntriesAreInTermOfLeader == 
+    \A c \in committed : c.term = c.entry[2]
+
+\* Is 'xlog' a prefix of 'ylog'.
+IsPrefix(xlog, ylog) == 
+    /\ Len(xlog) <= Len(ylog)
+    /\ xlog = SubSeq(ylog, 1, Len(xlog))
+
+\* If a particular log entry E exists with term T, it must have been created
+\* uniquely by some primary, since we know there can only be 1 primary per term.
+\* This means that any log that exists with entries in term T must be a prefix
+\* of this log.
+LogEntryIsUniqueToPrimaryCreator == 
+    \* If two nodes both have a log entry in term T, then one must be a prefix of the other.
+    \A s,t \in Server :
+        (\E i \in DOMAIN log[s] : \E j \in DOMAIN log[t] : log[s][i] = log[t][j]) =>
+            \/ IsPrefix(log[s], log[t]) 
+            \/ IsPrefix(log[t], log[s])
+
+\* If there exists a log entry in term T, and there exists a node that is 
+\* currently primary in term T, then the entry must exist in that node's log.
+LogEntryInTermMustExistInACurrentPrimaryLog == 
+    \A s \in Server :
+    \A i \in DOMAIN log[s] : 
+        \A t \in Server : 
+        (state[t] = Primary /\ currentTerm[t] = log[s][i]) => InLog(<<i, log[s][i]>>, t)
+
+\*
+\* The inductive invariant.
+\*
 StateMachineSafetyInd == 
     /\ StateMachineSafety
     /\ CommittedEntryPresentInLogs
@@ -159,20 +230,19 @@ StateMachineSafetyInd ==
     /\ LeaderLogContainsPastCommittedEntries
     /\ CurrentTermAtLeastAsLargeAsLogTerms
     /\ TermsOfEntriesGrowMonotonically
-
-    \* Election related invariants.
-    \* /\ PrimaryNodeImpliesElectionRecorded
-    \* /\ ElectionImpliesQuorumInTerm
-    \* /\ LogEntryInTermImpliesElectionInTerm
+    /\ PrimaryImpliesQuorumInTerm
+    /\ LogEntryInTermImpliesElectionInTerm
+    /\ NewerLogMustContainPastCommittedEntries
+    /\ CommittedEntriesAreInTermOfLeader
+    /\ LogEntryInTermMustExistInACurrentPrimaryLog
 
 \* Assumptions or previously proven invariants that we use to help make
 \* inductive proof easier. These follow from the rule that, if Inv1, Inv2, etc. is known to hold,
 \* then it suffices to show that Inv1 /\ Inv2 /\ IndInv /\ Next => IndInv' for the
 \* inductive step.
 Assumptions == 
-    /\ ElectionSafety
+    /\ PresentElectionSafety
     /\ LogMatching
-    /\ ElectionQuorumsValid
 
 IInit_StateMachineSafety ==  
     /\ TypeOKRandom 
@@ -181,6 +251,8 @@ IInit_StateMachineSafety ==
     /\ StateMachineSafetyInd
 
 INext_StateMachineSafety == NextStrict
+
+-------------------------------------------------------------------------------------
 
 \*
 \* For easier error diagnosis.
