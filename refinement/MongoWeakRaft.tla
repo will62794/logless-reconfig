@@ -191,15 +191,16 @@ StrictQuorumCondition ==
 \*      2. Overlap with some node containing an entry E for all previously committed entries E.
 \*
 WeakQuorumCondition == 
-    \A s \in Server :
-    \A quorum \in QuorumsAt(s) :
-        Electable(s, quorum) =>
+    \A s,t \in Server :
+    (s # t /\ state[s] = Primary) => 
+    (\A quorum \in QuorumsAt(t) : Electable(t, quorum) => \E i \in quorum : currentTerm[i] >= currentTerm[s])
         \* Overlaps with some node that contains term of election, for all previous elections.
-        ( 
-          /\ \A e \in elections : \E t \in quorum : currentTerm[t] >= e.term 
+        \* ( 
+          
+          \*/\ \A e \in elections : \E t \in quorum : currentTerm[t] >= e.term 
           \* Overlaps with some node containing entry E, for all committed entries E.
         \*   /\ \A w \in committed : \E t \in quorum : InLog(w.entry, t) 
-        )
+        \* )
 
 \* For model checking.
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion

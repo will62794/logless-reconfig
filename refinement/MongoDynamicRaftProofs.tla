@@ -37,13 +37,13 @@ CommittedType ==
       term : Nat]
 
 TypeOKRandom == 
-    /\ currentTerm \in RandomSubset(7, [Server -> Nat])
-    /\ state \in RandomSubset(5, [Server -> {Secondary, Primary}])
-    /\ log \in RandomSubset(5, [Server -> Seq(PositiveNat)])
-    /\ config \in RandomSubset(5, [Server -> SUBSET Server])
-    /\ configLog \in RandomSubset(5, [Server -> Seq(SUBSET Server)])
-    /\ committed \in RandomSetOfSubsets(5, 1, CommittedType)
-    /\ elections \in RandomSetOfSubsets(5, 1, ElectionType)
+    /\ currentTerm \in RandomSubset(10, [Server -> Nat])
+    /\ state \in RandomSubset(8, [Server -> {Secondary, Primary}])
+    /\ log \in RandomSubset(10, [Server -> Seq(PositiveNat)])
+    /\ config \in RandomSubset(6, [Server -> SUBSET Server])
+    /\ configLog \in RandomSubset(6, [Server -> Seq(SUBSET Server)])
+    /\ committed \in RandomSetOfSubsets(10, 1, CommittedType)
+    /\ elections = {} \*\in RandomSetOfSubsets(15, 1, ElectionType)
 
 -------------------------------------------------------------------------------------
 
@@ -57,6 +57,20 @@ LatestConfigLogEntryMatchesConfig ==
 LogAndConfigLogSameLengths ==
     \A s \in Server : Len(log[s]) = Len(configLog[s])
 
+MSRProofs == INSTANCE MongoStaticRaftProofs
+    WITH MaxTerm <- MaxTerm,
+         MaxLogLen <- MaxLogLen,
+         MaxConfigVersion <- MaxConfigVersion,
+         Server <- Server,
+         Secondary <- Secondary,
+         Primary <- Primary,
+         Nil <- Nil,
+         currentTerm <- currentTerm,
+         state <- state,
+         config <- config,
+         elections <- elections,
+         committed <- committed
+
 \* Inductive invariant.
 WeakQuorumConditionInd == 
     /\ MWR!WeakQuorumCondition
@@ -67,7 +81,7 @@ Assumptions ==
     /\ LogAndConfigLogSameLengths 
     /\ LatestConfigLogEntryMatchesConfig
     /\ LogMatching
-    /\ StateMachineSafety
+    /\ MSRProofs!StateMachineSafetyInd
 
 IInit ==  
     /\ TypeOKRandom 
