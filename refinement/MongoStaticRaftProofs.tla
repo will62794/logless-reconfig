@@ -129,7 +129,7 @@ PresentElectionSafety ==
 PrimaryImpliesQuorumInTerm == 
     \A s \in Server : 
         (state[s] = Primary) => 
-        \E Q \in MWR!Quorums(Server) : \A q \in Q : currentTerm[q] >= currentTerm[s]
+        \E Q \in MWR!QuorumsAt(s) : \A q \in Q : currentTerm[q] >= currentTerm[s]
 
 \* If a log entry is committed by a quorum Q, it must be present in the log of each node
 \* in Q.
