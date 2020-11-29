@@ -113,12 +113,11 @@ GetEntries(i, j) ==
               newEntry      == log[j][newEntryIndex]
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
+              \* We also propagate the config via logs.
               /\ configLog' = [configLog EXCEPT ![i] = Append(configLog[i], configLog[j][newEntryIndex])]
+              /\ config' = [config EXCEPT ![i] = configLog[j][newEntryIndex]]
     /\ UpdateTerms(i, j)
-    \* We also propagate the config via logs. Conceptually, the current config is determined by the 
-    \* last log entry, so we can just update the config on the receiving node directly to the config
-    \* of the sender.
-    /\ config' = [config EXCEPT ![j] = config[i]]
+
     /\ UNCHANGED <<elections, committed>>
 
 \* Is the last log entry of node 'i' currently committed.
