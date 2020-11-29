@@ -76,6 +76,15 @@ CanVoteForOplog(i, j, term) ==
            /\ Len(log[j]) >= Len(log[i]) IN
     /\ currentTerm[i] < term
     /\ logOk
+
+\* Is a log entry 'e'=<<i, t>> immediately committed in term 't' with a quorum 'Q'.
+ImmediatelyCommitted(e, Q) == 
+    LET eind == e[1] 
+        eterm == e[2] IN
+    \A s \in Q :
+        /\ Len(log[s]) >= eind
+        /\ InLog(e, s) \* they have the entry.
+        /\ currentTerm[s] = eterm  \* they are in the same term as the log entry.  
     
 -------------------------------------------------------------------------------------------
 
@@ -156,10 +165,7 @@ CommitEntry(i, commitQuorum) ==
     \* The entry was written by this leader.
     /\ log[i][ind] = currentTerm[i]
     \* all nodes have this log entry and are in the term of the leader.
-    /\ \A s \in commitQuorum :
-        /\ Len(log[s]) >= ind
-        /\ log[s][ind] = log[i][ind]        \* they have the entry.
-        /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
+    /\ ImmediatelyCommitted(<<ind,currentTerm[i]>>, commitQuorum)
     \* Don't mark an entry as committed more than once.
     /\ ~\E c \in committed : c.entry = <<ind, currentTerm[i]>>
     /\ committed' = committed \cup
