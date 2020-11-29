@@ -84,7 +84,7 @@ UpdateTerms(i, j) ==
 UpdateTermsOnNodes(i, j) == /\ UpdateTerms(i, j)
                             /\ UNCHANGED <<configVars>>
 
-BecomeLeaderConfig(i, voteQuorum) == 
+BecomeLeader(i, voteQuorum) == 
     \* Primaries make decisions based on their current configuration.
     LET newTerm == currentTerm[i] + 1 IN
     /\ i \in config[i] \* only become a leader if you are a part of your config.
@@ -153,6 +153,7 @@ Init ==
 Next ==
     \/ \E s \in Server, newConfig \in SUBSET Server : Reconfig(s, newConfig)
     \/ \E s,t \in Server : SendConfig(s, t)
+    \/ \E i \in Server : \E Q \in Quorums(config[i]) :  BecomeLeader(i, Q)
 
 Spec == Init /\ [][Next]_vars
 

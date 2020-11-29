@@ -22,9 +22,12 @@ VARIABLE configVersion
 VARIABLE configTerm
 VARIABLE config
 
+VARIABLE elections
+VARIABLE committed
+
 serverVars == <<currentTerm, state, log>>
 configVars == <<configVersion, configTerm, config>>
-vars == <<serverVars, configVersion, configTerm, config, log>>
+vars == <<serverVars, configVersion, configTerm, config, log, elections, committed>>
 
 (***************************************************************************)
 (* Helper operators.                                                       *)
@@ -49,7 +52,7 @@ Empty(s) == Len(s) = 0
 \* For model checking.
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 
-osmVars == <<log>>
+osmVars == <<log, elections, committed>>
 csmVars == <<configVersion, configTerm, config>>
 
 \* The config state machine.
@@ -69,6 +72,8 @@ OSM == INSTANCE MongoStaticRaft
              state <- state,
              log <- log,
              config <- config,
+             elections <- elections,
+             committed <- committed,
              MaxLogLen <- MaxLogLen,
              MaxTerm <- MaxTerm,
              MaxConfigVersion <- MaxConfigVersion
@@ -83,14 +88,39 @@ Init ==
     /\ CSM!Init 
     /\ OSM!Init
 
-\* TODO: Fix the write up of this composition.
+\* Oplog State Machine actions.
+OSMNext == 
+    \/ \E s \in Server : OSM!ClientRequest(s)
+    \/ \E s, t \in Server : OSM!GetEntries(s, t)
+    \/ \E s, t \in Server : OSM!RollbackEntries(s, t)
+    \/ \E s \in Server :  \E Q \in OSM!MWR!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+
+\* Config State Machine actions.
+CSMNext == 
+    \/ \E s \in Server, newConfig \in SUBSET Server : 
+        \* Before allowing a Reconfig, we must also ensure that any previously committed ops
+        \* are now committed by a quorum of the current configuration.
+        \* TODO: Correct this precondition.
+        \* /\ \A c \in committed : 
+        \*    \E Q \in QuorumsAt(config[s]) : OSM!MWR!ImmediatelyCommitted(c.entry, Q)
+        /\ CSM!Reconfig(s, newConfig)
+    \/ \E s,t \in Server : CSM!SendConfig(s, t)
+
+\* Actions shared by the CSM and OSM i.e. that must be executed jointly by both protocols.
+JointNext == 
+     \E i \in Server : \E Q \in Quorums(config[i]) : 
+        /\ OSM!BecomeLeader(i, Q)
+        /\ CSM!BecomeLeader(i, Q)
+
+\* We define the transition relation as an interleaving composition of the OSM and CSM.
+\* From the current state, we permit either the OSM or CSM to take a single,
+\* non election step. Election steps (i.e. BecomeLeader) actions in either
+\* state machine must synchronize i.e. they must be executed simultaneously
+\* in both sub protocols.
 Next == 
-    \/ (OSM!Next /\ UNCHANGED csmVars) \* TODO: Include OpCommittedInConfig precondition for the Reconfig action.
-    \/ (CSM!Next /\ UNCHANGED osmVars)
-    \* Synchronized election action that must be executed by both state machines jointly.
-    \/ \E s \in Server : \E Q \in Quorums(config[s]) : 
-        /\ CSM!BecomeLeaderConfig(s, Q)
-        /\ OSM!BecomeLeaderOplog(s, Q)
+    \/ OSMNext /\ UNCHANGED csmVars
+    \/ CSMNext /\ UNCHANGED osmVars
+    \/ JointNext
 
 Spec == Init /\ [][Next]_vars
 
@@ -98,8 +128,7 @@ ElectionSafety == \A x,y \in Server :
     (/\ (state[x] = Primary) /\ (state[y] = Primary) 
      /\  currentTerm[x] = currentTerm[y]) => (x = y)
 
-\* TODO: Fill in.
-StateMachineSafety == TRUE
+StateMachineSafety == OSM!StateMachineSafety
 
 THEOREM MongoRaftReconfigSafety == Spec => StateMachineSafety
 
