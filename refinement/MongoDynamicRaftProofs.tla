@@ -98,7 +98,10 @@ MSRProofs == INSTANCE MongoStaticRaftProofs
          committed <- committed
 
 CommittedEntryPresentInLogs == MSRProofs!CommittedEntryPresentInLogs
-CommitMustUseValidQuorum == MSRProofs!CommitMustUseValidQuorum
+
+CommitMustUseValidQuorum == \* MSRProofs!CommitMustUseValidQuorum
+    \A c \in committed : c.quorum # {} \* a quorum can be any non-empty subset of servers.
+    
 LeaderLogContainsPastCommittedEntries == MSRProofs!LeaderLogContainsPastCommittedEntries
 CurrentTermAtLeastAsLargeAsLogTerms == MSRProofs!CurrentTermAtLeastAsLargeAsLogTerms
 TermsOfEntriesGrowMonotonically == MSRProofs!TermsOfEntriesGrowMonotonically
@@ -109,8 +112,20 @@ CommittedEntriesAreInTermOfLeader == MSRProofs!CommittedEntriesAreInTermOfLeader
 LogEntryInTermMustExistInACurrentPrimaryLog == MSRProofs!LogEntryInTermMustExistInACurrentPrimaryLog
 
 \* Inductive invariant.
-WeakQuorumConditionInd == 
-    MSRProofs!StateMachineSafetyInd
+DynamicRaftInd == 
+    \* StaticRaft inductive invariant
+    /\ StateMachineSafety
+    /\ CommittedEntryPresentInLogs
+    /\ CommitMustUseValidQuorum
+    /\ LeaderLogContainsPastCommittedEntries
+    /\ CurrentTermAtLeastAsLargeAsLogTerms
+    /\ TermsOfEntriesGrowMonotonically
+    /\ PrimaryImpliesQuorumInTerm
+    \* /\ LogEntryInTermImpliesElectionInTerm
+    /\ NewerLogMustContainPastCommittedEntries
+    /\ CommittedEntriesAreInTermOfLeader
+    /\ LogEntryInTermMustExistInACurrentPrimaryLog
+
     \* /\ MWR!WeakQuorumCondition
 
 \* Assumed or previously proved invariants that we use to make the inductive step
@@ -119,18 +134,36 @@ Assumptions ==
     /\ LogAndConfigLogSameLengths 
     /\ LatestConfigLogEntryMatchesConfig
     /\ AllLogsStartWithInitConfig
-    \* /\ LogMatching
-    \* /\ MSRProofs!StateMachineSafetyInd
 
 IInit ==  
     /\ TypeOKRandom 
     /\ Assumptions
-    /\ WeakQuorumConditionInd
+    /\ DynamicRaftInd
 
 INext == Next
 
+\*
 \* For easier error diagnosis.
-Alias == MSRProofs!Alias
+\*
+StateStr(st) == 
+    IF st = Primary THEN "P" ELSE "S"
+
+ServerStr(s) == 
+    IF s = Nil THEN "--------------" ELSE
+    "t" \o ToString(currentTerm[s]) \o " " \o StateStr(state[s]) \o " " \o
+    ToString(log[s]) \o " " \o ToString(config[s])
+
+Alias == 
+    [
+        \* currentTerm |-> currentTerm,
+        \* state |-> state,
+        \* log |-> log,
+        \* config |-> config,
+        elections |-> elections,
+        committed |-> committed,
+        configLog |-> configLog,
+        nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)]
+    ]
 
 
 =============================================================================
