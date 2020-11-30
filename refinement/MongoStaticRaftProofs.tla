@@ -63,12 +63,12 @@ CommittedType ==
 TypeOKRandom == 
     /\ currentTerm \in RandomSubset(20, [Server -> Nat])
     /\ state \in RandomSubset(20, [Server -> {Secondary, Primary}])
-    /\ log \in RandomSubset(30, [Server -> Seq(PositiveNat)])
+    /\ log \in RandomSubset(35, [Server -> Seq(PositiveNat)])
     \* Make config constant for all nodes.
     /\ config = [i \in Server |-> Server]
     \* /\ elections \in RandomSetOfSubsets(15, 1, ElectionType)
     /\ elections = {}
-    /\ committed \in RandomSetOfSubsets(20, 1, CommittedType)
+    /\ committed \in RandomSetOfSubsets(25, 1, CommittedType)
 
 \* Condition that all nodes have the same config. For these proofs we assume this,
 \* which essentially makes the protocol we're proving MongoStaticRaft.
@@ -230,24 +230,35 @@ LogEntryInTermMustExistInACurrentPrimaryLog ==
 \*
 StateMachineSafetyInd == 
     /\ StateMachineSafety
+
+    \*
+    \* Properties that reference the 'committed' history variable.
+    \* 
     /\ CommittedEntryPresentInLogs
     /\ CommitMustUseValidQuorum
     /\ LeaderLogContainsPastCommittedEntries
-    /\ CurrentTermAtLeastAsLargeAsLogTerms
-    /\ TermsOfEntriesGrowMonotonically
-    /\ PrimaryImpliesQuorumInTerm
-    /\ LogEntryInTermImpliesElectionInTerm
     /\ NewerLogMustContainPastCommittedEntries
     /\ CommittedEntriesAreInTermOfLeader
+
+    \*
+    \* Properties that only reference "real" (non history) protocol variables.
+    \*
+    
+    /\ PresentElectionSafety
+    /\ PrimaryImpliesQuorumInTerm
+    /\ LogEntryInTermImpliesElectionInTerm
+
+    /\ CurrentTermAtLeastAsLargeAsLogTerms
+    /\ TermsOfEntriesGrowMonotonically
     /\ LogEntryInTermMustExistInACurrentPrimaryLog
 
 \* Assumptions or previously proven invariants that we use to help make
 \* inductive proof easier. These follow from the rule that, if Inv1, Inv2, etc. is known to hold,
 \* then it suffices to show that Inv1 /\ Inv2 /\ IndInv /\ Next => IndInv' for the
 \* inductive step.
-Assumptions == 
-    /\ PresentElectionSafety
-    /\ MWR!LogMatching
+Assumptions == TRUE
+    \* /\ PresentElectionSafety
+    \* /\ MWR!LogMatching
 
 IInit_StateMachineSafety ==  
     /\ TypeOKRandom 
@@ -269,7 +280,7 @@ ServerStr(s) ==
     "t" \o ToString(currentTerm[s]) \o " " \o StateStr(state[s]) \o " " \o
     ToString(log[s])
 
-Alias == 
+AliasProofs == 
     [
         \* currentTerm |-> currentTerm,
         \* state |-> state,
