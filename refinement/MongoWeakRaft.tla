@@ -182,6 +182,29 @@ ChangeConfig(i) ==
 \* Is node 'i' currently electable with quorum 'q'.
 Electable(i, q) == ENABLED BecomeLeader(i, q)
 
+\* Is a log entry 'e'=<<index, term>> currently committed. This definition of
+\* commitment is defined by checking if a log entry would be present in the log
+\* of any future elected leader. If so, then the entry is committed. Otherwise,
+\* it is not. This may requiring contacting every node, so it could, in
+\* practice, be an expensive operation, but it should work fine for an abstract
+\* definition, since we can reason about the global state directly.
+IsFutureCommitted(e) == 
+    LET electableNodes == {s \in Server : \E Q \in QuorumsAt(s) : Electable(s, Q)} IN 
+    \A s \in electableNodes : InLog(e, s)
+
+\* The set of all log entries (<<index, term>>) in the log of node 's'.
+LogEntriesAt(s) == {<<i,log[s][i]>> : i \in DOMAIN log[s]} 
+
+\* The set of log entries (<<index, term>>) in all node logs.
+LogEntriesAll == UNION {LogEntriesAt(s) : s \in Server}
+
+FutureCommittedImpliesImmediatelyCommitted == 
+    \A e \in LogEntriesAll : IsFutureCommitted(e) => (\E c \in committed : c.entry = e)
+
+ImmediatelyCommittedImpliesFutureCommitted ==
+    \A e \in LogEntriesAll : (\E c \in committed : c.entry = e) => IsFutureCommitted(e) 
+
+
 \* If a node is electable, its quorum must overlap with at least one node from
 \* all previous vote quorums and all previous commit quorums.
 StrictQuorumCondition == 
