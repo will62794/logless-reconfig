@@ -188,6 +188,7 @@ Electable(i, q) == ENABLED BecomeLeader(i, q)
 \* it is not. This may requiring contacting every node, so it could, in
 \* practice, be an expensive operation, but it should work fine for an abstract
 \* definition, since we can reason about the global state directly.
+\* TODO: Might also need to incorporate rollbacks into this definition?
 IsFutureCommitted(e) == 
     LET electableNodes == {s \in Server : \E Q \in QuorumsAt(s) : Electable(s, Q)} IN 
     \A s \in electableNodes : InLog(e, s)
