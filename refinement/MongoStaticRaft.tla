@@ -60,6 +60,9 @@ Spec == Init /\ [][Next]_MWR!vars
 ElectionSafety == MWR!ElectionSafety
 StateMachineSafety == MWR!StateMachineSafety
 
+FutureCommittedImpliesImmediatelyCommitted == MWR!FutureCommittedImpliesImmediatelyCommitted
+ImmediatelyCommittedImpliesFutureCommitted == MWR!ImmediatelyCommittedImpliesFutureCommitted
+
 THEOREM MongoStaticRaftSafety == Spec => StateMachineSafety
 
 -------------------------------------------------------------------------------------------
@@ -68,5 +71,18 @@ THEOREM MongoStaticRaftSafety == Spec => StateMachineSafety
 StateConstraint == \A s \in Server :
                     /\ currentTerm[s] <= MaxTerm
                     /\ Len(log[s]) <= MaxLogLen
+
+
+\* For easier error diagnosis
+Alias == 
+    [
+        currentTerm |-> currentTerm,
+        state |-> state,
+        log |-> log,
+        config |-> config,
+        elections |-> elections,
+        committed |-> committed,
+        futureCommitted |-> {e \in MWR!LogEntriesAll : MWR!IsFutureCommitted(e)}
+    ]
 
 =============================================================================
