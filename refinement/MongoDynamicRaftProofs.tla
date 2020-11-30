@@ -24,8 +24,7 @@ BoundedSeq(S, n) ==
 
 
 BoundedSeqFin(S) == BoundedSeq(S, MaxLogLen)
-NatFinite == 0..3
-PositiveNat == 1..3
+PositiveNat == {n \in Nat : n > 0}
 
 ElectionType == [ leader : Server, 
                   term   : Nat, 
@@ -50,6 +49,12 @@ AllLogsStartWithInitConfig ==
 LogAndConfigLogSameLengths ==
     \A s \in Server : Len(log[s]) = Len(configLog[s])
 
+\* The newest config log entry on a node is equivalent to its current config.
+LatestConfigLogEntryMatchesConfig == 
+    \A s \in Server : 
+        \/ configLog[s] = <<>> /\ log[s] = <<>>
+        \/ configLog[s] # <<>> /\ configLog[s][Len(configLog[s])] = config[s]
+
 \* We encode certain assumptions into this TypeOK definition that we 
 \* deem to be relatively trivial. Encoding them into the TypeOK definition
 \* appears to significantly increase state generation performance when 
@@ -63,11 +68,9 @@ TypeOKRandom ==
         log = [i \in Server |-> <<0>> \o mLog[i]]
     \* We assume that the configLog is a function of the 'log' i.e. it
     \* has the same length on every node, but with different entries.
-    /\ \E cLog \in RandomSubset(15, [Server -> Seq(SUBSET Server)]) : 
+    /\ \E cLog \in RandomSubset(35, [Server -> Seq(SUBSET Server)]) : 
        \E initConfig \in SUBSET Server :
         configLog = [i \in Server |-> <<initConfig>> \o cLog[i]]
-    /\ LogAndConfigLogSameLengths
-    /\ AllLogsStartWithInitConfig
     \* We also assume that the current config on every node is the last entry
     \* of the configLog on each node.
     /\ config = [i \in Server |-> configLog[i][Len(configLog[i])]]
@@ -76,12 +79,6 @@ TypeOKRandom ==
     /\ elections = {} \*\in RandomSetOfSubsets(15, 1, ElectionType)
 
 -------------------------------------------------------------------------------------
-
-\* The newest config log entry on a node is equivalent to its current config.
-LatestConfigLogEntryMatchesConfig == 
-    \A s \in Server : 
-        \/ configLog[s] = <<>> /\ log[s] = <<>>
-        \/ configLog[s] # <<>> /\ configLog[s][Len(configLog[s])] = config[s]
 
 MSRProofs == INSTANCE MongoStaticRaftProofs
     WITH MaxTerm <- MaxTerm,
@@ -110,23 +107,96 @@ LogEntryInTermImpliesElectionInTerm == MSRProofs!LogEntryInTermImpliesElectionIn
 NewerLogMustContainPastCommittedEntries == MSRProofs!NewerLogMustContainPastCommittedEntries
 CommittedEntriesAreInTermOfLeader == MSRProofs!CommittedEntriesAreInTermOfLeader
 LogEntryInTermMustExistInACurrentPrimaryLog == MSRProofs!LogEntryInTermMustExistInACurrentPrimaryLog
+PresentElectionSafety == MSRProofs!PresentElectionSafety
+
+ConfigsNonEmpty == 
+    \A s \in Server : 
+        /\ config[s] # {}
+        /\ \A i \in DOMAIN configLog[s] : configLog[s][i] # {}
+
+
+\* The set of all log entries (<<index, term>>) in the log of node 's'.
+\* LogEntriesAt(s) == {<<i,log[s][i]>> : i \in DOMAIN log[s]} 
+
+ReconfigPairsInLog(s) == 
+    {LET inew == (iold + 1) IN
+     [  oldEntry |-> <<iold,log[s][iold]>>,
+        newEntry |-> <<inew,log[s][inew]>>,
+        configOld |-> configLog[s][iold],
+        configNew |-> configLog[s][inew]] : 
+        iold \in 1..(Len(log[s])-1)}
+
+\* If we look at all logs in the system and look at every adjacent pair of
+\* entries, each of these should correspond to a reconfig, either by Reconfig
+\* action or a BecomeLeader action.
+ReconfigPairsAll == UNION {ReconfigPairsInLog(s) : s \in Server}
+
+\* If current config exists, its parent must be committed.
+ReconfigImpliesParentCommitted == 
+    \A rc \in ReconfigPairsAll :
+    \* If the terms are the same, this is a reconfig, so the old
+    \* config must be committed.
+    (rc.oldEntry[2] = rc.newEntry[2]) => \E c \in committed : c.entry = rc.oldEntry
+
+
+
+\* If a config is committed, all ancestors are deactivated.
+\* TODO?
+
+\* If a node 'i' is currently primary, we can determine what config it was elected in
+\* by looking at its newest log entry index that is not in its own term. Assumes 's'
+\* is currently primary.
+ElectionLogIndex(s) == 
+    LET nonTermEntries == {x \in DOMAIN log[s] : x # currentTerm[s]} IN
+    IF nonTermEntries = {} THEN -1 ELSE Max(nonTermEntries)
+
+\* Does there exist quorum of nodes in the node set 'S' that have all reached term
+\* >= 't'.
+QuorumSafeAtTerm(S, t) == \E Q \in Quorums(S) : \A s \in Q : currentTerm[s] >= t 
+
+\* Once a primary is elected, it should only append entries (i.e. reconfigs) to its log.
+\* So, all commtited entries written in this primary's term must have a quorum of nodes in term >=T
+\* since the primary must have been elected in a config prior to this sequence of log entries.
+ConfigsCommittedByPrimaryMustHaveQuorumAtTerm == 
+    \A s \in Server : (state[s] = Primary) =>
+    \A i \in DOMAIN log[s] : 
+        \* All committed log entries written by this primary should have a quorum
+        \* of nodes in their config with term >= T.
+        (\/ (/\ log[s][i] = currentTerm[s] 
+             /\ \E c \in committed : c.entry = <<i, log[s][i]>>) 
+         \/ i = ElectionLogIndex(s)) =>
+         QuorumSafeAtTerm(configLog[s][i], currentTerm[s])
+         
+\* TODO: Fix out of bounds errors with this definition?
 
 \* Inductive invariant.
 DynamicRaftInd == 
-    \* StaticRaft inductive invariant
     /\ StateMachineSafety
+
+    \*
+    \* Properties that reference the 'committed' history variable.
+    \* 
     /\ CommittedEntryPresentInLogs
-    /\ CommitMustUseValidQuorum
     /\ LeaderLogContainsPastCommittedEntries
-    /\ CurrentTermAtLeastAsLargeAsLogTerms
-    /\ TermsOfEntriesGrowMonotonically
-    /\ PrimaryImpliesQuorumInTerm
-    \* /\ LogEntryInTermImpliesElectionInTerm
     /\ NewerLogMustContainPastCommittedEntries
     /\ CommittedEntriesAreInTermOfLeader
+
+    \*
+    \* Properties that only reference "real" (non history) protocol variables.
+    \*
+    
+    /\ PresentElectionSafety
+
+    /\ CurrentTermAtLeastAsLargeAsLogTerms
+    /\ TermsOfEntriesGrowMonotonically
     /\ LogEntryInTermMustExistInACurrentPrimaryLog
 
-    \* /\ MWR!WeakQuorumCondition
+    \*
+    \* Config related properties.
+    \*
+    /\ ConfigsNonEmpty
+    /\ ReconfigImpliesParentCommitted
+    /\ ConfigsCommittedByPrimaryMustHaveQuorumAtTerm
 
 \* Assumed or previously proved invariants that we use to make the inductive step
 \* simpler.
@@ -161,6 +231,7 @@ Alias ==
         \* config |-> config,
         elections |-> elections,
         committed |-> committed,
+        config |-> config,
         configLog |-> configLog,
         nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)]
     ]
