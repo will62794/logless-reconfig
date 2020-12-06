@@ -100,9 +100,7 @@ CSMNext ==
     \/ \E s \in Server, newConfig \in SUBSET Server : 
         \* Before allowing a Reconfig, we must also ensure that any previously committed ops
         \* are now committed by a quorum of the current configuration.
-        \* TODO: Correct this precondition.
-        \* /\ \A c \in committed : 
-        \*    \E Q \in QuorumsAt(config[s]) : OSM!MWR!ImmediatelyCommitted(c.entry, Q)
+        /\ \A c \in committed : \E Q \in QuorumsAt(s) : OSM!MWR!ImmediatelyCommitted(c.entry, Q)
         /\ CSM!Reconfig(s, newConfig)
     \/ \E s,t \in Server : CSM!SendConfig(s, t)
 
@@ -140,5 +138,7 @@ StateConstraint == \A s \in Server :
                     /\ configVersion[s] <= MaxConfigVersion
 
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
+
+ServerSymmetry == Permutations(Server)
 
 =============================================================================
