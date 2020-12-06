@@ -216,21 +216,20 @@ StrictQuorumCondition ==
             /\ \A c \in committed : (quorum \cap c.quorum) # {}
 
 \*
-\* For any node that could be elected or could commit a write, all of its quorums must:
-\*      1. Overlap with some node with term >=T for all elections that occurred in term T.
-\*      2. Overlap with some node containing an entry E for all previously committed entries E.
+\* If a node is electable in some quorum, the quorum must:
+\*  1. Overlap with some node with term >=T for all elections that occurred in term T.
+\*  2. Overlap with some node containing an entry E for all previously committed entries E.
 \*
 WeakQuorumCondition == 
-    \A s,t \in Server :
-    (s # t /\ state[s] = Primary) => 
-    (\A quorum \in QuorumsAt(t) : Electable(t, quorum) => \E i \in quorum : currentTerm[i] >= currentTerm[s])
-        \* Overlaps with some node that contains term of election, for all previous elections.
-        \* ( 
-          
-          \*/\ \A e \in elections : \E t \in quorum : currentTerm[t] >= e.term 
+    \A s \in Server :
+    \A quorum \in SUBSET Server : 
+        Electable(s, quorum) => 
+        ( 
+          \* Overlaps with some node that contains term of election, for all previous elections.
+          /\ \A e \in elections : \E t \in quorum : currentTerm[t] >= e.term 
           \* Overlaps with some node containing entry E, for all committed entries E.
-        \*   /\ \A w \in committed : \E t \in quorum : InLog(w.entry, t) 
-        \* )
+          /\ \A w \in committed : \E t \in quorum : InLog(w.entry, t) 
+        )
 
 \* For model checking.
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
@@ -255,8 +254,8 @@ Next ==
 Spec == Init /\ [][Next]_vars
 
 \* Variants of the spec that satisfy different quorum conditions.
-SpecStrictQuorums ==   Init /\ [][Next /\ StrictQuorumCondition']_vars
-SpecWeakQuorums ==     Init /\ [][Next /\ WeakQuorumCondition']_vars
+SpecStrictQuorums ==   Init /\ StrictQuorumCondition /\ [][Next /\ StrictQuorumCondition']_vars
+SpecWeakQuorums ==     Init /\ WeakQuorumCondition   /\ [][Next /\ WeakQuorumCondition']_vars
 
 ElectionSafety == 
     \A e1, e2 \in elections : 
