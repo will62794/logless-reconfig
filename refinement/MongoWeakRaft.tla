@@ -223,7 +223,7 @@ StrictQuorumCondition ==
 \* TODO: Consider how concurrent elections/commits might affect validity of this condition.
 WeakQuorumCondition == 
     \A s \in Server :
-    \A quorum \in SUBSET Server : 
+    \A quorum \in QuorumsAt(s) : 
         Electable(s, quorum) => 
         ( 
           \* Overlaps with some node that contains term of election, for all previous elections.
