@@ -135,9 +135,14 @@ ConfigsNonEmpty ==
         /\ config[s] # {}
         /\ \A i \in DOMAIN configLog[s] : configLog[s][i] # {}
 
+\* Commit quorums cannot be empty.
+ValidCommitQuorums ==
+    \A c \in committed : c.quorum # {}
 
-\* The set of all log entries (<<index, term>>) in the log of node 's'.
-\* LogEntriesAt(s) == {<<i,log[s][i]>> : i \in DOMAIN log[s]} 
+
+\* Does there exist quorum of nodes in the node set 'S' that have all reached term
+\* >= 't'.
+QuorumAtTerm(S, t) == \E Q \in Quorums(S) : \A s \in Q : currentTerm[s] >= t 
 
 ReconfigPairsInLog(s) == 
     {LET inew == (iold + 1) IN
@@ -159,6 +164,22 @@ ReconfigImpliesParentCommitted ==
     \* config must be committed.
     (rc.oldEntry[2] = rc.newEntry[2]) => \E c \in committed : c.entry = rc.oldEntry
 
+\* If a step up reconfig log entry exists, then it must have been the result of an election, so a quorum
+\* in the config of the election must have term >=T.
+StepUpReconfigImpliesQuorumInTermFromElection == 
+    \A rc \in ReconfigPairsAll :
+    LET oldTerm == rc.oldEntry[2]
+        newTerm == rc.newEntry[2] IN
+    oldTerm # newTerm => QuorumAtTerm(rc.configOld, newTerm)
+
+\* If a log entry E exists for a reconfig, then its parent (the previous log entry) must be committed.
+ReconfigLogEntryImpliesParentCommitted == 
+    \A s \in Server :
+    \* Ignore the first element of each log.
+    \A i \in ((DOMAIN log[s]) \ {1}) : 
+        LET iPar == (i-1) IN
+        \* Reconfig log entry is one with same term.
+        (log[s][i] = log[s][iPar]) => (\E c \in committed : c.entry = <<iPar, log[s][iPar]>>)
 
 
 \* If a config is committed, all ancestors are deactivated.
@@ -171,24 +192,27 @@ ElectionLogIndex(s) ==
     LET nonTermEntries == {x \in DOMAIN log[s] : x # currentTerm[s]} IN
     IF nonTermEntries = {} THEN -1 ELSE Max(nonTermEntries)
 
-\* Does there exist quorum of nodes in the node set 'S' that have all reached term
-\* >= 't'.
-QuorumSafeAtTerm(S, t) == \E Q \in Quorums(S) : \A s \in Q : currentTerm[s] >= t 
-
 \* Once a primary is elected, it should only append entries (i.e. reconfigs) to its log.
 \* So, all commtited entries written in this primary's term must have a quorum of nodes in term >=T
-\* since the primary must have been elected in a config prior to this sequence of log entries.
+\* since the primary must have been elected in a config prior to this sequence of log entries. Also,
+\* the first entry before these entries must have been the one the primary was elected in, so it must
+\* also have a quorum in term >= T.
 ConfigsCommittedByPrimaryMustHaveQuorumAtTerm == 
     \A s \in Server : (state[s] = Primary) =>
     \A i \in DOMAIN log[s] : 
         \* All committed log entries written by this primary should have a quorum
         \* of nodes in their config with term >= T.
-        (\/ (/\ log[s][i] = currentTerm[s] 
-             /\ \E c \in committed : c.entry = <<i, log[s][i]>>) 
+        (\/ (log[s][i] = currentTerm[s] /\ \E c \in committed : c.entry = <<i, log[s][i]>>) 
          \/ i = ElectionLogIndex(s)) =>
-         QuorumSafeAtTerm(configLog[s][i], currentTerm[s])
-         
-\* TODO: Fix out of bounds errors with this definition?
+         QuorumAtTerm(configLog[s][i], currentTerm[s])
+
+\* A node that is currently primary must be inside its own current config.
+PrimaryMustBeInOwnConfig ==
+    \A s \in Server : state[s] = Primary => s \in config[s]
+
+\* For any config, its quorums must overlap with its parent.
+ConfigAndParentQuorumsOverlap == 
+    \A rc \in ReconfigPairsAll : QuorumsOverlap(rc.configOld, rc.configNew)
 
 \* Inductive invariant.
 DynamicRaftInd == 
@@ -207,17 +231,17 @@ DynamicRaftInd ==
     \*
     
     /\ PresentElectionSafety
-
     /\ CurrentTermAtLeastAsLargeAsLogTerms
     /\ TermsOfEntriesGrowMonotonically
     /\ LogEntryInTermMustExistInACurrentPrimaryLog
 
-    \*
     \* Config related properties.
-    \*
     /\ ConfigsNonEmpty
-    /\ ReconfigImpliesParentCommitted
-    /\ ConfigsCommittedByPrimaryMustHaveQuorumAtTerm
+    /\ ValidCommitQuorums
+    /\ PrimaryMustBeInOwnConfig
+    /\ ReconfigLogEntryImpliesParentCommitted
+    /\ StepUpReconfigImpliesQuorumInTermFromElection
+    /\ ConfigAndParentQuorumsOverlap
 
 \* Assumed or previously proved invariants that we use to make the inductive step
 \* simpler.
@@ -228,6 +252,7 @@ Assumptions ==
 
 IInit ==  
     /\ TypeOKRandom 
+    \* /\ PrintT(<<LogAndConfigLogSameLengths,LatestConfigLogEntryMatchesConfig,AllLogsStartWithInitConfig>>)
     /\ Assumptions
     /\ DynamicRaftInd
 
@@ -240,9 +265,9 @@ StateStr(st) ==
     IF st = Primary THEN "P" ELSE "S"
 
 ServerStr(s) == 
-    IF s = Nil THEN "--------------" ELSE
+    IF s = Nil THEN "----------------------------" ELSE
     "t" \o ToString(currentTerm[s]) \o " " \o StateStr(state[s]) \o " " \o
-    ToString(log[s]) \o " " \o ToString(config[s])
+    ToString(log[s]) \o " " \o ToString(configLog[s])
 
 Alias == 
     [
