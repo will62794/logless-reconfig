@@ -189,8 +189,8 @@ ReconfigLogEntryImpliesParentCommitted ==
 \* by looking at its newest log entry index that is not in its own term. Assumes 's'
 \* is currently primary.
 ElectionLogIndex(s) == 
-    LET nonTermEntries == {x \in DOMAIN log[s] : x # currentTerm[s]} IN
-    IF nonTermEntries = {} THEN -1 ELSE Max(nonTermEntries)
+    LET nonTermInds == {i \in DOMAIN log[s] : log[s][i] # currentTerm[s]} IN
+    IF nonTermInds = {} THEN -1 ELSE Max(nonTermInds)
 
 \* Once a primary is elected, it should only append entries (i.e. reconfigs) to its log.
 \* So, all commtited entries written in this primary's term must have a quorum of nodes in term >=T
