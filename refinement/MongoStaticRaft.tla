@@ -72,6 +72,7 @@ StateConstraint == \A s \in Server :
                     /\ currentTerm[s] <= MaxTerm
                     /\ Len(log[s]) <= MaxLogLen
 
+ServerSymmetry == Permutations(Server)
 
 \* For easier error diagnosis
 Alias == 
