@@ -63,14 +63,35 @@ LatestConfigLogEntryMatchesConfig ==
 TypeOKRandom == 
     /\ currentTerm \in RandomSubset(10, [Server -> Nat])
     /\ state \in RandomSubset(8, [Server -> {Secondary, Primary}])
+
+
+    \* Both the main 'log' and the 'configLog' are the same length. We assume this.
+    \* So, for state generation, we give the model checker some help by 
+    \* making them have the same length by construction, rather than generating
+    \* a bunch of random states and picking the valid ones. The rough idea is:
+    \* 1. Generate a random initial 'log' state, which sets the lengths for each log.
+    \* 2. Generate a random function mapping from positions in the 'log' to configs (i.e. SUBSET Server)
+    \* 3. Generate each configLog deterministically from the function generated in (2).
+
     \* We assume that all logs start out with the same '0' entry.
-    /\ \E mLog \in RandomSubset(15, [Server -> Seq(PositiveNat)]) :
+    /\ \E mLog \in RandomSubset(10, [Server -> Seq(PositiveNat)]) :
         log = [i \in Server |-> <<0>> \o mLog[i]]
-    \* We assume that the configLog is a function of the 'log' i.e. it
-    \* has the same length on every node, but with different entries.
-    /\ \E cLog \in RandomSubset(35, [Server -> Seq(SUBSET Server)]) : 
-       \E initConfig \in SUBSET Server :
-        configLog = [i \in Server |-> <<initConfig>> \o cLog[i]]
+
+    \* Random element from the set of functions that map from <<s,i>> indexes to configs
+    /\ LET ServerIndPairs == UNION {{<<s,i>> : i \in DOMAIN log[s]} : s \in Server} IN 
+        \E cLogMap \in RandomSubset(10, [ServerIndPairs -> SUBSET Server]) :
+        \E initConfig \in SUBSET Server :
+        \* configLog at server 's'.
+        LET ConfigLogAt(serv) == 
+            (LET domain == {si[2] : si \in {p \in ServerIndPairs : p[1]=serv}} IN 
+            [ind \in domain |-> 
+                IF ind = 1 THEN initConfig 
+                ELSE cLogMap[<<serv,ind>>]]) IN
+        configLog = [s \in Server |-> ConfigLogAt(s)]
+    
+    \* \E cLog \in RandomSubset(165, [Server -> Seq({sub \in SUBSET Server : sub # {}})]) : 
+    \*    \E initConfig \in SUBSET Server :
+    \*     configLog = [i \in Server |-> <<initConfig>> \o cLog[i]]
     \* We also assume that the current config on every node is the last entry
     \* of the configLog on each node.
     /\ config = [i \in Server |-> configLog[i][Len(configLog[i])]]
