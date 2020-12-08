@@ -220,6 +220,7 @@ StrictQuorumCondition ==
 \*  1. Overlap with some node with term >=T for all elections that occurred in term T.
 \*  2. Overlap with some node containing an entry E for all previously committed entries E.
 \*
+\* TODO: Consider how concurrent elections/commits might affect validity of this condition.
 WeakQuorumCondition == 
     \A s \in Server :
     \A quorum \in SUBSET Server : 
