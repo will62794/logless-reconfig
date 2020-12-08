@@ -231,6 +231,8 @@ MWR == INSTANCE MongoWeakRaft
 ElectionSafety == MWR!ElectionSafety
 LogMatching == MWR!LogMatching
 StateMachineSafety == MWR!StateMachineSafety
+WeakQuorumCondition == MWR!WeakQuorumCondition
+StrictQuorumCondition == MWR!StrictQuorumCondition
 
 \* TODO: Verify this.
 RefinementProperty == MWR!Spec
