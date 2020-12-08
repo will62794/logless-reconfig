@@ -210,7 +210,7 @@ ImmediatelyCommittedImpliesFutureCommitted ==
 \* all previous vote quorums and all previous commit quorums.
 StrictQuorumCondition == 
     \A s \in Server : 
-    \A quorum \in SUBSET Server : 
+    \A quorum \in QuorumsAt(s) : 
         Electable(s, quorum) => 
             /\ \A e \in elections : (quorum \cap e.quorum) # {}
             /\ \A c \in committed : (quorum \cap c.quorum) # {}
