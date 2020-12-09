@@ -61,7 +61,7 @@ LatestConfigLogEntryMatchesConfig ==
 \* checking inductive invariance, since we aren't generating tons of invalid states 
 \* only to throw them away.
 TypeOKRandom == 
-    /\ currentTerm \in RandomSubset(10, [Server -> Nat])
+    /\ currentTerm \in RandomSubset(12, [Server -> Nat])
     /\ state \in RandomSubset(8, [Server -> {Secondary, Primary}])
 
 
@@ -74,12 +74,12 @@ TypeOKRandom ==
     \* 3. Generate each configLog deterministically from the function generated in (2).
 
     \* We assume that all logs start out with the same '0' entry.
-    /\ \E mLog \in RandomSubset(10, [Server -> Seq(PositiveNat)]) :
+    /\ \E mLog \in RandomSubset(12, [Server -> Seq(PositiveNat)]) :
         log = [i \in Server |-> <<0>> \o mLog[i]]
 
     \* Random element from the set of functions that map from <<s,i>> indexes to configs
     /\ LET ServerIndPairs == UNION {{<<s,i>> : i \in DOMAIN log[s]} : s \in Server} IN 
-        \E cLogMap \in RandomSubset(10, [ServerIndPairs -> SUBSET Server]) :
+        \E cLogMap \in RandomSubset(12, [ServerIndPairs -> SUBSET Server]) :
         \E initConfig \in SUBSET Server :
         \* configLog at server 's'.
         LET ConfigLogAt(serv) == 
@@ -124,7 +124,7 @@ LeaderLogContainsPastCommittedEntries == MSRProofs!LeaderLogContainsPastCommitte
 CurrentTermAtLeastAsLargeAsLogTerms == MSRProofs!CurrentTermAtLeastAsLargeAsLogTerms
 TermsOfEntriesGrowMonotonically == MSRProofs!TermsOfEntriesGrowMonotonically
 PrimaryImpliesQuorumInTerm == MSRProofs!PrimaryImpliesQuorumInTerm
-LogEntryInTermImpliesElectionInTerm == MSRProofs!LogEntryInTermImpliesElectionInTerm
+\* LogEntryInTermImpliesElectionInTerm == MSRProofs!LogEntryInTermImpliesElectionInTerm
 NewerLogMustContainPastCommittedEntries == MSRProofs!NewerLogMustContainPastCommittedEntries
 CommittedEntriesAreInTermOfLeader == MSRProofs!CommittedEntriesAreInTermOfLeader
 LogEntryInTermMustExistInACurrentPrimaryLog == MSRProofs!LogEntryInTermMustExistInACurrentPrimaryLog
@@ -157,6 +157,12 @@ ReconfigPairsInLog(s) ==
 \* action or a BecomeLeader action.
 ReconfigPairsAll == UNION {ReconfigPairsInLog(s) : s \in Server}
 
+\* Step up reconfigs change the term.
+IsStepUpReconfig(rc) == rc.oldEntry[2] # rc.newEntry[2]
+
+\* Normal reconfigs do not change the term.
+IsNormalReconfig(rc) == rc.oldEntry[2] = rc.newEntry[2]
+
 \* If current config exists, its parent must be committed.
 ReconfigImpliesParentCommitted == 
     \A rc \in ReconfigPairsAll :
@@ -185,11 +191,17 @@ ReconfigLogEntryImpliesParentCommitted ==
 \* If a config is committed, all ancestors are deactivated.
 \* TODO?
 
+\* Gives the index of the newest log entry in log[s] that is in a term less than T.
+\* If there is no such entry, will return 1. Assumes monotonicity of terms in log.
+LatestEntryBeforeTerm(s, T) == 
+    LET indicesBeforeTerm == {i \in DOMAIN log[s] : log[s][i] < T} IN 
+    IF indicesBeforeTerm # {} THEN Max(indicesBeforeTerm) ELSE 1
+
 \* If a node 'i' is currently primary, we can determine what config it was elected in
 \* by looking at its newest log entry index that is not in its own term. Assumes 's'
 \* is currently primary.
 ElectionLogIndex(s) == 
-    LET nonTermInds == {i \in DOMAIN log[s] : log[s][i] # currentTerm[s]} IN
+    LET nonTermInds == {i \in DOMAIN log[s] : log[s][i] < currentTerm[s]} IN
     IF nonTermInds = {} THEN -1 ELSE Max(nonTermInds)
 
 \* Once a primary is elected, it should only append entries (i.e. reconfigs) to its log.
@@ -206,6 +218,25 @@ ConfigsCommittedByPrimaryMustHaveQuorumAtTerm ==
          \/ i = ElectionLogIndex(s)) =>
          QuorumAtTerm(configLog[s][i], currentTerm[s])
 
+\* If a log entry exists in term T, it must have been created by a primary in term T,
+\* which implies there must have been a successful election in term T. The primary of term
+\* T must have been elected, though, in a config from an older term e.g. in this log
+\*
+\* <<0,1,1,1,2,2,2>>
+\*
+\* The existence of any of the entries in term T imply that the leader of term 2 must have
+\* been elected in config/entry <<index=4,term=1>>. So, there must be a quorum of nodes in
+\* config at <<4,1>> that have term >= T. For a log entry <<i,T>>, the election of the leader 
+\* in term T must have occurred in the latest log entry in a term < T.
+LogEntryInTermImpliesElectionInTerm == 
+    \A s \in Server :
+    \* Don't consider the initial log entry since no election created it.
+    \A i \in ((DOMAIN log[s]) \ {1}) : 
+        \* Look for the newest log entry in an earlier term. The election for the
+        \* term of the current entry have must occurred in that entry's config.
+        LET electionInd == LatestEntryBeforeTerm(s, log[s][i]) IN
+        QuorumAtTerm(configLog[s][electionInd], log[s][i])
+
 \* A node that is currently primary must be inside its own current config.
 PrimaryMustBeInOwnConfig ==
     \A s \in Server : state[s] = Primary => s \in config[s]
@@ -214,34 +245,28 @@ PrimaryMustBeInOwnConfig ==
 ConfigAndParentQuorumsOverlap == 
     \A rc \in ReconfigPairsAll : QuorumsOverlap(rc.configOld, rc.configNew)
 
+StepUpReconfigsCannotChangeConfig == 
+    \A rc \in ReconfigPairsAll : IsStepUpReconfig(rc) => (rc.configOld = rc.configNew)
+
 \* Inductive invariant.
 DynamicRaftInd == 
     /\ StateMachineSafety
 
-    \*
-    \* Properties that reference the 'committed' history variable.
-    \* 
     /\ CommittedEntryPresentInLogs
     /\ LeaderLogContainsPastCommittedEntries
     /\ NewerLogMustContainPastCommittedEntries
     /\ CommittedEntriesAreInTermOfLeader
 
-    \*
-    \* Properties that only reference "real" (non history) protocol variables.
-    \*
-    
     /\ PresentElectionSafety
     /\ CurrentTermAtLeastAsLargeAsLogTerms
     /\ TermsOfEntriesGrowMonotonically
     /\ LogEntryInTermMustExistInACurrentPrimaryLog
 
-    \* Config related properties.
-    /\ ConfigsNonEmpty
-    /\ ValidCommitQuorums
-    /\ PrimaryMustBeInOwnConfig
+    /\ LogEntryInTermImpliesElectionInTerm
     /\ ReconfigLogEntryImpliesParentCommitted
-    /\ StepUpReconfigImpliesQuorumInTermFromElection
-    /\ ConfigAndParentQuorumsOverlap
+    /\ ConfigsCommittedByPrimaryMustHaveQuorumAtTerm
+    /\ StepUpReconfigsCannotChangeConfig
+
 
 \* Assumed or previously proved invariants that we use to make the inductive step
 \* simpler.
@@ -249,6 +274,12 @@ Assumptions ==
     /\ LogAndConfigLogSameLengths 
     /\ LatestConfigLogEntryMatchesConfig
     /\ AllLogsStartWithInitConfig
+    \* Basic, config related assumptions.
+    /\ ConfigsNonEmpty
+    /\ ValidCommitQuorums
+    /\ PrimaryMustBeInOwnConfig 
+    /\ ConfigAndParentQuorumsOverlap
+  
 
 IInit ==  
     /\ TypeOKRandom 
@@ -279,7 +310,10 @@ Alias ==
         committed |-> committed,
         config |-> config,
         configLog |-> configLog,
-        nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)]
+        nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)],
+        reconfigs |-> ReconfigPairsAll,
+        electionLogIndexes |-> [s \in Server |-> ElectionLogIndex(s)]
+        \* latestBeforeTerm |-> [s \in Server |-> [ i \in ((DOMAIN log[s]) \{1}) |-> LatestEntryBeforeTerm(s, log[s][i])]]
     ]
 
 
