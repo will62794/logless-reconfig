@@ -230,6 +230,16 @@ MWR == INSTANCE MongoWeakRaft
 
 ElectionSafety == MWR!ElectionSafety
 LogMatching == MWR!LogMatching
+
+\* Variant of LogMatching property that also takes into account the values in the 'configLog'.
+LogMatchingWithConfigs == 
+    \A s,t \in Server : 
+    \A i \in DOMAIN log[s] :
+        (\E j \in DOMAIN log[t] : i = j /\ log[s][i] = log[t][j]) => 
+        /\ (SubSeq(log[s],1,i) = SubSeq(log[t],1,i)) \* prefixes must be the same.
+        /\ (SubSeq(configLog[s],1,i) = SubSeq(configLog[t],1,i))\* configLog values must match.
+
+
 StateMachineSafety == MWR!StateMachineSafety
 WeakQuorumCondition == MWR!WeakQuorumCondition
 StrictQuorumCondition == MWR!StrictQuorumCondition
