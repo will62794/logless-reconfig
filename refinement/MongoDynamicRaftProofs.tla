@@ -289,6 +289,87 @@ IInit ==
 
 INext == Next
 
+
+\*
+\* Inductive invariants for proving the WeakQuorumCondition.
+\*
+
+
+\* Predicate that looks at the current state and determines which elections must have occurred in the past
+\* If a log entry exists in term T, this implies that an election in term T must have occurred.
+\* Produces a set of terms representing the past elections that must have occurred.
+PastElectionTerms == (UNION {Range(log[s]) : s \in Server})
+
+\* The initial term (0) is special in the sense that all nodes start in it. Thus, no primaries
+\* can exist in term 0, since they must increment their term at least once to try an election.
+NoPrimariesInInitialTerm == \A s \in Server : (currentTerm[s] = 0) => (state[s] # Primary)
+
+\* Since there can be no primaries in the initial term, there can be no committed entries directly
+\* committed in it either.
+NoCommitsInInitialTerm == \A c \in committed : c.term # 0
+
+\* If a log entry is committed, it must have been committed with the quorum of the config in that
+\* entry.
+\* LogEntryMustBeCommittedWithOwnConfig == 
+\*     \A c \in committed : c.quorum = configLog[c.leader][c.entry[1]]
+
+\* This condition states that any currently electable node N, for all previous elections E in term T,
+\* N must use a quorum that overlaps with some node with term >= T. We could state this
+\* directly as a property over the 'elections' history variable, but we instead try to state it 
+\* by only involving "real" (non history) variables. So, instead of directly looking into the 
+\* 'elections' history varible, we need to look at the current state to see if there is "evidence"
+\* of an election occurring in term T. This evidence will appear in the form of a log entry in term
+\* T. If such an entry exists, then an election must have occurred in that term in the past.
+WeakElectionQuorumCondition == 
+    \A s \in Server :
+    \A quorum \in QuorumsAt(s) : 
+        Electable(s, quorum) => (\A tPast \in PastElectionTerms : \E t \in quorum : currentTerm[t] >= tPast)
+
+WeakCommitQuorumCondition == 
+    \A s \in Server :
+    \A quorum \in QuorumsAt(s) : 
+        Electable(s, quorum) => (\A w \in committed : \E t \in quorum : InLog(w.entry, t)) 
+
+\* Inductive invariant.
+WeakQuorumInd == 
+    /\ WeakElectionQuorumCondition
+
+    /\ WeakCommitQuorumCondition
+    \* /\ CommittedEntryPresentInLogs
+
+\*
+\* If we have shown that MongoDynamicRaft refines MongoWeakRaft, and we assume
+\* that MongoWeakRaft /\ []WeakQuorumCondition satisfies all standard safety
+\* properties of Raft, then we believe it should be valid to assume the standard
+\* safety properties of Raft as a part of our inductive invariant i.e. we can
+\* assume they hold in the current state, since we are assuming that the
+\* protocol up to the current state "behaved as" (refined) MongoWeakRaft
+\* protocol and it satisfied WeakQuorumCondition in all states up to and
+\* including the current. So, it should be the case that the relevant safety hold
+\* properties in the current state.
+\*
+WeakQuorumIndAssumptions == 
+    /\ Assumptions
+    /\ LogMatchingWithConfigs
+    /\ PresentElectionSafety
+    /\ CurrentTermAtLeastAsLargeAsLogTerms
+    \* This is more or less an assumption derived from behavior of the "lockstep" protocol.
+    /\ ReconfigLogEntryImpliesParentCommitted 
+    \* This is an easy assumption that should apply in the case of static Raft as well.
+    /\ NoPrimariesInInitialTerm
+    /\ NoCommitsInInitialTerm
+    \* This is a simple assumption that follows almost directly from the rules of protocol.
+    /\ StepUpReconfigsCannotChangeConfig
+
+WeakQuorumIInit ==  
+    /\ TypeOKRandom 
+    /\ WeakQuorumIndAssumptions
+    /\ WeakQuorumInd
+
+WeakQuorumINext == Next
+
+-------------------------------------------------------------------------------------
+
 \*
 \* For easier error diagnosis.
 \*
@@ -310,10 +391,13 @@ Alias ==
         committed |-> committed,
         config |-> config,
         configLog |-> configLog,
-        nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)],
-        reconfigs |-> ReconfigPairsAll,
-        electionLogIndexes |-> [s \in Server |-> ElectionLogIndex(s)]
+        \* reconfigs |-> ReconfigPairsAll,
+        pastElectionTerms |-> PastElectionTerms,
+        electableNodes |-> {s \in Server : \E q \in QuorumsAt(s) : Electable(s,q)},
+        \* electionLogIndexes |-> [s \in Server |-> ElectionLogIndex(s)]
         \* latestBeforeTerm |-> [s \in Server |-> [ i \in ((DOMAIN log[s]) \{1}) |-> LatestEntryBeforeTerm(s, log[s][i])]]
+        nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)]
+
     ]
 
 
