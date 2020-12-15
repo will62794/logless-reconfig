@@ -41,8 +41,8 @@ StateMachineSafety == MWR!StateMachineSafety
 \* This is the abstract condition necessary for a Raft protocol to operate "safely" without
 \* reliance on quorum overlaps.
 \*
-\*  (1) An electable node overlap with some node with term >=T for all elections that occurred in term T.
-\*  (2) An electable must overlap with some node containing an entry E for all previously committed entries E.
+\*  (1) An electable node must overlap with some node with term >=T for all elections that occurred in term T.
+\*  (2) An electable node must overlap with some node containing an entry E for all previously committed entries E.
 \*  (3) A committable write must overlap with some node with term >=T for all elections that occurred in term T.
 \*
 WeakQuorumCondition ==
