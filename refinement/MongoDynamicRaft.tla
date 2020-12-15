@@ -228,6 +228,20 @@ MWR == INSTANCE MongoWeakRaft
          elections <- elections,
          committed <- committed
 
+MSWR == INSTANCE MongoSafeWeakRaft 
+    WITH MaxTerm <- MaxTerm,
+         MaxLogLen <- MaxLogLen,
+         MaxConfigVersion <- MaxConfigVersion,
+         Server <- Server,
+         Secondary <- Secondary,
+         Primary <- Primary,
+         Nil <- Nil,
+         currentTerm <- currentTerm,
+         state <- state,
+         config <- config,
+         elections <- elections,
+         committed <- committed
+
 ElectionSafety == MWR!ElectionSafety
 LogMatching == MWR!LogMatching
 
@@ -241,11 +255,14 @@ LogMatchingWithConfigs ==
 
 
 StateMachineSafety == MWR!StateMachineSafety
-WeakQuorumCondition == MWR!WeakQuorumCondition
+WeakQuorumCondition == MSWR!WeakQuorumCondition
 StrictQuorumCondition == MWR!StrictQuorumCondition
 
 \* TODO: Verify this.
 RefinementProperty == MWR!Spec
+
+THEOREM MDRRefinesMWR == Spec => MWR!Spec
+THEOREM MDRWeakQuorumCondition == Spec => []MSWR!WeakQuorumCondition
 
 -------------------------------------------------------------------------------------------
 
