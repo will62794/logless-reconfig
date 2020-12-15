@@ -38,9 +38,9 @@ The *MongoStaticRaft* protocol behaves "safely". That is, it satisfies the 9 key
 
 To develop *MongoSafeWeakRaft* we can start from the definition of *StaticRaftSafety* and try to abstract the conditions necessary for satisfying these properties, without a reliance on quorum overlap. Quorums for elections and commitment in *MongoStaticRaft* must overlap, which serves to ensure the following properties:
 
-1. If an election has occurred in term T, this prevents future elections in term T.
-2. If an election has occurred in term T, it prevents entries from becoming committed in terms < T in the future.
-3. If a leader is elected in term T, it must contain all entries committed in previous terms.
+- C1. If an election has occurred in term T, this prevents future elections in term T.
+- C2. If an election has occurred in term T, it prevents entries from becoming committed in terms < T in the future.
+- C3. If a leader is elected in term T, it must contain all entries committed in previous terms.
 
 *MongoStaticRaft* relies on quorum overlap to enforce these conditions, which are necessary to satisfy *StaticRaftSafety*, but when viewed in the abstract, these conditions don't inherently depend on quorums. We can refer to these conditions collectively as the *WeakQuorumCondition*. We claim that if *MongoWeakRaft* is modified to satisfy these 3 conditions, this is sufficient to satisfy *StaticRaftSafety*. This is how we define *MongoSafeWeakRaft* i.e. it is directly defined as 
 
@@ -62,6 +62,17 @@ which is sufficient to show that
 (5) MongoDynamicRaft => StaticRaftSafety
 ```
 To prove (2) inductively, we can assume that the protocol refined *MongoWeakRaft* up the current state and that it satisfied *WeakQuorumCondition* up the current state, which means we can assume *StaticRaftSafety* as part of our inductive hypothesis. Then, we just need to prove that in the next state, *WeakQuorumCondition* is maintained by the *MongoDynamicRaft* protocol i.e. we need to prove that the 3 conditions listed above are upheld.
+
+How to prove each of the *WeakQuorumCondition* cases for *MongoDynamicRaft*? We can re-state them more concretely for sake of proof:
+
+- C1. For any electable node, it must overlap with some in term >=T for all past elections in term T.
+- C2. For an electable node, it must overlap with some node with entry E for all past committed entries E.
+- C3. For any committable write, its commit quorum must overlap with some node in term >= T for all past elections in term T.
+
+We can try to sketch the proof for each. Our induction hypothesis allows us to assume that the Raft log is currently "safe" i.e. it satisfies *StateMachineSafety* and the static safety properties including *LogMatching*, etc. 
+
+
+
 
 
 
