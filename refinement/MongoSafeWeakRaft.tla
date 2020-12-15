@@ -64,7 +64,11 @@ WeakQuorumCondition ==
 \* but the TLC  model checker will not interpret it correctly, so we insert the condition into
 \* the initial and transition predicate directly to maintain the condition at every step.
 \*
-Spec == MWR!Init /\ WeakQuorumCondition /\ [][MWR!Next /\ WeakQuorumCondition']_vars
+
+Init == MWR!Init /\ WeakQuorumCondition
+Next == MWR!Next /\ WeakQuorumCondition'
+
+Spec == Init /\ [][Next]_vars
 
 THEOREM MongoSafeWeakRaftSafety == Spec => []StateMachineSafety
 
