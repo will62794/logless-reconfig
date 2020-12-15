@@ -215,22 +215,6 @@ StrictQuorumCondition ==
             /\ \A e \in elections : (quorum \cap e.quorum) # {}
             /\ \A c \in committed : (quorum \cap c.quorum) # {}
 
-\*
-\* If a node is electable in some quorum, the quorum must:
-\*  1. Overlap with some node with term >=T for all elections that occurred in term T.
-\*  2. Overlap with some node containing an entry E for all previously committed entries E.
-\*
-\* TODO: Consider how concurrent elections/commits might affect validity of this condition.
-WeakQuorumCondition ==
-    \A s \in Server :
-    \A quorum \in QuorumsAt(s) : 
-        \* 1. Electable node overlaps with some node that contains term of election, for all previous elections.
-        /\ Electable(s, quorum) => \A e \in elections : \E t \in quorum : currentTerm[t] >= e.term 
-        \* 2. Electable node overlaps with some node containing entry E, for all committed entries E.
-        /\ Electable(s, quorum) => \A c \in committed : \E t \in quorum : InLog(c.entry, t)
-        \* 3. Commitable write overlaps with some node that contains term of election, for all previous elections. 
-        /\ ENABLED CommitEntry(s, quorum) => (\A e \in elections : \E t \in quorum : currentTerm[t] >= e.term)
-
 \* For model checking.
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 
@@ -257,7 +241,6 @@ Spec == Init /\ [][Next]_vars
 
 \* Variants of the spec that satisfy different quorum conditions.
 SpecStrictQuorums ==   Init /\ StrictQuorumCondition /\ [][Next /\ StrictQuorumCondition']_vars
-SpecWeakQuorums ==     Init /\ WeakQuorumCondition   /\ [][Next /\ WeakQuorumCondition']_vars
 
 ElectionSafety == 
     \A e1, e2 \in elections : 
@@ -284,10 +267,6 @@ THEOREM ~(Spec => []StateMachineSafety)
 
 \* Using the strict or weak quorum condition should ensure safety.
 THEOREM StrictQuorumSafety == SpecStrictQuorums => []StateMachineSafety
-THEOREM WeakQuorumSafety == SpecWeakQuorums => []StateMachineSafety
-
-\* The strict quorum condition should imply the weak quorum condition.
-THEOREM StrictQuorumImpliesWeakQuorum == SpecStrictQuorums => []WeakQuorumCondition
 
 -------------------------------------------------------------------------------------------
 
