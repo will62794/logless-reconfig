@@ -14,11 +14,15 @@ VARIABLE config
 
 VARIABLE configLog \* shadow of 'log' variable which stores config at a log index.
 
+\* Implementation variable stored to support rolling back to the initial config.
+\* TODO: Can hopefully get rid of this eventually by abstracting away rollback.
+VARIABLE initConfig 
+
 VARIABLE elections
 VARIABLE committed
 
 serverVars == <<currentTerm, state, log>>
-vars == <<currentTerm, state, log, elections, committed, config, configLog>>
+vars == <<currentTerm, state, log, elections, committed, config, configLog, initConfig>>
 
 (***************************************************************************)
 (* Helper operators.                                                       *)
@@ -90,10 +94,13 @@ RollbackEntries(i, j) ==
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
     /\ configLog' = [configLog EXCEPT ![i] = SubSeq(configLog[i], 1, Len(configLog[i])-1)]
-    \* Roll back your config state as well.
-    /\ config' = [config EXCEPT ![i] = configLog[i][Len(configLog[i])-1]]
+    \* Roll back your config state as well. If we are rolling back our only log entry,
+    \* then go back to the initial config.
+    /\ config' = [config EXCEPT ![i] = 
+                    IF Len(log[i]) = 1 THEN initConfig
+                    ELSE configLog[i][Len(configLog[i])-1]]
     /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<elections, committed>>
+    /\ UNCHANGED <<elections, committed, initConfig>>
 
 \* Node 'i' gets a new log entry from node 'j'.
 GetEntries(i, j) ==
@@ -118,7 +125,7 @@ GetEntries(i, j) ==
               /\ config' = [config EXCEPT ![i] = configLog[j][newEntryIndex]]
     /\ UpdateTerms(i, j)
 
-    /\ UNCHANGED <<elections, committed>>
+    /\ UNCHANGED <<elections, committed, initConfig>>
 
 \* Is the last log entry of node 'i' currently committed.
 LastIsCommitted(i) == 
@@ -138,7 +145,7 @@ ClientRequest(i, newConfig) ==
     /\ log' = [log EXCEPT ![i] = Append(log[i], currentTerm[i])]
     /\ config' = [config EXCEPT ![i] = newConfig]
     /\ configLog' = [configLog EXCEPT ![i] = Append(configLog[i], newConfig)]
-    /\ UNCHANGED <<currentTerm, state, elections, committed>>
+    /\ UNCHANGED <<currentTerm, state, elections, committed, initConfig>>
 
 BecomeLeader(i, voteQuorum) == 
     \* Primaries make decisions based on their current configuration.
@@ -159,7 +166,7 @@ BecomeLeader(i, voteQuorum) ==
     /\ log' = [log EXCEPT ![i] = Append(log[i], newTerm)]
     \* The config does not change but we write a dummy log entry.
     /\ configLog' = [configLog EXCEPT ![i] = Append(configLog[i], config[i])]
-    /\ UNCHANGED <<committed, config>>   
+    /\ UNCHANGED <<committed, config, initConfig>>   
 
 CommitEntry(i, commitQuorum) ==
     LET ind == Len(log[i]) IN
@@ -180,7 +187,7 @@ CommitEntry(i, commitQuorum) ==
             {[ entry  |-> <<ind, currentTerm[i]>>,
                quorum |-> commitQuorum,
                term  |-> currentTerm[i]]}
-    /\ UNCHANGED <<currentTerm, state, log, elections, config, configLog>>
+    /\ UNCHANGED <<currentTerm, state, log, elections, config, configLog, initConfig>>
 
 \* Is node 'i' currently electable with quorum 'q'.
 Electable(i, q) == ENABLED BecomeLeader(i, q)
@@ -191,12 +198,13 @@ CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 Init ==
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
-    \* Let every log start with an entry representing the initial config.
-    /\ log = [i \in Server |-> <<0>>]
-    /\ \E initConfig \in SUBSET Server : 
-        /\ initConfig # {}
-        /\ config = [i \in Server |-> initConfig]
-        /\ configLog = [i \in Server |-> <<initConfig>>]
+    /\ log = [i \in Server |-> <<>>]
+    /\ \E initCfg \in SUBSET Server : 
+        /\ initCfg # {}
+        /\ config = [i \in Server |-> initCfg]
+        /\ configLog = [i \in Server |-> <<>>]
+        \* Save the initial config in case of rollback.
+        /\ initConfig = initCfg
     /\ elections = {}
     /\ committed = {}
 
@@ -258,11 +266,14 @@ StateMachineSafety == MWR!StateMachineSafety
 WeakQuorumCondition == MSWR!WeakQuorumCondition
 StrictQuorumCondition == MWR!StrictQuorumCondition
 
-\* TODO: Verify this.
-RefinementProperty == MWR!Spec
+\*
+\* Refinement definitions.
+\*
 
 THEOREM MDRRefinesMWR == Spec => MWR!Spec
 THEOREM MDRWeakQuorumCondition == Spec => []MSWR!WeakQuorumCondition
+
+RefinesMongoWeakRaft == MWR!Spec
 
 -------------------------------------------------------------------------------------------
 
@@ -274,5 +285,16 @@ StateConstraint == \A s \in Server :
 MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 
 ServerSymmetry == Permutations(Server)
+
+
+
+\* vInit == Init
+\* vNext ==
+\*     \/ /\ MSWR!Next 
+\*        /\ configLog' = IF log' # log UNCHANGED <<configLog>>
+\*     \/ Next
+
+\* vSpec == Init /\ [][vNext]_vars
+
 
 =============================================================================

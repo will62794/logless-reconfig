@@ -86,9 +86,12 @@ ImmediatelyCommitted(e, Q) ==
     
 -------------------------------------------------------------------------------------------
 
-(***************************************************************************)
-(* Next state actions.                                                     *)
-(***************************************************************************)
+\*
+\* Next state actions.                                                     
+\*
+\* The core actions do not specify how the 'config' variable changes, since in the final specification we allow
+\* it to potentially change synchronously with any protocol transition.
+\*
 
 \* Exchange terms between two nodes and step down the primary if needed.
 UpdateTerms(i, j) ==
@@ -107,7 +110,7 @@ RollbackEntries(i, j) ==
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
     /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<elections, committed, config>>
+    /\ UNCHANGED <<elections, committed>>
 
 \* Node 'i' gets a new log entry from node 'j'.
 GetEntries(i, j) ==
@@ -128,14 +131,14 @@ GetEntries(i, j) ==
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
     /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<elections, committed, config>>
+    /\ UNCHANGED <<elections, committed>>
 
 \* Node 'i', a primary, handles a new client request and places the entry 
 \* in its log.                                                            
 ClientRequest(i) ==
     /\ state[i] = Primary
     /\ log' = [log EXCEPT ![i] = Append(log[i], currentTerm[i])]
-    /\ UNCHANGED <<currentTerm, state, elections, committed, config>>
+    /\ UNCHANGED <<currentTerm, state, elections, committed>>
 
 BecomeLeader(i, voteQuorum) == 
     \* Primaries make decisions based on their current configuration.
@@ -152,7 +155,10 @@ BecomeLeader(i, voteQuorum) ==
         {[ leader  |-> i, 
             term   |-> newTerm, 
             quorum |-> voteQuorum]}
-    /\ UNCHANGED <<log, committed, config>>   
+    \* Allow new leaders to write a no-op on step up if they want to. It is optional, but permissible.
+    /\ \/ log' = [log EXCEPT ![i] = Append(log[i], newTerm)]
+       \/ UNCHANGED log
+    /\ UNCHANGED <<committed>>   
 
 CommitEntry(i, commitQuorum) ==
     LET ind == Len(log[i]) IN
@@ -170,14 +176,14 @@ CommitEntry(i, commitQuorum) ==
             {[ entry  |-> <<ind, currentTerm[i]>>,
                quorum |-> commitQuorum,
                term  |-> currentTerm[i]]}
-    /\ UNCHANGED <<currentTerm, state, log, elections, config>>
+    /\ UNCHANGED <<currentTerm, state, log, elections>>
 
 \* Arbitrarily change the config of some node.
 ChangeConfig(i) == 
     /\ \E newConfig \in SUBSET Server : 
         /\ newConfig # {} \* configs should be non-empty.
         /\ config' = [config EXCEPT ![i] = newConfig]
-    /\ UNCHANGED <<currentTerm, state, log, committed, elections>>
+    \* /\ UNCHANGED <<currentTerm, state, log, committed, elections>>
 
 \* Is node 'i' currently electable with quorum 'q'.
 Electable(i, q) == ENABLED BecomeLeader(i, q)
@@ -228,14 +234,20 @@ Init ==
     /\ elections = {}
     /\ committed = {}
 
-Next == 
+\* The next state actions that do not affect the 'config' variable.
+NextCore == 
     \/ \E s \in Server : ClientRequest(s)
     \/ \E s, t \in Server : GetEntries(s, t)
     \/ \E s, t \in Server : RollbackEntries(s, t)
     \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
     \/ \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
-    \* TODO: Might want to allow this to change synchronously with any other action.
-    \/ \E s \in Server : ChangeConfig(s)
+
+\* We allow the protocol to take any 'core' protocol step and, if it wants to, change the config
+\* on some node arbitrarily when that transition is taken.
+Next == 
+    /\ NextCore 
+    \* Allows the config to be changed or remain the same on any protocol step.
+    /\ \E s \in Server : ChangeConfig(s)
 
 Spec == Init /\ [][Next]_vars
 
