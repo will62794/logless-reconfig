@@ -72,6 +72,13 @@ Spec == Init /\ [][Next]_vars
 
 THEOREM MongoSafeWeakRaftSafety == Spec => []StateMachineSafety
 
+\*
+\* Refinement definitions.
+\*
+
+THEOREM Spec => MWR!Spec
+
+RefinesMongoWeakRaft == MWR!Spec
 
 --------------
 
