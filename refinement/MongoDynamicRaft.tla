@@ -274,6 +274,7 @@ THEOREM MDRRefinesMWR == Spec => MWR!Spec
 THEOREM MDRWeakQuorumCondition == Spec => []MSWR!WeakQuorumCondition
 
 RefinesMongoWeakRaft == MWR!Spec
+RefinesMongoSafeWeakRaft == MSWR!Spec
 
 -------------------------------------------------------------------------------------------
 
