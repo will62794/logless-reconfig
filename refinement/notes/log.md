@@ -36,13 +36,13 @@ among other properties and invariants about logs/states that are not directly de
 
 The *MongoStaticRaft* protocol behaves "safely". That is, it satisfies the 9 key safety lemmas provided in the original Raft proof, which includes the high level *StateMachineSafety* property. We let *StaticRaftSafety* be the property that represents the conjunction of these 9 abstract safety properties. We can, however, define a more general protocol than MongoStaticRaft that satisfies this same definition of safety but doesn't rely on the strict assumption that any two quorums overlap. We will call this protocol *MongoSafeWeakRaft*. Before defining it, though, we first define an even weaker protocol called *MongoWeakRaft*. This is a variant of *MongoStaticRaft* that allows configurations on nodes to change arbitrarily. That is, no restrictions are placed on when configurations can change. This protocol is unsafe, but we will use it as a starting point to define the abstract, safe protocol *MongoSafeWeakRaft*.
 
-To develop *MongoSafeWeakRaft* we can start from the definition of *StaticRaftSafety* and try to abstract the conditions necessary for satisfying these properties, without a reliance on quorum overlap. Quorum for elections and commitment in *MongoStaticRaft* must overlap, which servers to ensure the following properties:
+To develop *MongoSafeWeakRaft* we can start from the definition of *StaticRaftSafety* and try to abstract the conditions necessary for satisfying these properties, without a reliance on quorum overlap. Quorums for elections and commitment in *MongoStaticRaft* must overlap, which serves to ensure the following properties:
 
 1. If an election has occurred in term T, this prevents future elections in term T.
 2. If an election has occurred in term T, it prevents entries from becoming committed in terms < T in the future.
 3. If a leader is elected in term T, it must contain all entries committed in previous terms.
 
-*MongoStaticRaft* relies on quorum overlap to enforce these conditions and satisfiy *StaticRaftSafety*, but when viewed in the abstract, these conditions don't inherently depend on the quorums used by the protocol. We can refer to these conditions collectively as the *WeakQuorumCondition*. Then, we claim that if *MongoWeakRaft* is modified to satisfy these 3 conditions, this should be sufficient to satisfy *StaticRaftSafety*. This is how we define *MongoSafeWeakRaft* i.e. it is directly defined as 
+*MongoStaticRaft* relies on quorum overlap to enforce these conditions, which are necessary to satisfy *StaticRaftSafety*, but when viewed in the abstract, these conditions don't inherently depend on quorums. We can refer to these conditions collectively as the *WeakQuorumCondition*. We claim that if *MongoWeakRaft* is modified to satisfy these 3 conditions, this is sufficient to satisfy *StaticRaftSafety*. This is how we define *MongoSafeWeakRaft* i.e. it is directly defined as 
 
 ```
 MongoSafeWeakRaft == MongoWeakRaft /\ []WeakQuorumCondition
@@ -61,7 +61,7 @@ which is sufficient to show that
 (4) MongoDynamicRaft => MongoSafeWeakRaft
 (5) MongoDynamicRaft => StaticRaftSafety
 ```
-To prove (2) inductively, we can assume that the protocol refined *MongoWeakRaft* up the current state and that it satisfied *WeakQuorumCondition* up the current state, which means we can assume *StaticRaftSafety* as part of our inductive hypothesis. Then, we just need to prove that in the next state, *WeakQuorumCondition* is maintained by the *MongoDynamicRaft* protocol.
+To prove (2) inductively, we can assume that the protocol refined *MongoWeakRaft* up the current state and that it satisfied *WeakQuorumCondition* up the current state, which means we can assume *StaticRaftSafety* as part of our inductive hypothesis. Then, we just need to prove that in the next state, *WeakQuorumCondition* is maintained by the *MongoDynamicRaft* protocol i.e. we need to prove that the 3 conditions listed above are upheld.
 
 
 
