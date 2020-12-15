@@ -31,9 +31,7 @@ vars == <<currentTerm, state, log, elections, committed, config>>
 
 Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
 QuorumsAt(i) == Quorums(config[i])
-\* QuorumsAt(i) == SUBSET config[i]
-\* QuorumsAt(i) == Quorums(Server)
-    
+
 \* Do all quorums of set x and set y share at least one overlapping node.
 QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
 
@@ -176,7 +174,9 @@ CommitEntry(i, commitQuorum) ==
 
 \* Arbitrarily change the config of some node.
 ChangeConfig(i) == 
-    /\ \E newConfig \in SUBSET Server : config' = [config EXCEPT ![i] = newConfig]
+    /\ \E newConfig \in SUBSET Server : 
+        /\ newConfig # {} \* configs should be non-empty.
+        /\ config' = [config EXCEPT ![i] = newConfig]
     /\ UNCHANGED <<currentTerm, state, log, committed, elections>>
 
 \* Is node 'i' currently electable with quorum 'q'.
@@ -221,16 +221,15 @@ StrictQuorumCondition ==
 \*  2. Overlap with some node containing an entry E for all previously committed entries E.
 \*
 \* TODO: Consider how concurrent elections/commits might affect validity of this condition.
-WeakQuorumCondition == 
+WeakQuorumCondition ==
     \A s \in Server :
     \A quorum \in QuorumsAt(s) : 
-        Electable(s, quorum) => 
-        ( 
-          \* Overlaps with some node that contains term of election, for all previous elections.
-          /\ \A e \in elections : \E t \in quorum : currentTerm[t] >= e.term 
-          \* Overlaps with some node containing entry E, for all committed entries E.
-          /\ \A w \in committed : \E t \in quorum : InLog(w.entry, t) 
-        )
+        \* 1. Electable node overlaps with some node that contains term of election, for all previous elections.
+        /\ Electable(s, quorum) => \A e \in elections : \E t \in quorum : currentTerm[t] >= e.term 
+        \* 2. Electable node overlaps with some node containing entry E, for all committed entries E.
+        /\ Electable(s, quorum) => \A c \in committed : \E t \in quorum : InLog(c.entry, t)
+        \* 3. Commitable write overlaps with some node that contains term of election, for all previous elections. 
+        /\ ENABLED CommitEntry(s, quorum) => (\A e \in elections : \E t \in quorum : currentTerm[t] >= e.term)
 
 \* For model checking.
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
@@ -239,7 +238,9 @@ Init ==
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
     /\ log = [i \in Server |-> <<>>]
-    /\ \E initConfig \in SUBSET Server : config = [i \in Server |-> initConfig]
+    /\ \E initConfig \in SUBSET Server : 
+        /\ initConfig # {} \* configs should be non-empty.
+        /\ config = [i \in Server |-> initConfig]
     /\ elections = {}
     /\ committed = {}
 
@@ -268,6 +269,11 @@ LogMatching ==
     \A i \in DOMAIN log[s] :
         (\E j \in DOMAIN log[t] : i = j /\ log[s][i] = log[t][j]) => 
         (SubSeq(log[s],1,i) = SubSeq(log[t],1,i)) \* prefixes must be the same.
+
+\* When a node gets elected as primary it contains all entries committed in previous terms.
+LeaderCompleteness == 
+    \A s \in Server : (state[s] = Primary) => 
+        \A c \in committed : (c.term < currentTerm[s] => InLog(c.entry, s))
 
 \* If two entries are committed at the same index, they must be the same entry.
 StateMachineSafety == 
