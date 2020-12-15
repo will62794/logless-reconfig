@@ -289,13 +289,4 @@ ServerSymmetry == Permutations(Server)
 
 
 
-\* vInit == Init
-\* vNext ==
-\*     \/ /\ MSWR!Next 
-\*        /\ configLog' = IF log' # log UNCHANGED <<configLog>>
-\*     \/ Next
-
-\* vSpec == Init /\ [][vNext]_vars
-
-
 =============================================================================
