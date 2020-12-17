@@ -266,6 +266,55 @@ StateMachineSafety == MWR!StateMachineSafety
 WeakQuorumCondition == MSWR!WeakQuorumCondition
 StrictQuorumCondition == MWR!StrictQuorumCondition
 
+
+SeqOf(set, n) == 
+  UNION {[1..m -> set] : m \in 0..n}
+BoundedSeq(S, n) ==
+  SeqOf(S, n)
+
+BoundedSeqFin(S) == BoundedSeq(S, 4)
+
+\* Reconfig history edges in the log of node 's'.
+ReconfigEdges(s) == {[old |-> [m |-> configLog[s][k], i |-> k+1, t |-> log[s][k] ], 
+                      new |-> [m |-> configLog[s][k+1], i |-> k+1, t |-> log[s][k+1]]] : k \in 1..Len(log[s])-1}
+
+\* The configuration history structure.
+ConfigHistory == UNION {ReconfigEdges(s) : s \in Server}    
+
+AllHistoryConfigs == UNION {{rc.old, rc.new} : rc \in ConfigHistory}
+
+AllConfigs == UNION {Range(configLog[s]) : s \in Server}
+
+\* Set of all paths in the history graph.
+Paths == {p \in BoundedSeqFin(AllHistoryConfigs) :
+             /\ p # << >>
+             /\ \A i \in 1..(Len(p)-1) : [old |-> p[i], new |-> p[i+1]] \in ConfigHistory}
+
+\* Is there a path from config ci to cj in the history.
+Path(ci, cj) == \E p \in Paths : p[1] = ci /\ p[Len(p)] = cj
+
+\* Is config ci an ancestor of cj.
+Ancestor(ci, cj) == Path(ci, cj)
+
+\* Is config ci a descendant of cj.
+Descendant(ci, cj) == Path(cj, ci)
+
+\* Is config ci a sibling of cj i.e. are they on different branches with a common
+\* ancestor.
+Sibling(ci, cj) == 
+    /\ \E a \in AllHistoryConfigs : Ancestor(a, ci) /\ Ancestor(a, cj)
+    /\ ~Ancestor(ci, cj)
+    /\ ~Ancestor(cj, ci)
+
+\* If two configs C1, C2 on sibling branches have non overlapping quorums,
+\* one of them must be committed and one of them must be deactivated.
+NonOverlappingConfigsMutuallyExclusiveCommit == 
+    \A c1, c2 \in AllConfigs :
+    (Sibling(c1,c2) /\ ~QuorumsOverlap(c1.m, c2.m)) => 
+        \E c \in committed : 
+            \/ (c.entry = <<c1.i,c1.t>>)
+            \/ (c.entry = <<c2.i,c2.t>>)
+
 \*
 \* Refinement definitions.
 \*
@@ -288,5 +337,17 @@ MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 ServerSymmetry == Permutations(Server)
 
 
+\* For debugging.
+Alias == 
+    [
+        currentTerm |-> currentTerm,
+        state |-> state,
+        log |-> log,
+        elections |-> elections,
+        committed |-> committed,
+        config |-> config,
+        configLog |-> configLog,
+        reconfigs |-> ConfigHistory
+    ]
 
 =============================================================================
