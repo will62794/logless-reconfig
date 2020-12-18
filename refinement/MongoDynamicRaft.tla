@@ -306,12 +306,25 @@ Sibling(ci, cj) ==
     /\ ~Ancestor(ci, cj)
     /\ ~Ancestor(cj, ci)
 
+\* Compares to see if it2=<<index2,term2>> is newer than it1=<<index1,term1>>
+NewerLog(it1,it2) == 
+    \/ (it1[2] = it2[2] /\ it1[1] < it2[1])
+    \/ it1[2] < it2[2]
+
+\* A config is deactivated if it is prevented from holding elections now or in the future.
+\* That is, no quorum in the config could hold a successful election.
+Deactivated(c) == 
+    \* TODO: Finish this definition.
+    \A Q \in Quorums(c.m) :
+    \E s \in Q : NewerLog(<<Len(log[s]),log[s][Len(log[s])]>>, <<c.i,c.t>>)
+
 \* If two configs C1, C2 on sibling branches have non overlapping quorums,
 \* one of them must be committed and one of them must be deactivated.
 NonOverlappingConfigsMutuallyExclusiveCommit == 
-    \A c1, c2 \in AllConfigs :
+    \A c1, c2 \in AllHistoryConfigs :
     (Sibling(c1,c2) /\ ~QuorumsOverlap(c1.m, c2.m)) => 
         \E c \in committed : 
+            \* TODO: Finish this definition.
             \/ (c.entry = <<c1.i,c1.t>>)
             \/ (c.entry = <<c2.i,c2.t>>)
 
