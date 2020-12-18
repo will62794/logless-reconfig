@@ -267,28 +267,20 @@ WeakQuorumCondition == MSWR!WeakQuorumCondition
 StrictQuorumCondition == MWR!StrictQuorumCondition
 
 
-SeqOf(set, n) == 
-  UNION {[1..m -> set] : m \in 0..n}
-BoundedSeq(S, n) ==
-  SeqOf(S, n)
-
-BoundedSeqFin(S) == BoundedSeq(S, 4)
-
 \* Reconfig history edges in the log of node 's'.
 ReconfigEdges(s) == {[old |-> [m |-> configLog[s][k], i |-> k+1, t |-> log[s][k] ], 
-                      new |-> [m |-> configLog[s][k+1], i |-> k+1, t |-> log[s][k+1]]] : k \in 1..Len(log[s])-1}
+                      new |-> [m |-> configLog[s][k+1], i |-> k+1, t |-> log[s][k+1]]] : k \in 1..(Len(log[s])-1)}
 
 \* The configuration history structure.
-ConfigHistory == UNION {ReconfigEdges(s) : s \in Server}    
-
-AllHistoryConfigs == UNION {{rc.old, rc.new} : rc \in ConfigHistory}
+ConfigHistoryEdges == UNION {ReconfigEdges(s) : s \in Server}    
+ConfigHistoryNodes == UNION {{rc.old, rc.new} : rc \in ConfigHistoryEdges}
 
 AllConfigs == UNION {Range(configLog[s]) : s \in Server}
 
 \* Set of all paths in the history graph.
-Paths == {p \in BoundedSeqFin(AllHistoryConfigs) :
+Paths == {p \in Seq(ConfigHistoryNodes) :
              /\ p # << >>
-             /\ \A i \in 1..(Len(p)-1) : [old |-> p[i], new |-> p[i+1]] \in ConfigHistory}
+             /\ \A i \in 1..(Len(p)-1) : [old |-> p[i], new |-> p[i+1]] \in ConfigHistoryEdges}
 
 \* Is there a path from config ci to cj in the history.
 Path(ci, cj) == \E p \in Paths : p[1] = ci /\ p[Len(p)] = cj
@@ -302,31 +294,45 @@ Descendant(ci, cj) == Path(cj, ci)
 \* Is config ci a sibling of cj i.e. are they on different branches with a common
 \* ancestor.
 Sibling(ci, cj) == 
-    /\ \E a \in AllHistoryConfigs : Ancestor(a, ci) /\ Ancestor(a, cj)
+    /\ \E a \in ConfigHistoryNodes : Ancestor(a, ci) /\ Ancestor(a, cj)
     /\ ~Ancestor(ci, cj)
     /\ ~Ancestor(cj, ci)
 
-\* Compares to see if it2=<<index2,term2>> is newer than it1=<<index1,term1>>
-NewerLog(it1,it2) == 
-    \/ (it1[2] = it2[2] /\ it1[1] < it2[1])
-    \/ it1[2] < it2[2]
+\* Takes a path and returns the set of edges making up that path.
+EdgesInPath(p) == {[old |-> p[i], new |-> p[i+1]] : i \in 1..(Len(p)-1)}
+
+\* Compares to see if it1=<<index1,term1>> is newer than it2=<<index2,term2>>
+NewerIndTerm(it1,it2) == 
+    \/ (it1[2] = it2[2] /\ it1[1] > it2[1])
+    \/ it1[2] > it2[2]
+
+\* The newest common ancestor between two nodes. Assume ci and cj are siblings.
+NewestCommonAncestor(ci, cj) ==
+    LET commonAncestors == {c \in ConfigHistoryNodes : Ancestor(c, ci) /\ Ancestor(c, cj)} IN
+    CHOOSE newestCA \in commonAncestors :
+        \A otherCA \in commonAncestors : 
+            /\ (otherCA # newestCA) => NewerIndTerm(<<newestCA.i,newestCA.t>>, <<otherCA.i,otherCA.t>>)
+
+\* Returns the number of reconfig edges in the given path 'p'.
+NReconfigs(p) == 
+    \* Edges where terms don't change are considered 'reconfig' edges.
+    Cardinality({e \in EdgesInPath(p) : e = e[2][2]})
 
 \* A config is deactivated if it is prevented from holding elections now or in the future.
 \* That is, no quorum in the config could hold a successful election.
 Deactivated(c) == 
-    \* TODO: Finish this definition.
-    \A Q \in Quorums(c.m) :
-    \E s \in Q : NewerLog(<<Len(log[s]),log[s][Len(log[s])]>>, <<c.i,c.t>>)
+    \A Q \in Quorums(c.m) : \E s \in Q : NewerIndTerm(<<Len(log[s]),log[s][Len(log[s])]>>, <<c.i,c.t>>)
 
 \* If two configs C1, C2 on sibling branches have non overlapping quorums,
 \* one of them must be committed and one of them must be deactivated.
-NonOverlappingConfigsMutuallyExclusiveCommit == 
-    \A c1, c2 \in AllHistoryConfigs :
-    (Sibling(c1,c2) /\ ~QuorumsOverlap(c1.m, c2.m)) => 
+NonOverlappingSiblingConfigsMutuallyExclusiveCommit == 
+    \A c1, c2 \in ConfigHistoryNodes :
+    (/\ Sibling(c1,c2) 
+     /\ ~QuorumsOverlap(c1.m, c2.m)) => 
         \E c \in committed : 
-            \* TODO: Finish this definition.
-            \/ (c.entry = <<c1.i,c1.t>>)
-            \/ (c.entry = <<c2.i,c2.t>>)
+        LET nca == NewestCommonAncestor(c1, c2) IN
+            \/ (c.entry = <<c1.i,c1.t>>) \/ \A x \in Range(Path(nca, c2)) : Deactivated(x)
+            \/ (c.entry = <<c2.i,c2.t>>) \/ \A x \in Range(Path(nca, c1)) : Deactivated(x)
 
 \*
 \* Refinement definitions.
@@ -349,6 +355,10 @@ MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 
 ServerSymmetry == Permutations(Server)
 
+SeqOf(set, n) == 
+  UNION {[1..m -> set] : m \in 0..n}
+
+BoundedSeq(S) == SeqOf(S, Max(Nat))
 
 \* For debugging.
 Alias == 
@@ -360,7 +370,7 @@ Alias ==
         committed |-> committed,
         config |-> config,
         configLog |-> configLog,
-        reconfigs |-> ConfigHistory
+        reconfigs |-> ConfigHistoryEdges
     ]
 
 =============================================================================
