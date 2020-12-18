@@ -43,17 +43,8 @@ RollbackEntries(s, t) == MWR!RollbackEntries(s, t)
 BecomeLeader(s, Q) == MWR!BecomeLeader(s, Q)
 CommitEntry(s, Q) == MWR!CommitEntry(s, Q)
 
-Init ==
-    /\ MWR!Init 
-    \* All nodes have a fixed config, which is the set of all nodes.
-    /\ \A s \in Server : config[s] = Server 
-
-Next == 
-    \/ \E s \in Server : ClientRequest(s)
-    \/ \E s, t \in Server : GetEntries(s, t)
-    \/ \E s, t \in Server : RollbackEntries(s, t)
-    \/ \E s \in Server : \E Q \in MWR!QuorumsAt(s) : BecomeLeader(s, Q)
-    \/ \E s \in Server :  \E Q \in MWR!QuorumsAt(s) : CommitEntry(s, Q)
+Init == MWR!Init 
+Next == MWR!NextStatic /\ UNCHANGED config
 
 Spec == Init /\ [][Next]_MWR!vars
 

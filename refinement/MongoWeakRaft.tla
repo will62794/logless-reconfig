@@ -235,7 +235,7 @@ Init ==
     /\ committed = {}
 
 \* The next state actions that do not affect the 'config' variable.
-NextCore == 
+NextStatic == 
     \/ \E s \in Server : ClientRequest(s)
     \/ \E s, t \in Server : GetEntries(s, t)
     \/ \E s, t \in Server : RollbackEntries(s, t)
@@ -245,7 +245,7 @@ NextCore ==
 \* We allow the protocol to take any 'core' protocol step and, if it wants to, change the config
 \* on some node arbitrarily when that transition is taken.
 Next == 
-    /\ NextCore 
+    /\ NextStatic 
     \* Allows the config to be changed or remain the same on any protocol step.
     /\ \E s \in Server : ChangeConfig(s)
 
