@@ -55,20 +55,30 @@ WeakQuorumCondition ==
         \* 3. Commitable write overlaps with some node that contains term of election, for all previous elections. 
         /\ ENABLED MWR!CommitEntry(s, quorum) => (\A e \in elections : \E t \in quorum : currentTerm[t] >= e.term)
 
+NextStatic == 
+    \/ \E s \in Server : MWR!ClientRequest(s)
+    \/ \E s, t \in Server : MWR!GetEntries(s, t)
+    \/ \E s, t \in Server : MWR!RollbackEntries(s, t)
+    \/ \E s \in Server : \E Q \in MWR!QuorumsAt(s) : MWR!BecomeLeader(s, Q)
+    \/ \E s \in Server :  \E Q \in MWR!QuorumsAt(s) : MWR!CommitEntry(s, Q)
+
+Next == 
+    /\ NextStatic 
+    \* Allows the config to be changed or remain the same on any protocol step.
+    /\ \E s \in Server : MWR!ChangeConfig(s)
+    \* Ensure the condition holds on every transition.
+    /\ WeakQuorumCondition'
+
 \*
 \* This protocol behaves the same as the "weak" protocol, except that it satisfies the weak quorum
 \* condition at every step. Note that it is valid in TLA+ to write the following formula:
 \*      
-\*  Init /\ [][MWR!Next]_vars /\ []WeakQuorumCondition
+\*  Init /\ [][Next]_vars /\ []WeakQuorumCondition
 \* 
 \* but the TLC  model checker will not interpret it correctly, so we insert the condition into
 \* the initial and transition predicate directly to maintain the condition at every step.
 \*
-
-Init == MWR!Init /\ WeakQuorumCondition
-Next == MWR!Next /\ WeakQuorumCondition'
-
-Spec == Init /\ [][Next]_vars
+Spec == MWR!Init /\ WeakQuorumCondition /\ [][Next]_vars
 
 THEOREM MongoSafeWeakRaftSafety == Spec => []StateMachineSafety
 
