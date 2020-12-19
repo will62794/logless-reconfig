@@ -176,15 +176,11 @@ SiblingUpdateDist(c1, c2) ==
     NUpdateEdges(Path(nca, c1)) + NUpdateEdges(Path(nca, c2))
 
 \* For two sibling nodes separated by >= 2 reconfig edges, one of them must be committed.
-BranchSafety == 
+SiblingBranchSafety == 
     \A c1,c2 \in HistoryNodes :
     Siblings(c1,c2) => 
-    ((SiblingUpdateDist(c1,c2) >= 1) => 
+    ((SiblingUpdateDist(c1,c2) >= 2) => 
         (EntryCommitted(c1) \/ EntryCommitted(c2)))
-
-BranchTest == 
-    \A c1,c2 \in HistoryNodes :
-    Siblings(c1,c2) => (SiblingUpdateDist(c1,c2) >= 0 )   
 
 \* If a log entry e exists and was created via an update edge, 
 \* then its parent in the log history must be committed.
@@ -215,8 +211,6 @@ ServerSymmetry == Permutations(Server)
 
 SeqOf(set, n) == UNION {[1..m -> set] : m \in 0..n}
 BoundedSeq(S) == SeqOf(S, MaxLogLen)
-
-inv1 == Cardinality(HistoryEdges) < 2
 
 \* For debugging.
 Alias == 
