@@ -96,6 +96,8 @@ THEOREM MongoSafeWeakRaftSafety == Spec => []StateMachineSafety
 \* Safety property definitions.
 \*
 
+Range(f) == MWR!Range(f)
+
 \* Determines if it1=<<index1,term1>> is newer than it2=<<index2,term2>>
 IndTermGT(it1,it2) == 
     \/ (it1[2] = it2[2] /\ it1[1] > it2[1])
@@ -169,6 +171,9 @@ NUpdateEdges(p) == Cardinality(UpdateEdges(p))
 \* Is log entry e=<<i,t>> committed.
 EntryCommitted(e) == \E c \in committed : c.entry = e
 
+\* Is log entry e=<<i,t>> committed. (shorter definition)
+Committed(e) == EntryCommitted(e)
+
 \* The number of update edges between two sibling nodes, which is defined as the sum of the 
 \* distance from their common ancestor to each node.
 SiblingUpdateDist(c1, c2) == 
@@ -186,6 +191,12 @@ SiblingBranchSafety ==
 \* then its parent in the log history must be committed.
 UpdateEdgeMustBeCommitted == 
     \A e \in HistoryEdges : IsUpdateEdge(e) => EntryCommitted(e[1])
+
+LockstepWrites ==
+    \A s \in Server : \A i \in 2..Len(log[s]) : Committed(<<i-1,log[s][i-1]>>)
+
+ElectionNoop == 
+    \A s \in Server : (state[s] = Primary) => \E t \in Range(log[s]) : t=currentTerm[s]
 
 \*
 \* Refinement definitions.

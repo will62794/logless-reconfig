@@ -250,6 +250,20 @@ MSWR == INSTANCE MongoSafeWeakRaft
          elections <- elections,
          committed <- committed
 
+MSWLR == INSTANCE MongoSafeWeakLockstepRaft 
+    WITH MaxTerm <- MaxTerm, 
+         MaxLogLen <- MaxLogLen, 
+         MaxConfigVersion <- MaxConfigVersion,
+         Server <- Server, 
+         Secondary <- Secondary, 
+         Primary <- Primary,
+         Nil <- Nil,
+         currentTerm <- currentTerm, 
+         state <- state, 
+         config <- config, 
+         elections <- elections,
+         committed <- committed
+
 ElectionSafety == MWR!ElectionSafety
 LogMatching == MWR!LogMatching
 
@@ -343,6 +357,7 @@ THEOREM MDRWeakQuorumCondition == Spec => []MSWR!WeakQuorumCondition
 
 RefinesMongoWeakRaft == MWR!Spec
 RefinesMongoSafeWeakRaft == MSWR!Spec
+RefinesMongoSafeWeakLockstepRaft == MSWLR!Spec
 
 -------------------------------------------------------------------------------------------
 
