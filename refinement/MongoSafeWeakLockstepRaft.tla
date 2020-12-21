@@ -55,6 +55,24 @@ ElectionSafety == MSWR!MWR!ElectionSafety
 LeaderCompleteness == MSWR!MWR!LeaderCompleteness
 StateMachineSafety == MSWR!MWR!StateMachineSafety
 
+\* Is log entry e=<<i,t>> committed.
+EntryCommitted(e) == \E c \in committed : c.entry = e
+
+\* Is log entry e=<<i,t>> committed. (shorter definition)
+Committed(e) == EntryCommitted(e)
+
+Range(f) == MWR!Range(f)
+
+LockstepCommit ==
+    \A s \in Server : \A i \in 2..Len(log[s]) : Committed(<<i-1,log[s][i-1]>>)
+
+LockstepElectionBarrier == 
+    \A s \in Server : (state[s] = Primary) => \E t \in Range(log[s]) : t=currentTerm[s]
+
+LockstepCondition == 
+    /\ LockstepCommit
+    /\ LockstepElectionBarrier
+
 \* Is the last log entry of node 'i' currently committed.
 LastIsCommitted(i) == 
     \/ Len(log[i]) = 0 \* consider an empty log as being committed.
@@ -62,31 +80,18 @@ LastIsCommitted(i) ==
        /\ \E c \in committed : 
             c.entry = <<Len(log[i]), log[i][Len(log[i])]>>
 
-NextStatic == 
-    \/ \E s \in Server : 
-        \* Current entry must be committed before writing a new one.
-        /\ LastIsCommitted(s)
-        /\ MWR!ClientRequest(s)
-    \/ \E s, t \in Server :  MWR!GetEntries(s, t)
-    \/ \E s, t \in Server :  MWR!RollbackEntries(s, t)
-    \/ \E s \in Server : \E Q \in MWR!QuorumsAt(s) :
-        \* Require the primary to write a no-op on step up. 
-        /\  MWR!BecomeLeader(s, Q)
-        /\ log' = [log EXCEPT ![s] = Append(log[s], currentTerm[s] + 1)]
-    \/ \E s \in Server :  \E Q \in  MWR!QuorumsAt(s) :  MWR!CommitEntry(s, Q)
-
-Next == 
-    /\ NextStatic 
-    \* Allows the config to be changed or remain the same on any protocol step.
-    /\ \E s \in Server : MWR!ChangeConfig(s)
-    \* Ensure the condition holds on every transition.
-    /\ MSWR!WeakQuorumCondition'
+\* We define the state machine predicates for this protocol, though we specify the protocol more abstractly
+\* below. This state machine characterization should be equivalent to the temporal logic characterization,
+\* but the temporal logic version is slightly clearer to specify and understand.
+Init == MSWR!Init /\ LockstepCondition
+Next == MSWR!Next /\ LockstepCondition'
 
 \*
-\* This protocol behaves the same as the "safe weak" protocol, except that it adds a few
-\* extra pre/post conditions to ensure stricter behavior.
+\* This protocol behaves the same as the "safe" weak protocol, except that it adds a few
+\* extra pre/post conditions to ensure the lockstep behavior.
 \*
-Spec == MWR!Init /\ MSWR!WeakQuorumCondition /\ [][Next]_vars
+Spec == MSWR!Spec /\ []LockstepCondition
+
 
 THEOREM MongoSafeWeakRaftSafety == Spec => []StateMachineSafety
 
@@ -96,7 +101,6 @@ THEOREM MongoSafeWeakRaftSafety == Spec => []StateMachineSafety
 \* Safety property definitions.
 \*
 
-Range(f) == MWR!Range(f)
 
 \* Determines if it1=<<index1,term1>> is newer than it2=<<index2,term2>>
 IndTermGT(it1,it2) == 
@@ -168,12 +172,6 @@ UpdateEdges(p) == {e \in EdgesInPath(p) : IsUpdateEdge(e)}
 \* Returns the number of update edges in the given path 'p'.
 NUpdateEdges(p) == Cardinality(UpdateEdges(p))
 
-\* Is log entry e=<<i,t>> committed.
-EntryCommitted(e) == \E c \in committed : c.entry = e
-
-\* Is log entry e=<<i,t>> committed. (shorter definition)
-Committed(e) == EntryCommitted(e)
-
 \* The number of update edges between two sibling nodes, which is defined as the sum of the 
 \* distance from their common ancestor to each node.
 SiblingUpdateDist(c1, c2) == 
@@ -192,12 +190,6 @@ SiblingBranchSafety ==
 UpdateEdgeMustBeCommitted == 
     \A e \in HistoryEdges : IsUpdateEdge(e) => EntryCommitted(e[1])
 
-LockstepWrites ==
-    \A s \in Server : \A i \in 2..Len(log[s]) : Committed(<<i-1,log[s][i-1]>>)
-
-ElectionNoop == 
-    \A s \in Server : (state[s] = Primary) => \E t \in Range(log[s]) : t=currentTerm[s]
-
 \*
 \* Refinement definitions.
 \*
@@ -207,32 +199,5 @@ THEOREM Spec => MSWR!Spec
 
 RefinesMongoWeakRaft == MWR!Spec
 RefinesMongoSafeWeakRaft == MSWR!Spec
-
---------------------------------------------------------
-
-\*
-\* Used for model checking only.
-\*
-
-StateConstraint == \A s \in Server :
-                    /\ currentTerm[s] <= MaxTerm
-                    /\ Len(log[s]) <= MaxLogLen
-
-ServerSymmetry == Permutations(Server)
-
-SeqOf(set, n) == UNION {[1..m -> set] : m \in 0..n}
-BoundedSeq(S) == SeqOf(S, MaxLogLen)
-
-\* For debugging.
-Alias == 
-    [
-        currentTerm |-> currentTerm,
-        state |-> state,
-        log |-> log,
-        elections |-> elections,
-        committed |-> committed,
-        config |-> config,
-        historyEdges |-> HistoryEdges
-    ]
 
 ====

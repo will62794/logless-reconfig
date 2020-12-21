@@ -32,11 +32,6 @@ MWR == INSTANCE MongoWeakRaft
          elections <- elections,
          committed <- committed
 
-\* Re-defined locally for convenience.
-ElectionSafety == MWR!ElectionSafety
-LeaderCompleteness == MWR!LeaderCompleteness
-StateMachineSafety == MWR!StateMachineSafety
-
 \*
 \* This is the abstract condition necessary for a Raft protocol to operate "safely" without
 \* reliance on quorum overlaps.
@@ -55,32 +50,19 @@ WeakQuorumCondition ==
         \* 3. Commitable write overlaps with some node that contains term of election, for all previous elections. 
         /\ ENABLED MWR!CommitEntry(s, quorum) => (\A e \in elections : \E t \in quorum : currentTerm[t] >= e.term)
 
-NextStatic == 
-    \/ \E s \in Server : MWR!ClientRequest(s)
-    \/ \E s, t \in Server : MWR!GetEntries(s, t)
-    \/ \E s, t \in Server : MWR!RollbackEntries(s, t)
-    \/ \E s \in Server : \E Q \in MWR!QuorumsAt(s) : MWR!BecomeLeader(s, Q)
-    \/ \E s \in Server :  \E Q \in MWR!QuorumsAt(s) : MWR!CommitEntry(s, Q)
-
-Next == 
-    /\ NextStatic 
-    \* Allows the config to be changed or remain the same on any protocol step.
-    /\ \E s \in Server : MWR!ChangeConfig(s)
-    \* Ensure the condition holds on every transition.
-    /\ WeakQuorumCondition'
+\* We define the state machine predicates for this protocol, though we specify the protocol more abstractly
+\* below. This state machine characterization should be equivalent to the temporal logic characterization,
+\* but the temporal logic version is slightly clearer to specify and understand.
+Init == MWR!Init /\ WeakQuorumCondition
+Next == MWR!Next /\ WeakQuorumCondition'
 
 \*
 \* This protocol behaves the same as the "weak" protocol, except that it satisfies the weak quorum
-\* condition at every step. Note that it is valid in TLA+ to write the following formula:
-\*      
-\*  Init /\ [][Next]_vars /\ []WeakQuorumCondition
-\* 
-\* but the TLC  model checker will not interpret it correctly, so we insert the condition into
-\* the initial and transition predicate directly to maintain the condition at every step.
+\* condition at every step.
 \*
-Spec == MWR!Init /\ WeakQuorumCondition /\ [][Next]_vars
+Spec == MWR!Spec /\ []WeakQuorumCondition
 
-THEOREM MongoSafeWeakRaftSafety == Spec => []StateMachineSafety
+THEOREM MongoSafeWeakRaftSafety == Spec => []MWR!StateMachineSafety
 
 \*
 \* Refinement definitions.
@@ -91,13 +73,5 @@ THEOREM Spec => MWR!Spec
 RefinesMongoWeakRaft == MWR!Spec
 
 --------------
-
-\* Used for model checking only.
-
-StateConstraint == \A s \in Server :
-                    /\ currentTerm[s] <= MaxTerm
-                    /\ Len(log[s]) <= MaxLogLen
-
-ServerSymmetry == Permutations(Server)
 
 ====
