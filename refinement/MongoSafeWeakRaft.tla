@@ -32,23 +32,26 @@ MWR == INSTANCE MongoWeakRaft
          elections <- elections,
          committed <- committed
 
+
+\* Electable node 's' in quorum 'q' overlaps with some node that contains term of election, for all previous elections.
+QC_1(s, Q) == MWR!Electable(s, Q) => \A e \in elections : \E t \in Q : currentTerm[t] >= e.term 
+
+\* Electable node 's' i quorum 'q' overlaps with some node containing entry E, for all committed entries E.
+QC_2(s, Q) == MWR!Electable(s, Q) => \A c \in committed : \E t \in Q : MWR!InLog(c.entry, t)
+
+\* Commitable write by node 's' in quorum 'q' overlaps with some node that contains term of election, for all previous elections. 
+QC_3(s, Q) == ENABLED MWR!CommitEntry(s, Q) => (\A e \in elections : \E t \in Q : currentTerm[t] >= e.term)
+
 \*
 \* This is the abstract condition necessary for a Raft protocol to operate "safely" without
 \* reliance on quorum overlaps.
 \*
-\*  (1) An electable node must overlap with some node with term >=T for all elections that occurred in term T.
-\*  (2) An electable node must overlap with some node containing an entry E for all previously committed entries E.
-\*  (3) A committable write must overlap with some node with term >=T for all elections that occurred in term T.
-\*
 WeakQuorumCondition ==
     \A s \in Server :
-    \A quorum \in MWR!QuorumsAt(s) : 
-        \* 1. Electable node overlaps with some node that contains term of election, for all previous elections.
-        /\ MWR!Electable(s, quorum) => \A e \in elections : \E t \in quorum : currentTerm[t] >= e.term 
-        \* 2. Electable node overlaps with some node containing entry E, for all committed entries E.
-        /\ MWR!Electable(s, quorum) => \A c \in committed : \E t \in quorum : MWR!InLog(c.entry, t)
-        \* 3. Commitable write overlaps with some node that contains term of election, for all previous elections. 
-        /\ ENABLED MWR!CommitEntry(s, quorum) => (\A e \in elections : \E t \in quorum : currentTerm[t] >= e.term)
+    \A Q \in MWR!QuorumsAt(s) : 
+        /\ QC_1(s, Q)
+        /\ QC_2(s, Q)
+        /\ QC_3(s, Q)
 
 \* We define the state machine predicates for this protocol, though we specify the protocol more abstractly
 \* below. This state machine characterization should be equivalent to the temporal logic characterization,
