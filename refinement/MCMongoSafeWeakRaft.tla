@@ -12,6 +12,9 @@ StateConstraint == \A s \in Server :
 
 ServerSymmetry == Permutations(Server)
 
+\* Invariant stating that StateMachineSafety holds in every next state.
+OneStepStateMachineSafety == [][StateMachineSafety']_vars
+
 \*
 \* Theoretically, it is valid in TLA+ to write the following formula:
 \*      
