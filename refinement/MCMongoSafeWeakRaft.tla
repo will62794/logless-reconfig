@@ -12,6 +12,9 @@ StateConstraint == \A s \in Server :
 
 ServerSymmetry == Permutations(Server)
 
+SeqOf(set, n) == UNION {[1..m -> set] : m \in 0..n}
+BoundedSeq(S) == SeqOf(S, MaxLogLen)
+
 \* Invariant stating that StateMachineSafety holds in every next state.
 OneStepStateMachineSafety == [][StateMachineSafety']_vars
 
