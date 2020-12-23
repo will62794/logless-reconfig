@@ -129,25 +129,8 @@ BecomeLeader(i, voteQuorum) ==
     /\ UNCHANGED <<config, initConfig>>   
 
 CommitEntry(i, commitQuorum) ==
-    LET ind == Len(log[i]) IN
-    \* Must have some entries to commit.
-    /\ ind > 0
-    \* This node is leader.
-    /\ state[i] = Primary
-    \* The entry was written by this leader.
-    /\ log[i][ind] = currentTerm[i]
-    \* all nodes have this log entry and are in the term of the leader.
-    /\ \A s \in commitQuorum :
-        /\ Len(log[s]) >= ind
-        /\ log[s][ind] = log[i][ind]        \* they have the entry.
-        /\ currentTerm[s] = currentTerm[i]  \* they are in the same term.
-    \* Don't mark an entry as committed more than once.
-    /\ ~\E c \in committed : c.entry = <<ind, currentTerm[i]>>
-    /\ committed' = committed \cup
-            {[ entry  |-> <<ind, currentTerm[i]>>,
-               quorum |-> commitQuorum,
-               term  |-> currentTerm[i]]}
-    /\ UNCHANGED <<currentTerm, state, log, elections, config, configLog, initConfig>>
+    /\ MWR!CommitEntry(i, commitQuorum)
+    /\ UNCHANGED <<config, configLog, initConfig>>
 
 \* Is node 'i' currently electable with quorum 'q'.
 Electable(i, q) == ENABLED BecomeLeader(i, q)
