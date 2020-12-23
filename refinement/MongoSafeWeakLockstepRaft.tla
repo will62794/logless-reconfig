@@ -61,11 +61,21 @@ EntryCommitted(e) == \E c \in committed : c.entry = e
 \* Is log entry e=<<i,t>> committed. (shorter definition)
 Committed(e) == EntryCommitted(e)
 
+\* Is an edge 'e' an update edge i.e. both nodes have the same term.
+IsUpdateEdge(e) == e[1][2] = e[2][2]
+
+\* Is an edge 'e' an election edge i.e. the nodes have different terms.
+IsElectionEdge(e) == e[1][2] # e[2][2]
+
 Range(f) == MWR!Range(f)
 
+\* Before executing a client write, the newest entry on a primary must be committed.
 LockstepCommit ==
-    \A s \in Server : \A i \in 2..Len(log[s]) : Committed(<<i-1,log[s][i-1]>>)
+    \A s \in Server : \A i \in 2..Len(log[s]) : 
+        LET edge == << <<i-1,log[s][i-1]>>, <<i,log[s][i]>> >> IN
+        IsUpdateEdge(edge) => Committed(edge[1])
 
+\* When a leader is elected, it must have atomically written a log entry in its new term.
 LockstepElectionBarrier == 
     \A s \in Server : (state[s] = Primary) => \E t \in Range(log[s]) : t=currentTerm[s]
 
@@ -80,17 +90,13 @@ LastIsCommitted(i) ==
        /\ \E c \in committed : 
             c.entry = <<Len(log[i]), log[i][Len(log[i])]>>
 
-\* We define the state machine predicates for this protocol, though we specify the protocol more abstractly
-\* below. This state machine characterization should be equivalent to the temporal logic characterization,
-\* but the temporal logic version is slightly clearer to specify and understand.
-Init == MSWR!Init /\ LockstepCondition
-Next == MSWR!Next /\ LockstepCondition'
-
 \*
 \* This protocol behaves the same as the "safe" weak protocol, except that it adds a few
 \* extra pre/post conditions to ensure the lockstep behavior.
 \*
-Spec == MSWR!Spec /\ []LockstepCondition
+Init == MSWR!Init /\ LockstepCondition
+Next == MSWR!Next /\ LockstepCondition'
+Spec == Init /\ [][Next]_vars
 
 
 THEOREM MongoSafeWeakRaftSafety == Spec => []StateMachineSafety
@@ -159,12 +165,6 @@ CommonAncestors(ci, cj) ==
 NewestCommonAncestor(ci, cj) ==
     LET cancestors == CommonAncestors(ci, cj) IN
     CHOOSE cai \in cancestors : \A caj \in cancestors : IndTermGTE(cai, caj)
-
-\* Is an edge 'e' an update edge i.e. both nodes have the same term.
-IsUpdateEdge(e) == e[1][2] = e[2][2]
-
-\* Is an edge 'e' an election edge i.e. the nodes have different terms.
-IsElectionEdge(e) == e[1][2] # e[2][2]
 
 \* Returns the set of update edges in the given path 'p'.
 UpdateEdges(p) == {e \in EdgesInPath(p) : IsUpdateEdge(e)}
