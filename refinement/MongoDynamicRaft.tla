@@ -280,6 +280,7 @@ StateMachineSafety == MWR!StateMachineSafety
 WeakQuorumCondition == MSWR!WeakQuorumCondition
 StrictQuorumCondition == MWR!StrictQuorumCondition
 
+LockstepCondition == MSWLR!LockstepCondition
 
 \* Reconfig history edges in the log of node 's'.
 ReconfigEdges(s) == {[old |-> [m |-> configLog[s][k], i |-> k+1, t |-> log[s][k] ], 
