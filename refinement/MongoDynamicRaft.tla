@@ -14,15 +14,11 @@ VARIABLE config
 
 VARIABLE configLog \* shadow of 'log' variable which stores config at a log index.
 
-\* Implementation variable stored to support rolling back to the initial config.
-\* TODO: Can hopefully get rid of this eventually by abstracting away rollback.
-VARIABLE initConfig 
-
 VARIABLE elections
 VARIABLE committed
 
 serverVars == <<currentTerm, state, log>>
-vars == <<currentTerm, state, log, elections, committed, config, configLog, initConfig>>
+vars == <<currentTerm, state, log, elections, committed, config, configLog>>
 
 \* For model checking.
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
@@ -99,7 +95,6 @@ MergeEntries(i, j) ==
     /\ MWR!MergeEntries(i, j)
     /\ configLog' = [configLog EXCEPT ![j] = configLog[i]]
     /\ config' = [config EXCEPT ![j] = config[i]]
-    /\ UNCHANGED <<initConfig>>
 
 \* Is the last log entry of node 'i' currently committed.
 LastIsCommitted(i) == 
@@ -118,7 +113,6 @@ ClientRequest(i, newConfig) ==
     /\ config' = [config EXCEPT ![i] = newConfig]
     /\ configLog' = [configLog EXCEPT ![i] = Append(configLog[i], newConfig)]
     /\ MWR!ClientRequest(i)
-    /\ UNCHANGED <<initConfig>>
 
 BecomeLeader(i, voteQuorum) == 
     /\ MWR!BecomeLeader(i, voteQuorum)
@@ -126,11 +120,11 @@ BecomeLeader(i, voteQuorum) ==
     /\ log' = [log EXCEPT ![i] = Append(log[i], currentTerm[i] + 1)]
     \* The config does not change but we write a dummy log entry.
     /\ configLog' = [configLog EXCEPT ![i] = Append(configLog[i], config[i])]
-    /\ UNCHANGED <<config, initConfig>>   
+    /\ UNCHANGED <<config>>   
 
 CommitEntry(i, commitQuorum) ==
     /\ MWR!CommitEntry(i, commitQuorum)
-    /\ UNCHANGED <<config, configLog, initConfig>>
+    /\ UNCHANGED <<config, configLog>>
 
 \* Is node 'i' currently electable with quorum 'q'.
 Electable(i, q) == ENABLED BecomeLeader(i, q)
@@ -144,8 +138,6 @@ Init ==
         /\ initCfg # {}
         /\ config = [i \in Server |-> initCfg]
         /\ configLog = [i \in Server |-> <<>>]
-        \* Save the initial config in case of rollback.
-        /\ initConfig = initCfg
     /\ elections = {}
     /\ committed = {}
 
