@@ -161,10 +161,33 @@ ElectionSafety == \A x,y \in Server :
     (/\ (state[x] = Primary) /\ (state[y] = Primary) 
      /\  currentTerm[x] = currentTerm[y]) => (x = y)
 
--------------------------------------------------------------------------------------------
 
 \* State Constraint. Used for model checking only.                                                *)
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
+
+
+\* TODO: Refinement mapping here needs auxiliary variables in this spec.
+\*
+\* Auxiliary variables.
+\* VARIABLE log
+\* VARIABLE configLog
+\*
+\* MDR == INSTANCE MongoDynamicRaft 
+\*     WITH MaxTerm <- MaxTerm,
+\*          MaxLogLen <- MaxLogLen,
+\*          MaxConfigVersion <- MaxConfigVersion,
+\*          Server <- Server,
+\*          Secondary <- Secondary,
+\*          Primary <- Primary,
+\*          Nil <- Nil,
+\*          currentTerm <- currentTerm,
+\*          state <- state,
+\*          config <- config,
+\*          configLog <- \* ? need auxiliary variable.
+\*          elections <- elections,
+\*          committed <- committed
+
+-------------------------------------------------------------------------------------------
 
 StateConstraint == \A s \in Server :
                     /\ currentTerm[s] <= MaxTerm
