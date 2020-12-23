@@ -53,17 +53,13 @@ WeakQuorumCondition ==
         /\ QC_2(s, Q)
         /\ QC_3(s, Q)
 
-\* We define the state machine predicates for this protocol, though we specify the protocol more abstractly
-\* below. This state machine characterization should be equivalent to the temporal logic characterization,
-\* but the temporal logic version is slightly clearer to specify and understand.
-Init == MWR!Init /\ WeakQuorumCondition
-Next == MWR!Next /\ WeakQuorumCondition'
-
 \*
 \* This protocol behaves the same as the "weak" protocol, except that it satisfies the weak quorum
 \* condition at every step.
 \*
-Spec == MWR!Spec /\ []WeakQuorumCondition
+Init == MWR!Init /\ WeakQuorumCondition
+Next == MWR!Next /\ WeakQuorumCondition'
+Spec == Init /\ [][Next]_vars
 
 THEOREM MongoSafeWeakRaftSafety == Spec => []MWR!StateMachineSafety
 
