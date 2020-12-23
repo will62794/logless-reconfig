@@ -49,8 +49,18 @@ Empty(s) == Len(s) = 0
 
 \* The term of the last entry in a log, or 0 if the log is empty.
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)]
+LastEntry(xlog) == <<Len(xlog),xlog[Len(xlog)]>>
 GetTerm(xlog, index) == IF index = 0 THEN 0 ELSE xlog[index]
 LogTerm(i, index) == GetTerm(log[i], index)
+
+NewerIndTerm(it1,it2) == 
+    \/ (it1[2] = it2[2] /\ it1[1] > it2[1])
+    \/ it1[2] > it2[2]
+
+\* Does node 'i' have a newer log than node 'j', based on its last entry.
+NewerLog(i, j) == 
+    \/ log[j] = <<>> /\ log[i] # <<>>
+    \/ log[j] # <<>> /\ log[i] # <<>> /\ NewerIndTerm(LastEntry(log[i]), LastEntry(log[j]))
 
 \* Is log entry e = <<index, term>> in the log of node 'i'.
 InLog(e, i) == \E x \in DOMAIN log[i] : x = e[1] /\ log[i][x] = e[2]
@@ -130,6 +140,16 @@ GetEntries(i, j) ==
               newEntry      == log[j][newEntryIndex]
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
+    /\ UpdateTerms(i, j)
+    /\ UNCHANGED <<elections, committed>>
+
+\* This is a coarse grained atomic action that combines both log replication and rollback.
+\* It atomically transfers the entire log from node 'i' to node 'j', if the log of node 'i'
+\* is "newer", by log comparison rules, than the log of node 'j'. Implementations should be
+\* allowed to do replication and rollback separately (fine-grained) or do it in one shot (coarse-grained).
+MergeEntries(i, j) ==
+    /\ NewerLog(i, j)
+    /\ log' = [log EXCEPT ![j] = log[i]]
     /\ UpdateTerms(i, j)
     /\ UNCHANGED <<elections, committed>>
 
@@ -241,6 +261,7 @@ NextStatic ==
     \/ \E s, t \in Server : RollbackEntries(s, t)
     \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
     \/ \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
+    \/ \E s, t \in Server : MergeEntries(s, t)
 
 \* We allow the protocol to take any 'core' protocol step and, if it wants to, change the config
 \* on some node arbitrarily when that transition is taken.

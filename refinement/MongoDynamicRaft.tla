@@ -94,55 +94,12 @@ CanVoteForOplog(i, j, term) ==
 (* Next state actions.                                                     *)
 (***************************************************************************)
 
-\* Exchange terms between two nodes and step down the primary if needed.
-UpdateTerms(i, j) ==
-    \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
-    /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
-                                          ![j] = Max({currentTerm[i], currentTerm[j]})]
-    \* May update state of sender or receiver.
-    /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j],
-                              ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
-
-UpdateTermsOnNodes(i, j) == /\ UpdateTerms(i, j)
-
-\*  Node 'i' rolls back against the log of node 'j'.  
-RollbackEntries(i, j) ==
-    /\ CanRollback(i, j)
-    \* Roll back one log entry.
-    /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
-    /\ configLog' = [configLog EXCEPT ![i] = SubSeq(configLog[i], 1, Len(configLog[i])-1)]
-    \* Roll back your config state as well. If we are rolling back our only log entry,
-    \* then go back to the initial config.
-    /\ config' = [config EXCEPT ![i] = 
-                    IF Len(log[i]) = 1 THEN initConfig
-                    ELSE configLog[i][Len(configLog[i])-1]]
-    /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<elections, committed, initConfig>>
-
-\* Node 'i' gets a new log entry from node 'j'.
-GetEntries(i, j) ==
-    /\ state[i] = Secondary
-    \* Node j must have more entries than node i.
-    /\ Len(log[j]) > Len(log[i])
-       \* Ensure that the entry at the last index of node i's log must match the entry at
-       \* the same index in node j's log. If the log of node i is empty, then the check
-       \* trivially passes. This is the essential 'log consistency check'.
-    /\ LET logOk == IF Empty(log[i])
-                        THEN TRUE
-                        ELSE log[j][Len(log[i])] = log[i][Len(log[i])] IN
-       /\ logOk \* log consistency check
-       \* If the log of node i is empty, then take the first entry from node j's log.
-       \* Otherwise take the entry following the last index of node i.
-       /\ LET newEntryIndex == IF Empty(log[i]) THEN 1 ELSE Len(log[i]) + 1
-              newEntry      == log[j][newEntryIndex]
-              newLog        == Append(log[i], newEntry) IN
-              /\ log' = [log EXCEPT ![i] = newLog]
-              \* We also propagate the config via logs.
-              /\ configLog' = [configLog EXCEPT ![i] = Append(configLog[i], configLog[j][newEntryIndex])]
-              /\ config' = [config EXCEPT ![i] = configLog[j][newEntryIndex]]
-    /\ UpdateTerms(i, j)
-
-    /\ UNCHANGED <<elections, committed, initConfig>>
+\* Transfer the log of node 'i' to node 'j', if it is newer.
+MergeEntries(i, j) ==
+    /\ MWR!MergeEntries(i, j)
+    /\ configLog' = [configLog EXCEPT ![j] = configLog[i]]
+    /\ config' = [config EXCEPT ![j] = config[i]]
+    /\ UNCHANGED <<initConfig>>
 
 \* Is the last log entry of node 'i' currently committed.
 LastIsCommitted(i) == 
@@ -211,13 +168,14 @@ Init ==
 
 
 \* Defined separately to improve error reporting when model checking.
+ClientRequestAction == \E s \in Server : \E newConfig \in SUBSET Server : ClientRequest(s, newConfig)
+MergeEntriesAction == \E s, t \in Server : MergeEntries(s, t)
 BecomeLeaderAction == \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
 CommitEntryAction == \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
 
 Next == 
-    \/ \E s \in Server : \E newConfig \in SUBSET Server : ClientRequest(s, newConfig)
-    \/ \E s, t \in Server : GetEntries(s, t)
-    \/ \E s, t \in Server : RollbackEntries(s, t)
+    \/ ClientRequestAction
+    \/ MergeEntriesAction
     \/ BecomeLeaderAction
     \/ CommitEntryAction
 
