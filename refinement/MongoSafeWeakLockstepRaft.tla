@@ -70,18 +70,18 @@ IsElectionEdge(e) == e[1][2] # e[2][2]
 Range(f) == MWR!Range(f)
 
 \* Before executing a client write, the newest entry on a primary must be committed.
-LockstepCommit ==
+LS_1 ==
     \A s \in Server : \A i \in 2..Len(log[s]) : 
         LET edge == << <<i-1,log[s][i-1]>>, <<i,log[s][i]>> >> IN
         IsUpdateEdge(edge) => Committed(edge[1])
 
 \* When a leader is elected, it must have atomically written a log entry in its new term.
-LockstepElectionBarrier == 
+LS_2 == 
     \A s \in Server : (state[s] = Primary) => \E t \in Range(log[s]) : t=currentTerm[s]
 
 LockstepCondition == 
-    /\ LockstepCommit
-    /\ LockstepElectionBarrier
+    /\ LS_1
+    /\ LS_2
 
 \* Is the last log entry of node 'i' currently committed.
 LastIsCommitted(i) == 
