@@ -164,25 +164,12 @@ ClientRequest(i, newConfig) ==
     /\ UNCHANGED <<initConfig>>
 
 BecomeLeader(i, voteQuorum) == 
-    \* Primaries make decisions based on their current configuration.
-    LET newTerm == currentTerm[i] + 1 IN
-    /\ i \in voteQuorum \* The new leader should vote for itself.
-    /\ \A v \in voteQuorum : CanVoteForOplog(v, i, newTerm)
-    \* Update the terms of each voter.
-    /\ currentTerm' = [s \in Server |-> IF s \in voteQuorum THEN newTerm ELSE currentTerm[s]]
-    /\ state' = [s \in Server |->
-                    IF s = i THEN Primary
-                    ELSE IF s \in voteQuorum THEN Secondary \* All voters should revert to secondary state.
-                    ELSE state[s]]
-    /\ elections' = elections \cup 
-        {[ leader  |-> i, 
-            term   |-> newTerm, 
-            quorum |-> voteQuorum]}
-    \* Write a new no-op on step up that must be committed before a config change can occur.
-    /\ log' = [log EXCEPT ![i] = Append(log[i], newTerm)]
+    /\ MWR!BecomeLeader(i, voteQuorum)
+    \* Must write a no-op on step up so that it must be committed before a config change can occur.
+    /\ log' = [log EXCEPT ![i] = Append(log[i], currentTerm[i] + 1)]
     \* The config does not change but we write a dummy log entry.
     /\ configLog' = [configLog EXCEPT ![i] = Append(configLog[i], config[i])]
-    /\ UNCHANGED <<committed, config, initConfig>>   
+    /\ UNCHANGED <<config, initConfig>>   
 
 CommitEntry(i, commitQuorum) ==
     LET ind == Len(log[i]) IN
