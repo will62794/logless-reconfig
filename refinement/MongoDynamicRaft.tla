@@ -24,6 +24,23 @@ VARIABLE committed
 serverVars == <<currentTerm, state, log>>
 vars == <<currentTerm, state, log, elections, committed, config, configLog, initConfig>>
 
+\* For model checking.
+CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
+
+MWR == INSTANCE MongoWeakRaft 
+    WITH MaxTerm <- MaxTerm,
+         MaxLogLen <- MaxLogLen,
+         MaxConfigVersion <- MaxConfigVersion,
+         Server <- Server,
+         Secondary <- Secondary,
+         Primary <- Primary,
+         Nil <- Nil,
+         currentTerm <- currentTerm,
+         state <- state,
+         config <- config,
+         elections <- elections,
+         committed <- committed
+
 (***************************************************************************)
 (* Helper operators.                                                       *)
 (***************************************************************************)
@@ -137,15 +154,14 @@ LastIsCommitted(i) ==
 \* Node 'i', a primary, handles a new client request and places the entry 
 \* in its log. It also executes a reconfig.                                                         
 ClientRequest(i, newConfig) ==
-    /\ state[i] = Primary
     \* Make sure the current log entry is committed before reconfiguring.
     /\ LastIsCommitted(i)
     /\ QuorumsOverlap(config[i], newConfig)
     /\ i \in newConfig \* don't remove yourself from config.
-    /\ log' = [log EXCEPT ![i] = Append(log[i], currentTerm[i])]
     /\ config' = [config EXCEPT ![i] = newConfig]
     /\ configLog' = [configLog EXCEPT ![i] = Append(configLog[i], newConfig)]
-    /\ UNCHANGED <<currentTerm, state, elections, committed, initConfig>>
+    /\ MWR!ClientRequest(i)
+    /\ UNCHANGED <<initConfig>>
 
 BecomeLeader(i, voteQuorum) == 
     \* Primaries make decisions based on their current configuration.
@@ -192,8 +208,6 @@ CommitEntry(i, commitQuorum) ==
 \* Is node 'i' currently electable with quorum 'q'.
 Electable(i, q) == ENABLED BecomeLeader(i, q)
 
-\* For model checking.
-CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 
 Init ==
     /\ currentTerm = [i \in Server |-> 0]
@@ -221,20 +235,6 @@ Next ==
     \/ CommitEntryAction
 
 Spec == Init /\ [][Next]_vars
-
-MWR == INSTANCE MongoWeakRaft 
-    WITH MaxTerm <- MaxTerm,
-         MaxLogLen <- MaxLogLen,
-         MaxConfigVersion <- MaxConfigVersion,
-         Server <- Server,
-         Secondary <- Secondary,
-         Primary <- Primary,
-         Nil <- Nil,
-         currentTerm <- currentTerm,
-         state <- state,
-         config <- config,
-         elections <- elections,
-         committed <- committed
 
 MSWR == INSTANCE MongoSafeWeakRaft 
     WITH MaxTerm <- MaxTerm,
@@ -265,6 +265,7 @@ MSWLR == INSTANCE MongoSafeWeakLockstepRaft
          committed <- committed
 
 ElectionSafety == MWR!ElectionSafety
+LeaderCompleteness == MWR!LeaderCompleteness
 LogMatching == MWR!LogMatching
 
 \* Variant of LogMatching property that also takes into account the values in the 'configLog'.
