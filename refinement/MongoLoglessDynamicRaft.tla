@@ -162,10 +162,6 @@ ElectionSafety == \A x,y \in Server :
      /\  currentTerm[x] = currentTerm[y]) => (x = y)
 
 
-\* State Constraint. Used for model checking only.                                                *)
-CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
-
-
 \* TODO: Refinement mapping here needs auxiliary variables in this spec.
 \*
 \* Auxiliary variables.
@@ -186,13 +182,5 @@ CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 \*          configLog <- \* ? need auxiliary variable.
 \*          elections <- elections,
 \*          committed <- committed
-
--------------------------------------------------------------------------------------------
-
-StateConstraint == \A s \in Server :
-                    /\ currentTerm[s] <= MaxTerm
-                    /\ configVersion[s] <= MaxConfigVersion
-
-MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 
 =============================================================================

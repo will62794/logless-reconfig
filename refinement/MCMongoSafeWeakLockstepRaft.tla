@@ -1,6 +1,9 @@
 ---- MODULE MCMongoSafeWeakLockstepRaft ----
 EXTENDS MongoSafeWeakLockstepRaft, TLC
 
+\* Constants for model checking.
+CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
+
 StateConstraint == \A s \in Server :
                     /\ currentTerm[s] <= MaxTerm
                     /\ Len(log[s]) <= MaxLogLen

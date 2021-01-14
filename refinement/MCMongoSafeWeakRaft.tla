@@ -1,6 +1,9 @@
 ---- MODULE MCMongoSafeWeakRaft ----
 EXTENDS MongoSafeWeakRaft,TLC
 
+\* Constants for model checking.
+CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
+
 \* Re-defined locally for convenience.
 ElectionSafety == MWR!ElectionSafety
 LeaderCompleteness == MWR!LeaderCompleteness

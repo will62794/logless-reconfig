@@ -18,9 +18,6 @@ VARIABLE committed
 
 vars == <<currentTerm, state, log, elections, committed, config>>
 
-\* Constants for model checking.
-CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
-
 MWR == INSTANCE MongoWeakRaft 
     WITH Server <- Server,
          Secondary <- Secondary,
@@ -33,10 +30,7 @@ MWR == INSTANCE MongoWeakRaft
          committed <- committed
 
 MSWR == INSTANCE MongoSafeWeakRaft 
-    WITH MaxTerm <- MaxTerm,
-         MaxLogLen <- MaxLogLen,
-         MaxConfigVersion <- MaxConfigVersion,
-         Server <- Server,
+    WITH Server <- Server,
          Secondary <- Secondary,
          Primary <- Primary,
          Nil <- Nil,

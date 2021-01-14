@@ -17,9 +17,6 @@ VARIABLE config
 VARIABLE elections
 VARIABLE committed
 
-\* For model checking.
-CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
-
 MWR == INSTANCE MongoWeakRaft 
     WITH Server <- Server,
          Secondary <- Secondary,
@@ -52,26 +49,5 @@ FutureCommittedImpliesImmediatelyCommitted == MWR!FutureCommittedImpliesImmediat
 ImmediatelyCommittedImpliesFutureCommitted == MWR!ImmediatelyCommittedImpliesFutureCommitted
 
 THEOREM MongoStaticRaftSafety == Spec => StateMachineSafety
-
--------------------------------------------------------------------------------------------
-
-\* State Constraint. Used for model checking only.                                                *)
-StateConstraint == \A s \in Server :
-                    /\ currentTerm[s] <= MaxTerm
-                    /\ Len(log[s]) <= MaxLogLen
-
-ServerSymmetry == Permutations(Server)
-
-\* For easier error diagnosis
-Alias == 
-    [
-        currentTerm |-> currentTerm,
-        state |-> state,
-        log |-> log,
-        config |-> config,
-        elections |-> elections,
-        committed |-> committed,
-        futureCommitted |-> {e \in MWR!LogEntriesAll : MWR!IsFutureCommitted(e)}
-    ]
 
 =============================================================================

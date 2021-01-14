@@ -49,8 +49,6 @@ Empty(s) == Len(s) = 0
 
 -------------------------------------------------------------------------------------------
 
-\* For model checking.
-CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 
 osmVars == <<log, elections, committed>>
 csmVars == <<configVersion, configTerm, config>>
@@ -61,10 +59,7 @@ CSM == INSTANCE MongoLoglessDynamicRaft
              state <- state,
              configVersion <- configVersion,
              configTerm <- configTerm,
-             config <- config,
-             MaxLogLen <- MaxLogLen,
-             MaxTerm <- MaxTerm,
-             MaxConfigVersion <- MaxConfigVersion
+             config <- config
 
 \* The oplog state machine.
 OSM == INSTANCE MongoStaticRaft 
@@ -73,10 +68,8 @@ OSM == INSTANCE MongoStaticRaft
              log <- log,
              config <- config,
              elections <- elections,
-             committed <- committed,
-             MaxLogLen <- MaxLogLen,
-             MaxTerm <- MaxTerm,
-             MaxConfigVersion <- MaxConfigVersion
+             committed <- committed
+             
 \*
 \* This protocol is specified as a composition of a Config State Machine (which
 \* runs MongoLoglessDynamicRaft) and an Oplog State Machine (which runs
@@ -129,16 +122,5 @@ ElectionSafety == \A x,y \in Server :
 StateMachineSafety == OSM!StateMachineSafety
 
 THEOREM MongoRaftReconfigSafety == Spec => StateMachineSafety
-
--------------------------------------------------------------------------------------------
-
-\* State Constraint. Used for model checking only.
-StateConstraint == \A s \in Server :
-                    /\ currentTerm[s] <= MaxTerm
-                    /\ configVersion[s] <= MaxConfigVersion
-
-MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
-
-ServerSymmetry == Permutations(Server)
 
 =============================================================================
