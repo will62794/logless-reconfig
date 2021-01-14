@@ -21,10 +21,7 @@ VARIABLE committed
 CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
 
 MWR == INSTANCE MongoWeakRaft 
-    WITH MaxTerm <- MaxTerm,
-         MaxLogLen <- MaxLogLen,
-         MaxConfigVersion <- MaxConfigVersion,
-         Server <- Server,
+    WITH Server <- Server,
          Secondary <- Secondary,
          Primary <- Primary,
          Nil <- Nil,

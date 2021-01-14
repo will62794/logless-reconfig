@@ -241,9 +241,6 @@ StrictQuorumCondition ==
             /\ \A e \in elections : (quorum \cap e.quorum) # {}
             /\ \A c \in committed : (quorum \cap c.quorum) # {}
 
-\* For model checking.
-CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
-
 Init ==
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
@@ -300,16 +297,5 @@ THEOREM ~(Spec => []StateMachineSafety)
 
 \* Using the strict or weak quorum condition should ensure safety.
 THEOREM StrictQuorumSafety == SpecStrictQuorums => []StateMachineSafety
-
--------------------------------------------------------------------------------------------
-
-\* State Constraint. Used for model checking only.
-StateConstraint == \A s \in Server :
-                    /\ currentTerm[s] <= MaxTerm
-                    /\ Len(log[s]) <= MaxLogLen
-
-MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
-
-ServerSymmetry == Permutations(Server)
 
 =============================================================================
