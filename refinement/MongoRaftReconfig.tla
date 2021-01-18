@@ -115,9 +115,7 @@ Next ==
 
 Spec == Init /\ [][Next]_vars
 
-ElectionSafety == \A x,y \in Server : 
-    (/\ (state[x] = Primary) /\ (state[y] = Primary) 
-     /\  currentTerm[x] = currentTerm[y]) => (x = y)
+ElectionSafety == OSM!ElectionSafety
 
 StateMachineSafety == OSM!StateMachineSafety
 
