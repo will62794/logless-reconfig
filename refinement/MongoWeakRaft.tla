@@ -194,7 +194,6 @@ CommitEntry(i, commitQuorum) ==
     /\ ~\E c \in committed : c.entry = <<ind, currentTerm[i]>>
     /\ committed' = committed \cup
             {[ entry  |-> <<ind, currentTerm[i]>>,
-               quorum |-> commitQuorum,
                term  |-> currentTerm[i]]}
     /\ UNCHANGED <<currentTerm, state, log, elections>>
 
@@ -231,15 +230,12 @@ FutureCommittedImpliesImmediatelyCommitted ==
 ImmediatelyCommittedImpliesFutureCommitted ==
     \A e \in LogEntriesAll : (\E c \in committed : c.entry = e) => IsFutureCommitted(e) 
 
-
-\* If a node is electable, its quorum must overlap with at least one node from
-\* all previous vote quorums and all previous commit quorums.
+\* All quorums of all nodes always overlap. A sufficient condition for this is if
+\* quorums of all configs overlap, and configs never change.
 StrictQuorumCondition == 
-    \A s \in Server : 
-    \A quorum \in QuorumsAt(s) : 
-        Electable(s, quorum) => 
-            /\ \A e \in elections : (quorum \cap e.quorum) # {}
-            /\ \A c \in committed : (quorum \cap c.quorum) # {}
+    [][\A s,t \in Server : 
+        /\ QuorumsOverlap(config[s], config[t])
+        /\ config[s] = config'[s]]_vars
 
 Init ==
     /\ currentTerm = [i \in Server |-> 0]
