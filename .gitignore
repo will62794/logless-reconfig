@@ -16,3 +16,4 @@ states/
 *.out
 graphs
 tla2tools.jar
+*TTrace*
