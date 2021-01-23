@@ -38,7 +38,15 @@ BecomeLeader(s, Q) == MWR!BecomeLeader(s, Q)
 CommitEntry(s, Q) == MWR!CommitEntry(s, Q)
 
 Init == MWR!Init 
-Next == MWR!NextStatic /\ UNCHANGED config
+
+NextStatic == 
+    \/ \E s \in Server : ClientRequest(s)
+    \/ \E s, t \in Server : GetEntries(s, t)
+    \/ \E s, t \in Server : RollbackEntries(s, t)
+    \/ \E s \in Server : \E Q \in MWR!QuorumsAt(s) : BecomeLeader(s, Q)
+    \/ \E s \in Server :  \E Q \in MWR!QuorumsAt(s) : CommitEntry(s, Q)
+
+Next == NextStatic /\ UNCHANGED config
 
 Spec == Init /\ [][Next]_MWR!vars
 
