@@ -2,7 +2,7 @@
 EXTENDS TLC, MongoStaticRaft
 
 \* For model checking.
-CONSTANTS MaxTerm, MaxLogLen, MaxConfigVersion
+CONSTANTS MaxTerm, MaxLogLen
 
 \* State Constraint. Used for model checking only.                                                *)
 StateConstraint == \A s \in Server :
