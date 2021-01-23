@@ -266,7 +266,7 @@ Next ==
 Spec == Init /\ [][Next]_vars
 
 \* Variants of the spec that satisfy different quorum conditions.
-SpecStrictQuorums ==   Init /\ StrictQuorumCondition /\ [][Next /\ StrictQuorumCondition']_vars
+\* SpecStrictQuorums ==   Init /\ StrictQuorumCondition /\ [][Next /\ StrictQuorumCondition']_vars
 
 ElectionSafety == 
     \A e1, e2 \in elections : 
@@ -291,7 +291,6 @@ StateMachineSafety ==
 \* This weak protocol should not be safe.
 THEOREM ~(Spec => []StateMachineSafety)
 
-\* Using the strict or weak quorum condition should ensure safety.
-THEOREM StrictQuorumSafety == SpecStrictQuorums => []StateMachineSafety
+\* THEOREM StrictQuorumSafety == SpecStrictQuorums => []StateMachineSafety
 
 =============================================================================
