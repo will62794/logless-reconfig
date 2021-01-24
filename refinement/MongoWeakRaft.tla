@@ -173,8 +173,7 @@ BecomeLeader(i, voteQuorum) ==
                     ELSE state[s]]
     /\ elections' = elections \cup 
         {[ leader  |-> i, 
-            term   |-> newTerm
-            ]}
+            term   |-> newTerm ]}
     \* Allow new leaders to write a no-op on step up if they want to. It is optional, but permissible.
     /\ \/ log' = [log EXCEPT ![i] = Append(log[i], newTerm)]
        \/ UNCHANGED log
