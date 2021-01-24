@@ -14,6 +14,6 @@ ServerSymmetry == Permutations(Server)
 
 \* If we are not checking a property that depends on the 'elections' history 
 \* variable, we can project it out.
-stateView == <<currentTerm,state,log,configVersion,configTerm,config,committed>>
+viewNoElections == <<currentTerm,state,log,configVersion,configTerm,config,committed>>
 
 ====
