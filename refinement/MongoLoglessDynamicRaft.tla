@@ -147,7 +147,7 @@ csmVars == <<configVersion, configTerm, config>>
 Init == 
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
-    /\ configVersion =  [i \in Server |-> 0]
+    /\ configVersion =  [i \in Server |-> 1]
     /\ configTerm    =  [i \in Server |-> 0]
     /\ \E initConfig \in SUBSET Server :
         /\ initConfig # {}
