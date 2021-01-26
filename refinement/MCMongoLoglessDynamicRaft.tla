@@ -1,4 +1,4 @@
----- MODULE MCLoglessDynamicRaft ----
+---- MODULE MCMongoLoglessDynamicRaft ----
 EXTENDS TLC, MongoLoglessDynamicRaft
 
 \* State Constraint. Used for model checking only.
