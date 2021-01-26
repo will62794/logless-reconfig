@@ -39,7 +39,12 @@ Empty(s) == Len(s) = 0
 IsNewerConfig(i, j) ==
     \/ configTerm[i] > configTerm[j]
     \/ /\ configTerm[i] = configTerm[j]
-       /\ configVersion[i] >= configVersion[j]
+       /\ configVersion[i] > configVersion[j]
+
+IsNewerOrEqualConfig(i, j) ==
+    \/ /\ configTerm[i] = configTerm[j]
+       /\ configVersion[i] = configVersion[j]
+    \/ IsNewerConfig(i, j)
 
 \* Compares two configs given as <<configVersion, configTerm>> tuples.
 NewerConfig(ci, cj) ==
@@ -55,16 +60,25 @@ NewerOrEqualConfig(ci, cj) == NewerConfig(ci, cj) \/ ci = cj
 \* Can node 'i' currently cast a vote for node 'j' in term 'term'.
 CanVoteForConfig(i, j, term) ==
     /\ currentTerm[i] < term
-    /\ IsNewerConfig(j, i)
+    /\ IsNewerOrEqualConfig(j, i)
     
 \* Do all quorums of set x and set y share at least one overlapping node.
 QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
-    
-ConfigQuorumCheck(self, s) == 
-    \* Equal configs.
-    \/ (/\ configVersion[self] = configVersion[s]
-        /\ configTerm[self] = configTerm[s])
-    \/ IsNewerConfig(s, self)
+
+\* Is the current config on primary s committed. A config C=(v, t) can be committed on 
+\* a primary in term T iff t=T and there are a quorum of nodes in term T that currently
+\* have config C.
+ConfigIsCommitted(s) == 
+    /\ state[s] = Primary
+    \* Config must be in the term of this primary.
+    /\ configTerm[s] = currentTerm[s]
+    /\ \E Q \in QuorumsAt(s) : 
+        \A t \in Q : 
+            \* Node must have the same config as the primary.
+            /\ configVersion[s] = configVersion[t]
+            /\ configTerm[s] = configTerm[t]
+            \* Node must be in the same term as the primary (and the config).
+            /\ currentTerm[t] = currentTerm[s]
 
 -------------------------------------------------------------------------------------------
 
@@ -100,25 +114,11 @@ BecomeLeader(i, voteQuorum) ==
     /\ configTerm' = [configTerm EXCEPT ![i] = newTerm]
     /\ UNCHANGED <<config, configVersion>>    
 
-
-\*
-\* Config State Machine actions.
-\*
-
-\* Did a node talked to a quorum as primary.
-TermQuorumCheck(self, s) == currentTerm[self] >= currentTerm[s]
-
-\* Is the config on node i currently "safe".
-ConfigIsSafe(i) ==
-    /\ \E q \in QuorumsAt(i):
-       \A s \in q : /\ TermQuorumCheck(i, s)
-                    /\ ConfigQuorumCheck(i, s)
-
 \* A reconfig occurs on node i. The node must currently be a leader.
 Reconfig(i, newConfig) ==
     (* PRE *)
     /\ state[i] = Primary
-    /\ ConfigIsSafe(i)
+    /\ ConfigIsCommitted(i)
     /\ QuorumsOverlap(config[i], newConfig)
     /\ i \in newConfig
     (* POST *)
@@ -133,7 +133,10 @@ SendConfig(i, j) ==
     /\ state[j] = Secondary
     /\ IsNewerConfig(i, j)
     (* POST *)
-    /\ UpdateTerms(i, j)
+    \* TODO: Is this required for safety, and why or why not? Perhaps separate it into a separate
+    \* communication channel.
+    /\ UpdateTerms(i, j) 
+    \* /\ UNCHANGED <<currentTerm, state>>
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
     /\ configTerm' = [configTerm EXCEPT ![j] = configTerm[i]]
     /\ config' = [config EXCEPT ![j] = config[i]]
