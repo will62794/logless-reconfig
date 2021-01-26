@@ -1,0 +1,5 @@
+# Overview
+
+This directory contains several specifications that are needed to define and verify various aspects of MongoDB's logless reconfiguration protocol, which is defined in the [*MongoRaftReconfig.tla*](MongoRaftReconfig.tla) specification. It is specified as a composition of two subprotocols, *[MongoStaticRaft.tla](MongoStaticRaft.tla)* and *[MongoLoglessDynamicRaft.tla](MongoLoglessDynamicRaft.tla)*, which are specified separately. 
+
+We also define an abstract, safe version of a Raft-based protocol that does not depend on strict quorum overlap, which is specified in [*MongoSafeWeakRaft.tla*](MongoSafeWeakRaft.tla). Additionally, there is a specification to help show the refinement mapping between *MongoLoglessDynamicRaft* and *MongoSafeWeakRaft*. This is given in *MongoLoglessDynamicRaftRefinement*, which extends *MongoLoglessDynamicRaft* with auxiliary variables that are necessary to define this mapping.
