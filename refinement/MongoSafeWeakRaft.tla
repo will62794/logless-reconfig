@@ -36,6 +36,20 @@ QC_2(s, Q) == MWR!Electable(s, Q) => \A c \in committed : \E t \in Q : MWR!InLog
 \* Commitable write by node 's' in quorum 'q' overlaps with some node that contains term of election, for all previous elections. 
 QC_3(s, Q) == ENABLED MWR!CommitEntry(s, Q) => (\A e \in elections : \E t \in Q : currentTerm[t] >= e.term)
 
+\* If an election has occurred in term T, no other elections can ever occur in term T.
+TS1 == \A e1,e2 \in elections : (e1.term = e2.term) => (e1.leader = e2.leader)
+
+\* If an election has occurred in term T, no primary can ever commit in a term < T.
+TS2 == \A e \in elections : \A s \in Server : 
+        (state[s] = Primary /\ currentTerm[s] < e.term) => 
+        \A Q \in MWR!QuorumsAt(s) : ~ENABLED MWR!CommitEntry(s, Q)
+
+\* If an entry E has been committed in term T, any leader in term > T will contain the entry in its log.
+TS3 == \A s \in Server : \A c \in committed :
+        (state[s]=Primary /\ c.term < currentTerm[s]) => MWR!InLog(c.entry, s)
+
+TermSafetyCondition == TS1 /\ TS2 /\ TS3
+
 \*
 \* This is the abstract condition necessary for a Raft protocol to operate "safely" without
 \* reliance on quorum overlaps.

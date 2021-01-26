@@ -70,4 +70,6 @@ WeakQuorumCondition2 == \A s \in Server : \A Q \in MSWR!MWR!QuorumsAt(s) : MSWR!
 WeakQuorumCondition3 == \A s \in Server : \A Q \in MSWR!MWR!QuorumsAt(s) : MSWR!QC_3(s, Q)
 
 WeakQuorumCondition == MSWR!WeakQuorumCondition
+
+TermSafetyCondition == MSWR!TermSafetyCondition
 ====
