@@ -87,7 +87,7 @@ ConfigIsCommitted(s) ==
 (***************************************************************************)
 
 \* Exchange terms between two nodes and step down the primary if needed.
-UpdateTerms(i, j) ==
+UpdateTermsExpr(i, j) ==
     \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
     /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
@@ -95,8 +95,9 @@ UpdateTerms(i, j) ==
     /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j],
                               ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
 
-UpdateTermsOnNodes(i, j) == /\ UpdateTerms(i, j)
-                            /\ UNCHANGED <<configVars>>
+UpdateTerms(i, j) == 
+    /\ UpdateTermsExpr(i, j)
+    /\ UNCHANGED <<configVars>>
 
 BecomeLeader(i, voteQuorum) == 
     \* Primaries make decisions based on their current configuration.
@@ -153,7 +154,7 @@ Next ==
     \/ \E s \in Server, newConfig \in SUBSET Server : Reconfig(s, newConfig)
     \/ \E s,t \in Server : SendConfig(s, t)
     \/ \E i \in Server : \E Q \in Quorums(config[i]) :  BecomeLeader(i, Q)
-    \/ \E s,t \in Server : UpdateTermsOnNodes(s,t)
+    \/ \E s,t \in Server : UpdateTerms(s,t)
 
 Spec == Init /\ [][Next]_vars
 

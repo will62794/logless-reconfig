@@ -36,7 +36,7 @@ GetEntries(s,t) == MWR!GetEntries(s,t)
 RollbackEntries(s, t) == MWR!RollbackEntries(s, t)
 BecomeLeader(s, Q) == MWR!BecomeLeader(s, Q)
 CommitEntry(s, Q) == MWR!CommitEntry(s, Q)
-UpdateTermsOnNodes(s, t) == MWR!UpdateTermsOnNodes(s, t)
+UpdateTerms(s, t) == MWR!UpdateTerms(s, t)
 
 Init == MWR!Init 
 
@@ -46,7 +46,7 @@ NextStatic ==
     \/ \E s, t \in Server : RollbackEntries(s, t)
     \/ \E s \in Server : \E Q \in MWR!QuorumsAt(s) : BecomeLeader(s, Q)
     \/ \E s \in Server :  \E Q \in MWR!QuorumsAt(s) : CommitEntry(s, Q)
-    \/ \E s,t \in Server : UpdateTermsOnNodes(s, t)
+    \/ \E s,t \in Server : UpdateTerms(s, t)
 
 Next == NextStatic /\ UNCHANGED config
 

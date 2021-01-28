@@ -104,7 +104,7 @@ ImmediatelyCommitted(e, Q) ==
 \*
 
 \* Helper operator for actions that propagate the term between two nodes.
-UpdateTerms(i, j) ==
+UpdateTermsExpr(i, j) ==
     \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
     /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
                                           ![j] = Max({currentTerm[i], currentTerm[j]})]
@@ -116,8 +116,8 @@ UpdateTerms(i, j) ==
 \* specified as a separate action, rather than occurring atomically on other replication actions that
 \* involve communication between two nodes. This makes it clearer to see where term propagation is strictly
 \* necessary for guaranteeing safety.
-UpdateTermsOnNodes(i, j) == 
-    /\ UpdateTerms(i, j)
+UpdateTerms(i, j) == 
+    /\ UpdateTermsExpr(i, j)
     /\ UNCHANGED <<log, config, elections, committed>>
 
 \*  Node 'i' rolls back against the log of node 'j'.  
@@ -257,7 +257,7 @@ NextStatic ==
     \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
     \/ \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
     \/ \E s, t \in Server : MergeEntries(s, t)
-    \/ \E s, t \in Server : UpdateTermsOnNodes(s, t)
+    \/ \E s, t \in Server : UpdateTerms(s, t)
 
 \* We allow the protocol to take any 'core' protocol step and, if it wants to, change the config
 \* on some node arbitrarily when that transition is taken.
