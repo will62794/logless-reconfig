@@ -72,4 +72,6 @@ WeakQuorumCondition3 == \A s \in Server : \A Q \in MSWR!MWR!QuorumsAt(s) : MSWR!
 WeakQuorumCondition == MSWR!WeakQuorumCondition
 
 TermSafetyCondition == MSWR!TermSafetyCondition
+
+StateMachineSafety == MSWR!MWR!StateMachineSafety
 ====
