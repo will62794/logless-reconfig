@@ -132,14 +132,10 @@ SendConfig(i, j) ==
     (* PRE *)
     /\ state[j] = Secondary
     /\ IsNewerConfig(i, j)
-    (* POST *)
-    \* TODO: Is this required for safety, and why or why not? Perhaps separate it into a separate
-    \* communication channel.
-    /\ UpdateTerms(i, j) 
-    \* /\ UNCHANGED <<currentTerm, state>>
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
     /\ configTerm' = [configTerm EXCEPT ![j] = configTerm[i]]
     /\ config' = [config EXCEPT ![j] = config[i]]
+    /\ UNCHANGED <<currentTerm, state>>
 
 
 csmVars == <<configVersion, configTerm, config>>
@@ -157,6 +153,7 @@ Next ==
     \/ \E s \in Server, newConfig \in SUBSET Server : Reconfig(s, newConfig)
     \/ \E s,t \in Server : SendConfig(s, t)
     \/ \E i \in Server : \E Q \in Quorums(config[i]) :  BecomeLeader(i, Q)
+    \/ \E s,t \in Server : UpdateTermsOnNodes(s,t)
 
 Spec == Init /\ [][Next]_vars
 
