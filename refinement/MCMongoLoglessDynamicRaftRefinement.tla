@@ -11,8 +11,7 @@ MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
 
 ServerSymmetry == Permutations(Server)
 
-\* View for projecting out history variables.
-RemoveHistoryVarsView == <<currentTerm,state,log,config>>
+ViewRemoveElectionsAndLogVars == <<currentTerm,state,config,configVersion,configTerm,committed>>
 
 \*
 \* For easier debugging.
