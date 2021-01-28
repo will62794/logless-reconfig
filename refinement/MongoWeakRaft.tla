@@ -103,7 +103,7 @@ ImmediatelyCommitted(e, Q) ==
 \* it to potentially change synchronously with any protocol transition.
 \*
 
-\* Exchange terms between two nodes and step down the primary if needed.
+\* Helper operator for actions that propagate the term between two nodes.
 UpdateTerms(i, j) ==
     \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
     /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
@@ -112,15 +112,20 @@ UpdateTerms(i, j) ==
     /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j],
                               ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
 
-UpdateTermsOnNodes(i, j) == /\ UpdateTerms(i, j)
+\* Action that exchanges terms between two nodes and step down the primary if needed. This can be safely
+\* specified as a separate action, rather than occurring atomically on other replication actions that
+\* involve communication between two nodes. This makes it clearer to see where term propagation is strictly
+\* necessary for guaranteeing safety.
+UpdateTermsOnNodes(i, j) == 
+    /\ UpdateTerms(i, j)
+    /\ UNCHANGED <<log, config, elections, committed>>
 
 \*  Node 'i' rolls back against the log of node 'j'.  
 RollbackEntries(i, j) ==
     /\ CanRollback(i, j)
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
-    /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<elections, committed>>
+    /\ UNCHANGED <<elections, committed, currentTerm, state>>
 
 \* Node 'i' gets a new log entry from node 'j'.
 GetEntries(i, j) ==
@@ -140,8 +145,7 @@ GetEntries(i, j) ==
               newEntry      == log[j][newEntryIndex]
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
-    /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<elections, committed>>
+    /\ UNCHANGED <<elections, committed, currentTerm, state>>
 
 \* This is a coarse grained atomic action that combines both log replication and rollback.
 \* It atomically transfers the entire log from node 'i' to node 'j', if the log of node 'i'
@@ -150,8 +154,7 @@ GetEntries(i, j) ==
 MergeEntries(i, j) ==
     /\ NewerLog(i, j)
     /\ log' = [log EXCEPT ![j] = log[i]]
-    /\ UpdateTerms(i, j)
-    /\ UNCHANGED <<elections, committed>>
+    /\ UNCHANGED <<elections, committed, currentTerm, state>>
 
 \* Node 'i', a primary, handles a new client request and places the entry 
 \* in its log.                                                            
@@ -254,6 +257,7 @@ NextStatic ==
     \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
     \/ \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
     \/ \E s, t \in Server : MergeEntries(s, t)
+    \/ \E s, t \in Server : UpdateTermsOnNodes(s, t)
 
 \* We allow the protocol to take any 'core' protocol step and, if it wants to, change the config
 \* on some node arbitrarily when that transition is taken.
