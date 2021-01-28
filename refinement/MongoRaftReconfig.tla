@@ -99,9 +99,10 @@ CSMNext ==
 
 \* Actions shared by the CSM and OSM i.e. that must be executed jointly by both protocols.
 JointNext == 
-     \E i \in Server : \E Q \in Quorums(config[i]) : 
+    \/ \E i \in Server : \E Q \in Quorums(config[i]) : 
         /\ OSM!BecomeLeader(i, Q)
         /\ CSM!BecomeLeader(i, Q)
+    \/ \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
 
 \* We define the transition relation as an interleaving composition of the OSM and CSM.
 \* From the current state, we permit either the OSM or CSM to take a single,
