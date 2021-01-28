@@ -86,14 +86,11 @@ ConfigIsCommitted(s) ==
 (* Next state actions.                                                     *)
 (***************************************************************************)
 
-\* Exchange terms between two nodes and step down the primary if needed.
+\* Update terms if node 'i' has a newer term than node 'j' and ensure 'j' reverts to Secondary state.
 UpdateTermsExpr(i, j) ==
-    \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
-    /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
-                                          ![j] = Max({currentTerm[i], currentTerm[j]})]
-    \* May update state of sender or receiver.
-    /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j],
-                              ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
+    /\ currentTerm[i] > currentTerm[j]
+    /\ currentTerm' = [currentTerm EXCEPT ![j] = currentTerm[i]]
+    /\ state' = [state EXCEPT ![j] = Secondary]
 
 UpdateTerms(i, j) == 
     /\ UpdateTermsExpr(i, j)

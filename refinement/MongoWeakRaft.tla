@@ -105,12 +105,9 @@ ImmediatelyCommitted(e, Q) ==
 
 \* Helper operator for actions that propagate the term between two nodes.
 UpdateTermsExpr(i, j) ==
-    \* Update terms of sender and receiver i.e. to simulate an RPC request and response (heartbeat).
-    /\ currentTerm' = [currentTerm EXCEPT ![i] = Max({currentTerm[i], currentTerm[j]}),
-                                          ![j] = Max({currentTerm[i], currentTerm[j]})]
-    \* May update state of sender or receiver.
-    /\ state' = [state EXCEPT ![j] = IF currentTerm[j] < currentTerm[i] THEN Secondary ELSE state[j],
-                              ![i] = IF currentTerm[i] < currentTerm[j] THEN Secondary ELSE state[i] ]
+    /\ currentTerm[i] > currentTerm[j]
+    /\ currentTerm' = [currentTerm EXCEPT ![j] = currentTerm[i]]
+    /\ state' = [state EXCEPT ![j] = Secondary]
 
 \* Action that exchanges terms between two nodes and step down the primary if needed. This can be safely
 \* specified as a separate action, rather than occurring atomically on other replication actions that
