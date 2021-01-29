@@ -88,12 +88,24 @@ OSMNext ==
     \/ \E s, t \in Server : OSM!RollbackEntries(s, t)
     \/ \E s \in Server :  \E Q \in OSM!MWR!QuorumsAt(s) : OSM!CommitEntry(s, Q)
 
+\* This is the precondition on committed oplog entries that must be satisfied on
+\* server s before it can execute a reconfiguration. All previously committed
+\* oplog entries must be committed by the rules of the server's current
+\* configuration. Since a primary can only commit entries in its own term, we
+\* check whether all entries committed in this primary's term are now committed
+\* on a quorum of its configuration. This should be sufficient to ensure all
+\* previously committed entries are committed, since every primary contains all
+\* committed ops in its log on becoming primary.
+OplogCommitmentCond(s) == 
+    \A c \in {n \in committed : n.term = currentTerm[s]} : 
+        \E Q \in QuorumsAt(s) : 
+        \A v \in Q : (OSM!MWR!InLog(c.entry, v) /\ currentTerm[v] = currentTerm[s])
+
 \* Config State Machine actions.
 CSMNext == 
     \/ \E s \in Server, newConfig \in SUBSET Server : 
-        \* Before allowing a Reconfig, we must also ensure that any previously committed ops
-        \* are now committed by a quorum of the current configuration.
-        /\ \A c \in committed : \E Q \in QuorumsAt(s) : OSM!MWR!ImmediatelyCommitted(c.entry, Q)
+        \* Before reconfiguration, ensure that previously committed ops are safe.
+        /\ OplogCommitmentCond(s)
         /\ CSM!Reconfig(s, newConfig)
     \/ \E s,t \in Server : CSM!SendConfig(s, t)
 
