@@ -1,4 +1,4 @@
-# January 25, 2021
+# 2021-01-25
 
 Working on defining the refinement mapping between MongoLoglessDynamicRaft and MongoSafeWeakRaft. Noticed a quirk of how `IsNewerConfig` is defined, which allows configs to be >= i.e.
 ```tla
