@@ -12,6 +12,7 @@ WORKERS=$3
 tlc="java -Dtlc2.tool.fp.FPSet.impl=tlc2.tool.fp.OffHeapDiskFPSet -cp tla2tools.jar tlc2.TLC"
 
 # Create output file to store results.
+mkdir -p "notes/tlc-results"
 outfilename="$(date +%F)_$(date +%s)_$SPEC".out
 outfile="notes/tlc-results/$outfilename"
 touch $outfile
