@@ -37,7 +37,8 @@ echo "Spec: $SPEC.tla" >> $outfile
 echo "Config: $CONFIG" >> $outfile
 echo "----" >> $outfile
 cat $CONFIG >> $outfile
-echo "\n----" >> $outfile
+echo "" >> $outfile
+echo "----" >> $outfile
 echo "" >> $outfile
 
 # Run the model checker.
