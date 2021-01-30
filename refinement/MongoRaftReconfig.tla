@@ -99,7 +99,7 @@ OSMNext ==
 \* configuration C, it must make sure that any entry it committed in T is now
 \* committed by the rules of configuration C i.e. it is "immediately committed"
 \* in C. That is, present on some quorum of servers in C that are in term T. 
-OplogCommitmentCond(s) == 
+OplogCommitment(s) == 
     \A c \in {n \in committed : n.term = currentTerm[s]} : 
         \E Q \in QuorumsAt(s) : 
         \A v \in Q : (OSM!MWR!InLog(c.entry, v) /\ currentTerm[v] = currentTerm[s])
@@ -108,7 +108,7 @@ OplogCommitmentCond(s) ==
 CSMNext == 
     \/ \E s \in Server, newConfig \in SUBSET Server : 
         \* Before reconfiguration, ensure that previously committed ops are safe.
-        /\ OplogCommitmentCond(s)
+        /\ OplogCommitment(s)
         /\ CSM!Reconfig(s, newConfig)
     \/ \E s,t \in Server : CSM!SendConfig(s, t)
 
