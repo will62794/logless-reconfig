@@ -51,34 +51,33 @@ T3 == \A s \in Server : \A c \in committed :
 
 ### Soundness of our Specification Abstractions
 
-In a fail-stop, asynchronous, message passing system model, nodes communicated by sending messages over the network, and nodes can fail by stopping at any time. This gives basic fundamental events of this model, where message drops and duplication are also considered. We can assume a 'network' variables that contains the set of outstanding messages that have not yet been delivered:
+In a fail-stop, asynchronous, message passing system model, nodes communicate by sending messages over the network, and nodes can fail by stopping at any time. The basic, defining characteristics of this model include the following:
 
-- SendMsg(m): place a message 'm' in 'network'
-- RecvMsg(m): message 'm' is processed and removed from 'network'.
-- DropMsg(m): message 'm' is removed from 'network' without being processed.
-- DuplicateMsg(m): a copy of 'm' is added to 'network'.
-- Fail(i): node 'i' stops sending or receiving any messages.
-- Recover(i): node 'i' begins sending and receiving messages again.
+- Node failure
+- Message loss/duplication
+- Message Delay (Asynchrony)
 
-**Node Failures**
+Let's consider how each of these aspects affect reasoning about correctness and verification of a system and how it's treated in our abstract TLA+ specs.
 
-If a node fails and recovers at some later point, this should be equivalent to a behavior where the node simply did not send or receive any message, which is always possible in our non-deterministic specification. If too many nodes stay permanently failed, this obviously presents liveness issues, but we are focused on safety verification. As far as 
+**Node Failure**
+
+If a node fails and recovers at some later point, this should be equivalent to a behavior where the node simply did not send or receive any message for some period of time, which is always possible in the non-deterministic specification i.e. the model checker will always explore behaviors where a certain node is "unscheduled" (doesn't execute any actions) for an arbitrary period of time. If too many nodes stay permanently failed, this obviously presents liveness issues, but we are focused on safety verification.
 
 **Message Loss**
 
-If a node A sends a message to node B in an asynchronous network, this message could be lost. If the sending of a message does not modify any local state of node A, though (i.e. it only modifies the network), then this (Send, Drop) pair of events is as if they never occurred at all i.e. it has no effect on the local states of nodes, which is what matters for safety. That is, it's equivalent to the node having never sent its message at all, which a scenario clearly covered by our specification. Message loss is important to consider when reasoning about liveness, but we are concerned with safety.
-
-**Stale Messages**
-
-The other difference is that our specification models message transmission synchronously i.e. there is no separation between a 'Send' and 'Receive' event. In the fully asynchronous model, this means that a node may be able to receive a stale message i.e. one from arbitrarily far back in the past, though our specification can't represent this. Is this important? TODO: Something about monotonicity?????
-
-In our spec, SendConfig/BecomeLeader are the two actions that model message send/receipt. Let's examine SendConfig. We know that for SendConfig, nodes will only accept configurations newer than their own. Messages coming from arbitrarily far back in the past could be modeled in our spec by nodes that are indefinitely stale i.e. they have become "partitioned" and haven't updated their state in arbitrarily long. I think this should be sufficient in our model to capture these "stale" messages cases. 
+If a node A sends a message to node B in an asynchronous network, this message could be lost. If the sending of a message does not modify any local state of node A, though (i.e. it only modifies the network), then this (send, drop) pair of events are effectively nilpotent i.e they have no effect on the state of nodes, which is what matters for safety. That is, it's equivalent to the node having never sent a message at all, which are scenarios that are covered by the model checker i.e. it just chooses not to schedule a certain action. Message loss is important to consider when reasoning about liveness/progress, but we are concerned with safety.
 
 **Message Duplication**
 
-Can be modeled as equivalent to the spec just trying to execute the same action more than once? Idempotency should be ensured by the preconditions of the actions?
+If the network can spontaneously duplicate messages, does this present any fundamentally new considerations for modeling/verification? It seems like message duplication would about checking idempotency issues i.e. if a node processing the same message would lead to bugs. It seems like this idempotency is sort of implicitly verified in our specs simply by action preconditions i.e. if an action precondition is "not idempotent" meaning it could allow the same action A to occur twice in a row, the model checker would exercise this case, in behaviors where such actions occur repeatedly. Could think about this more but it doesn't feel too problematic.
 
+**Message Delay (Asynchrony)**
 
+A big difference is that our specification models message transmission synchronously i.e. there is no separation between a 'send' and 'receive' event. In the fully asynchronous model, this means that a node may be able to receive a stale message i.e. one from arbitrarily far back in the past, though our specification doesn't model this explicitly through an async network. represent this. But, our models should actually exercise cases where nodes can hear about arbitrarily stale information e.g. if there is some node that is "partitioned" (conceptually), and it's state has not been updated in many transitions. At a later time, it could then try to communicate with another node, which would seem to be nearly equivalent to the case of a stale message hanging around in the network indefinitely and being delivered at a later time.
+
+Is this important? TODO: Something about monotonicity?????
+
+In our spec, SendConfig/BecomeLeader are the two actions that model message send/receipt. Let's examine SendConfig. We know that for SendConfig, nodes will only accept configurations newer than their own. Messages coming from arbitrarily far back in the past could be modeled in our spec by nodes that are indefinitely stale i.e. they have become "partitioned" and haven't updated their state in arbitrarily long. I think this should be sufficient in our model to capture these "stale" messages cases. 
 
 **Atomic Elections**
 
