@@ -47,6 +47,9 @@ Range(f) == {f[x] : x \in DOMAIN f}
 \* Is a sequence empty.
 Empty(s) == Len(s) = 0
 
+GetTerm(xlog, index) == IF index = 0 THEN 0 ELSE xlog[index]
+LogTerm(i, index) == GetTerm(log[i], index)
+
 -------------------------------------------------------------------------------------------
 
 
@@ -88,6 +91,19 @@ OSMNext ==
     \/ \E s, t \in Server : OSM!RollbackEntries(s, t)
     \/ \E s \in Server :  \E Q \in OSM!MWR!QuorumsAt(s) : OSM!CommitEntry(s, Q)
 
+\* Check whether the entry at "index" on "primary" is committed in the primary's current config.
+IsCommitted(index, primary) ==
+    \* The primary must contain such an entry.
+    /\ Len(log[primary]) >= index
+    \* The entry was written by this leader.
+    /\ LogTerm(primary, index) = currentTerm[primary]
+    /\ \E quorum \in Quorums(config[primary]):
+        \* all nodes have this log entry and are in the term of the leader.
+        \A s \in quorum : \E k \in DOMAIN log[s] :
+            /\ k = index
+            /\ log[s][k] = log[primary][k]    \* they have the entry.
+            /\ currentTerm[s] = currentTerm[primary]  \* they are in the same term.
+
 \*
 \* This is the precondition about committed oplog entries that must be satisfied
 \* on a primary server s in order for it to execute a reconfiguration.
@@ -100,9 +116,12 @@ OSMNext ==
 \* committed by the rules of configuration C i.e. it is "immediately committed"
 \* in C. That is, present on some quorum of servers in C that are in term T. 
 OplogCommitment(s) == 
-    \A c \in {n \in committed : n.term = currentTerm[s]} : 
-        \E Q \in QuorumsAt(s) : 
-        \A t \in Q : (OSM!MWR!InLog(c.entry, t) /\ currentTerm[t] = currentTerm[s])
+    \* The primary has at least committed one entry in its term if there are any
+    \* entries committed in earlier terms.
+    /\ committed = {} \/ \E c \in committed : IsCommitted(c.entry[1], s)
+    \* All entries committed in the primary's term have been committed in the
+    \* current config.
+    /\ \A c \in committed : (c.term = currentTerm[s]) => IsCommitted(c.entry[1], s)
 
 \* Config State Machine actions.
 CSMNext == 
