@@ -135,6 +135,8 @@ ElectionSafety == OSM!ElectionSafety
 
 StateMachineSafety == OSM!StateMachineSafety
 
+LeaderCompleteness == OSM!MWR!LeaderCompleteness
+
 \* If an election has occurred in term T, then no leader should be able to
 \* commit writes in terms U < T. A sufficient condition to check this is to
 \* ensure that, for all past elections E, any current primary P in a term <
