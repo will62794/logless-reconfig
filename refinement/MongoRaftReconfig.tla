@@ -89,8 +89,8 @@ OSMNext ==
     \/ \E s \in Server :  \E Q \in OSM!MWR!QuorumsAt(s) : OSM!CommitEntry(s, Q)
 
 \*
-\* This is the precondition on committed oplog entries that must be satisfied on
-\* a primary server s in order for it to execute a reconfiguration.
+\* This is the precondition about committed oplog entries that must be satisfied
+\* on a primary server s in order for it to execute a reconfiguration.
 \*
 \* When a primary is first elected in term T, we can be sure that it contains
 \* all committed entries from terms < T. During its reign as primary in term T
