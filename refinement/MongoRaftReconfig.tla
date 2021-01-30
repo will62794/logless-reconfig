@@ -102,7 +102,7 @@ OSMNext ==
 OplogCommitment(s) == 
     \A c \in {n \in committed : n.term = currentTerm[s]} : 
         \E Q \in QuorumsAt(s) : 
-        \A v \in Q : (OSM!MWR!InLog(c.entry, v) /\ currentTerm[v] = currentTerm[s])
+        \A t \in Q : (OSM!MWR!InLog(c.entry, t) /\ currentTerm[t] = currentTerm[s])
 
 \* Config State Machine actions.
 CSMNext == 
