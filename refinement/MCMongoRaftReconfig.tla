@@ -45,9 +45,9 @@ Alias ==
     [
         \* currentTerm |-> currentTerm,
         \* state |-> state,
-        log |-> log,
+        \* log |-> log,
         \* config |-> config,
-        elections |-> elections,
+        \* elections |-> elections,
         committed |-> committed,
         \* config |-> config,
         \* reconfigs |-> ReconfigPairsAll,
