@@ -1,0 +1,65 @@
+Git Revision: f6c21a7
+Platform: Linux login-faculty.ccs.neu.edu 3.10.0-1127.19.1.el7.x86_64 #1 SMP Tue Aug 25 17:23:54 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+CPU Info Linux: model name	: Intel(R) Xeon(R) Gold 5118 CPU @ 2.30GHz
+CPU Cores Linux: 48
+CPU Info Mac: 
+CPU Cores Mac: 
+Spec: MCMongoLoglessDynamicRaftRefinement.tla
+Config: models/MCMongoLoglessDynamicRaftRefinement-5Servers-T2-CV2.cfg
+----
+INIT InitAux
+NEXT NextAux
+CONSTANTS 
+Nil = Nil
+Server = {n1, n2, n3, n4, n5}
+Secondary = Secondary
+Primary = Primary
+MaxTerm = 2
+MaxConfigVersion = 2
+CONSTRAINT StateConstraint
+INVARIANT StateMachineSafety
+VIEW ViewRemoveElectionsAndLogVars
+SYMMETRY ServerSymmetry
+ALIAS Alias
+----
+
+TLC2 Version 2.15 of Day Month 20?? (rev: adc67eb)
+Running breadth-first search Model-Checking with fp 126 and seed 2903865450059486146 with 1 worker on 48 cores with 27305MB heap and 4096MB offheap memory (Linux 3.10.0-1127.19.1.el7.x86_64 amd64, Oracle Corporation 1.8.0_262 x86_64, OffHeapDiskFPSet, DiskStateQueue).
+Parsing file /proj/will-fm/logless-reconfig/refinement/MCMongoLoglessDynamicRaftRefinement.tla
+Parsing file /tmp/TLC.tla
+Parsing file /proj/will-fm/logless-reconfig/refinement/MongoLoglessDynamicRaftRefinement.tla
+Parsing file /proj/will-fm/logless-reconfig/refinement/MongoLoglessDynamicRaft.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/Integers.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Parsing file /proj/will-fm/logless-reconfig/refinement/MongoSafeWeakRaft.tla
+Parsing file /proj/will-fm/logless-reconfig/refinement/MongoWeakRaft.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module MongoLoglessDynamicRaft
+Semantic processing of module MongoWeakRaft
+Semantic processing of module MongoSafeWeakRaft
+Semantic processing of module MongoLoglessDynamicRaftRefinement
+Semantic processing of module MCMongoLoglessDynamicRaftRefinement
+Starting... (2021-02-02 09:59:25)
+Computing initial states...
+Computed 2 initial states...
+Computed 4 initial states...
+Computed 8 initial states...
+Computed 16 initial states...
+Finished computing initial states: 31 states generated, with 5 of them distinct at 2021-02-02 09:59:26.
+Progress(7) at 2021-02-02 09:59:29: 22,429 states generated (22,429 s/min), 4,779 distinct states found (4,779 ds/min), 3,203 states left on queue.
+Progress(12) at 2021-02-02 10:00:29: 736,280 states generated (713,851 s/min), 51,546 distinct states found (46,767 ds/min), 8,803 states left on queue.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 4.1E-9
+  based on the actual fingerprints:  val = 3.3E-10
+1239555 states generated, 64914 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 15.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 20 and the 95th percentile is 3).
+Finished in 01min 54s at (2021-02-02 10:01:19)
