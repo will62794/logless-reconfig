@@ -18,7 +18,7 @@ which will download a pinned version of `tla2tools.jar` to the current directory
 ```
 This will run the specification `<spec_name>.tla` with TLC configuration `models/<config_file>` with `<worker_count>` TLC worker threads. It will save the results of the execution, along with auxiliary information about the run, into a timestamped file in `specs/tlc-results`. 
 
-For example, to verify the `StateMachineSafety` property of `MongoRaftReconfig` and `MongoLoglessDynamicRaft`, respectively, you can run the following models:
+<!-- For example, to verify the `StateMachineSafety` property of `MongoRaftReconfig` and `MongoLoglessDynamicRaft`, respectively, you can run the following models:
 
 ```bash
 ./checkmodel.sh models/MCMongoRaftReconfig_4Servers-L2-T2-CV3.cfg MCMongoRaftReconfig 1
@@ -27,7 +27,7 @@ For example, to verify the `StateMachineSafety` property of `MongoRaftReconfig` 
 ```bash
 ./checkmodel.sh models/MCMongoLoglessDynamicRaftRefinement-4Servers-T4-CV4.cfg MCMongoLoglessDynamicRaftRefinement 1
 ```
-Complete verification for these models may take several minutes or hours depending on the speed of your machine. 
+Complete verification for these models may take several minutes or hours depending on the speed of your machine.  -->
 
  <!-- ## Checking Refinement
 
