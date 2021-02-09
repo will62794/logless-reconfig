@@ -17,7 +17,7 @@ which will download a pinned version of `tla2tools.jar` to the current directory
 ```
 ./checkmodel.sh <config_file> <spec_name> <worker_count>
 ```
-The `./checkmodel.sh <config_file> <spec_name> <worker_count>` script runs the given specification and configuration with the specified worker count, and saves the results of the execution, along with auxiliary information about the run into a timestamped file in `specs/notes/tlc-results`. 
+The `./checkmodel.sh <config_file> <spec_name> <worker_count>` script runs the given specification and configuration with the specified worker count, and saves the results of the execution, along with auxiliary information about the run into a timestamped file in `specs/tlc-results`. 
 
 For example, to verify the `StateMachineSafety` property of `MongoRaftReconfig` and `MongoLoglessDynamicRaft`, respectively, you can run the following models:
 
