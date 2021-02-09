@@ -1,6 +1,5 @@
 
-# Logless Dynamic Reconfiguration in MongoDB: TLA+ Specifications
-
+# TLA+ Specification of Logless Dynamic Reconfiguration in MongoDB
 
 This repository contains TLA+ specifications for defining and verifying the logless dynamic reconfiguration protocol used in the MongoDB replication system. The protocol, which is specified in the [`MongoRaftReconfig`](specs/MongoRaftReconfig.tla) specification, extends the static MongoDB replication protocol to allow for dynamic membership changes. `MongoRaftReconfig` is formally specified as a composition of two subprotocols, [`MongoStaticRaft`](specs/MongoStaticRaft.tla) and [`MongoLoglessDynamicRaft`](specs/MongoLoglessDynamicRaft.tla). The former is responsible for managing the oplog, which handles user database operations, while the latter manages the configuration state of the replica set in a separate, logless replicated state machine.
 
