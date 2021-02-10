@@ -55,7 +55,7 @@ NextAux ==
     \* Record commits explicitly to simulate the behavior of MongoSafeWeakRaft.
     \/ CommitConfigAux
 
-MSWR == INSTANCE MongoSafeWeakRaft WITH 
+MWR == INSTANCE MongoWeakRaft WITH 
         currentTerm <- currentTerm,
         state <- state,
         log <- log,
@@ -63,15 +63,5 @@ MSWR == INSTANCE MongoSafeWeakRaft WITH
         elections <- elections,
         committed <- committed
 
-RefinesMSWR == MSWR!Spec
-
-WeakQuorumCondition1 == \A s \in Server : \A Q \in MSWR!MWR!QuorumsAt(s) : MSWR!QC_1(s, Q)
-WeakQuorumCondition2 == \A s \in Server : \A Q \in MSWR!MWR!QuorumsAt(s) : MSWR!QC_2(s, Q)
-WeakQuorumCondition3 == \A s \in Server : \A Q \in MSWR!MWR!QuorumsAt(s) : MSWR!QC_3(s, Q)
-
-WeakQuorumCondition == MSWR!WeakQuorumCondition
-
-TermSafetyCondition == MSWR!TermSafetyCondition
-
-StateMachineSafety == MSWR!MWR!StateMachineSafety
+StateMachineSafety == MWR!StateMachineSafety
 ====

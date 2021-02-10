@@ -33,7 +33,6 @@ Alias ==
         \* config |-> config,
         elections |-> elections,
         committed |-> committed,
-        MWRCommitEntryEnabled |-> \E s \in Server : \E Q \in QuorumsAt(s) : ENABLED MSWR!MWR!CommitEntry(s, Q),
         \* config |-> config,
         \* reconfigs |-> ReconfigPairsAll,
         \* electionLogIndexes |-> [s \in Server |-> ElectionLogIndex(s)]
