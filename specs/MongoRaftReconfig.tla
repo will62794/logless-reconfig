@@ -9,10 +9,6 @@ EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 CONSTANTS Server
 CONSTANTS Secondary, Primary, Nil
 
-(***************************************************************************)
-(* Replication related variables.                                          *)
-(***************************************************************************)
-
 VARIABLE currentTerm
 VARIABLE state
 \* Oplog state machine.
