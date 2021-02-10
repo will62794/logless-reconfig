@@ -1,4 +1,4 @@
----- MODULE MongoLoglessDynamicRaftRefinement ----
+---- MODULE MongoLoglessDynamicRaftAux ----
 EXTENDS TLC, MongoLoglessDynamicRaft
 
 \*

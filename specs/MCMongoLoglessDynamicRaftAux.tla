@@ -1,5 +1,5 @@
----- MODULE MCMongoLoglessDynamicRaftRefinement ----
-EXTENDS TLC, MongoLoglessDynamicRaftRefinement
+---- MODULE MCMongoLoglessDynamicRaftAux ----
+EXTENDS TLC, MongoLoglessDynamicRaftAux
 
 CONSTANTS MaxTerm, MaxConfigVersion
 

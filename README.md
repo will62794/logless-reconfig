@@ -25,7 +25,7 @@ This will run the specification `<spec_name>.tla` with TLC configuration `models
 ```
 
 ```bash
-./checkmodel.sh models/MCMongoLoglessDynamicRaftRefinement-4Servers-T4-CV4.cfg MCMongoLoglessDynamicRaftRefinement 1
+./checkmodel.sh models/MCMongoLoglessDynamicRaftAux-4Servers-T4-CV4.cfg MCMongoLoglessDynamicRaftAux 1
 ```
 Complete verification for these models may take several minutes or hours depending on the speed of your machine.  -->
 
