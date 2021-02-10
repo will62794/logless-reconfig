@@ -2,12 +2,12 @@
 EXTENDS TLC, MongoLoglessDynamicRaft
 
 \*
-\* Auxiliary specification for defining the refinement mapping between MongoLoglessDynamicRaft
-\* and MongoSafeWeakRaft. Defines the conceptual mapping between the "logless" protocol
-\* and the "log-based" versions of the protocol e.g. MongoSafeWeakRaft.
+\* Extended version of MongoLoglessDynamicRaft that includes history variables
+\* for checking correctness properties and for defining refinement mapping between
+\* between the "logless" protocol and a log-based versions of the protocol.
 \*
 
-\* Auxiliary variables needed for the refinement mapping.
+\* Auxiliary history variables.
 VARIABLE log
 VARIABLE elections
 VARIABLE committed

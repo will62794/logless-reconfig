@@ -1,5 +1,8 @@
 ---- MODULE MongoLoglessDynamicRaft ----
-\* The logless, dynamic Raft protocol for reconfiguration.
+\*
+\* Logless protocol for managing configuration state reconfiguration in MongoDB 
+\* replication.
+\*
 
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 
@@ -12,9 +15,8 @@ VARIABLE configVersion
 VARIABLE configTerm
 VARIABLE config
 
-serverVars == <<currentTerm, state>>
 configVars == <<configVersion, configTerm, config>>
-vars == <<serverVars, configVersion, configTerm, config>>
+vars == <<currentTerm, state, configVersion, configTerm, config>>
 
 (***************************************************************************)
 (* Helper operators.                                                       *)
@@ -114,12 +116,10 @@ BecomeLeader(i, voteQuorum) ==
 
 \* A reconfig occurs on node i. The node must currently be a leader.
 Reconfig(i, newConfig) ==
-    (* PRE *)
     /\ state[i] = Primary
     /\ ConfigIsCommitted(i)
     /\ QuorumsOverlap(config[i], newConfig)
     /\ i \in newConfig
-    (* POST *)
     /\ configTerm' = [configTerm EXCEPT ![i] = currentTerm[i]]
     /\ configVersion' = [configVersion EXCEPT ![i] = configVersion[i] + 1]
     /\ config' = [config EXCEPT ![i] = newConfig]
@@ -127,7 +127,6 @@ Reconfig(i, newConfig) ==
 
 \* Node i sends its current config to node j.
 SendConfig(i, j) ==
-    (* PRE *)
     /\ state[j] = Secondary
     /\ IsNewerConfig(i, j)
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
@@ -154,31 +153,5 @@ Next ==
     \/ \E s,t \in Server : UpdateTerms(s,t)
 
 Spec == Init /\ [][Next]_vars
-
-ElectionSafety == \A x,y \in Server : 
-    (/\ (state[x] = Primary) /\ (state[y] = Primary) 
-     /\  currentTerm[x] = currentTerm[y]) => (x = y)
-
-
-\* TODO: Refinement mapping here needs auxiliary variables in this spec.
-\*
-\* Auxiliary variables.
-\* VARIABLE log
-\* VARIABLE configLog
-\*
-\* MDR == INSTANCE MongoDynamicRaft 
-\*     WITH MaxTerm <- MaxTerm,
-\*          MaxLogLen <- MaxLogLen,
-\*          MaxConfigVersion <- MaxConfigVersion,
-\*          Server <- Server,
-\*          Secondary <- Secondary,
-\*          Primary <- Primary,
-\*          Nil <- Nil,
-\*          currentTerm <- currentTerm,
-\*          state <- state,
-\*          config <- config,
-\*          configLog <- \* ? need auxiliary variable.
-\*          elections <- elections,
-\*          committed <- committed
 
 =============================================================================

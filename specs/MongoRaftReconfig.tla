@@ -150,28 +150,14 @@ Next ==
 
 Spec == Init /\ [][Next]_vars
 
+\*
+\* Correctness properties.
+\*
+
 ElectionSafety == OSM!ElectionSafety
 
 StateMachineSafety == OSM!StateMachineSafety
 
 LeaderCompleteness == OSM!MWR!LeaderCompleteness
-
-\* If an election has occurred in term T, then no leader should be able to
-\* commit writes in terms U < T. A sufficient condition to check this is to
-\* ensure that, for all past elections E, any current primary P in a term <
-\* E.term is deactivated from committing. 
-\*
-\* We can check for deactivation of a primary P in term U by checking that all
-\* of its quorums contain some node V whose term is > U . This ensures that such
-\* a primary could no longer commit writes now, or ever again in the future.
-ElectionDisablesOldTerms == 
-    \A e \in elections : 
-    \A s \in Server : 
-    (state[s] = Primary /\ currentTerm[s] < e.term) => 
-        \A Q \in QuorumsAt(s) : 
-        \E v \in Q : currentTerm[v] > currentTerm[s]
-    
-
-THEOREM MongoRaftReconfigSafety == Spec => StateMachineSafety
 
 =============================================================================

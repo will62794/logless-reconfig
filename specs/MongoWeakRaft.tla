@@ -6,10 +6,6 @@ EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 CONSTANTS Server
 CONSTANTS Secondary, Primary, Nil
 
-(***************************************************************************)
-(* Replication related variables.                                          *)
-(***************************************************************************)
-
 VARIABLE currentTerm
 VARIABLE state
 VARIABLE log
@@ -288,9 +284,22 @@ LeaderCompleteness ==
 StateMachineSafety == 
     \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
 
+\* If an election has occurred in term T, then no leader should be able to
+\* commit writes in terms U < T. A sufficient condition to check this is to
+\* ensure that, for all past elections E, any current primary P in a term <
+\* E.term is deactivated from committing. 
+\*
+\* We can check for deactivation of a primary P in term U by checking that all
+\* of its quorums contain some node V whose term is > U . This ensures that such
+\* a primary could no longer commit writes now, or ever again in the future.
+ElectionDisablesOldTerms == 
+    \A e \in elections : 
+    \A s \in Server : 
+    (state[s] = Primary /\ currentTerm[s] < e.term) => 
+        \A Q \in QuorumsAt(s) : 
+        \E v \in Q : currentTerm[v] > currentTerm[s]
+
 \* This weak protocol should not be safe.
 THEOREM ~(Spec => []StateMachineSafety)
-
-\* THEOREM StrictQuorumSafety == SpecStrictQuorums => []StateMachineSafety
 
 =============================================================================
