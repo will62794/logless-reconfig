@@ -21,7 +21,6 @@ Alias ==
         log |-> log,
         config |-> config,
         elections |-> elections,
-        committed |-> committed,
-        futureCommitted |-> {e \in MWR!LogEntriesAll : MWR!IsFutureCommitted(e)}
+        committed |-> committed
     ]
 ====
