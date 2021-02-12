@@ -7,11 +7,7 @@ StateConstraint == \A s \in Server :
                     /\ currentTerm[s] <= MaxTerm
                     /\ configVersion[s] <= MaxConfigVersion
 
-MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
-
 ServerSymmetry == Permutations(Server)
-
-ViewRemoveElectionsAndLogVars == <<currentTerm,state,config,configVersion,configTerm,committed>>
 
 \*
 \* For easier debugging.
@@ -31,7 +27,6 @@ Alias ==
         \* state |-> state,
         log |-> log,
         \* config |-> config,
-        elections |-> elections,
         committed |-> committed,
         \* config |-> config,
         \* reconfigs |-> ReconfigPairsAll,

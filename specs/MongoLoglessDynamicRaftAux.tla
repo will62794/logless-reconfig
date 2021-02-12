@@ -9,34 +9,29 @@ EXTENDS TLC, MongoLoglessDynamicRaft
 
 \* Auxiliary history variables.
 VARIABLE log
-VARIABLE elections
 VARIABLE committed
 
 InitAux == 
     /\ Init
     /\ log = [s \in Server |-> <<>>] 
-    /\ elections = {}
     /\ committed = {}
 
 ReconfigAux == 
     \E s \in Server, newConfig \in SUBSET Server : 
         /\ Reconfig(s, newConfig) 
         /\ log' = [log EXCEPT ![s] = Append(log[s], currentTerm[s])]
-        /\ UNCHANGED <<elections, committed>>
+        /\ UNCHANGED <<committed>>
 
 SendConfigAux == 
     \E s,t \in Server : 
         /\ SendConfig(s, t)
         /\ log' = [log EXCEPT ![t] = log[s]]
-        /\ UNCHANGED <<elections, committed>>
+        /\ UNCHANGED <<committed>>
 
 BecomeLeaderAux == 
     \E i \in Server : \E Q \in Quorums(config[i]) :  
         /\ BecomeLeader(i, Q)
         /\ log' = [log EXCEPT ![i] = Append(log[i], currentTerm[i] + 1)]
-        /\ elections' = elections \cup 
-            {[ leader  |-> i, 
-                term   |-> currentTerm[i] + 1 ]}
         /\ UNCHANGED <<committed>>  
 
 CommitConfigAux == 
@@ -45,7 +40,7 @@ CommitConfigAux ==
         /\ committed' = committed \cup 
             {[ entry  |-> <<Len(log[s]), configTerm[s]>>,
                 term  |-> currentTerm[s]]}
-        /\ UNCHANGED <<currentTerm, log, state, elections, config, configVersion, configTerm>>
+        /\ UNCHANGED <<currentTerm, log, state, config, configVersion, configTerm>>
 
 \* Next state relation with auxiliary variables.
 NextAux ==
@@ -55,13 +50,8 @@ NextAux ==
     \* Record commits explicitly to simulate the behavior of MongoSafeWeakRaft.
     \/ CommitConfigAux
 
-MWR == INSTANCE MongoWeakRaft WITH 
-        currentTerm <- currentTerm,
-        state <- state,
-        log <- log,
-        config <- config,
-        elections <- elections,
-        committed <- committed
+\* If two entries are committed at the same index, they must be the same entry.
+StateMachineSafety == 
+    \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
 
-StateMachineSafety == MWR!StateMachineSafety
 ====
