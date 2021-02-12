@@ -8,7 +8,5 @@ StateConstraint == \A s \in Server :
                     /\ currentTerm[s] <= MaxTerm
                     /\ configVersion[s] <= MaxConfigVersion
 
-MaxTermInvariant ==  \A s \in Server : currentTerm[s] <= MaxTerm
-
 ServerSymmetry == Permutations(Server)
 ====

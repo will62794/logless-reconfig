@@ -112,7 +112,7 @@ RollbackEntries(i, j) ==
     /\ CanRollback(i, j)
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
-    /\ UNCHANGED <<elections, committed, currentTerm, state>>
+    /\ UNCHANGED <<elections, committed, currentTerm, state, config>>
 
 \* Node 'i' gets elected as a primary.
 BecomeLeader(i, voteQuorum) == 
@@ -171,15 +171,13 @@ Init ==
     /\ elections = {}
     /\ committed = {}
 
-NextStatic == 
+Next == 
     \/ \E s \in Server : ClientRequest(s)
     \/ \E s, t \in Server : GetEntries(s, t)
     \/ \E s, t \in Server : RollbackEntries(s, t)
     \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
     \/ \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
     \/ \E s,t \in Server : UpdateTerms(s, t)
-
-Next == NextStatic /\ UNCHANGED config
 
 Spec == Init /\ [][Next]_vars
 

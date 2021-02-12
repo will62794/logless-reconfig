@@ -9,25 +9,21 @@ EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 CONSTANTS Server
 CONSTANTS Secondary, Primary, Nil
 
+VARIABLE log
+VARIABLE committed
 VARIABLE currentTerm
 VARIABLE state
-\* Oplog state machine.
-VARIABLE log
-\* Config state machine.
+VARIABLE config
 VARIABLE configVersion
 VARIABLE configTerm
-VARIABLE config
 
 VARIABLE elections
-VARIABLE committed
 
-serverVars == <<currentTerm, state, log>>
-configVars == <<configVersion, configTerm, config>>
-vars == <<serverVars, configVersion, configTerm, config, log, elections, committed>>
+vars == <<currentTerm, state, log, configVersion, configTerm, config, log, elections, committed>>
 
-(***************************************************************************)
-(* Helper operators.                                                       *)
-(***************************************************************************)
+\*
+\* Helper operators.
+\*
 
 \* The set of all quorums of a given set.
 Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
@@ -151,9 +147,7 @@ Spec == Init /\ [][Next]_vars
 \*
 
 ElectionSafety == OSM!ElectionSafety
-
 StateMachineSafety == OSM!StateMachineSafety
-
 LeaderCompleteness == OSM!LeaderCompleteness
 
 =============================================================================

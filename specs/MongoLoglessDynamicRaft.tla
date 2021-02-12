@@ -1,7 +1,7 @@
 ---- MODULE MongoLoglessDynamicRaft ----
 \*
-\* Logless protocol for managing configuration state reconfiguration in MongoDB 
-\* replication.
+\* Logless protocol for managing configuration state for dynamic reconfiguration
+\* in MongoDB replication.
 \*
 
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
@@ -15,12 +15,11 @@ VARIABLE configVersion
 VARIABLE configTerm
 VARIABLE config
 
-configVars == <<configVersion, configTerm, config>>
 vars == <<currentTerm, state, configVersion, configTerm, config>>
 
-(***************************************************************************)
-(* Helper operators.                                                       *)
-(***************************************************************************)
+\*
+\* Helper operators.
+\*
 
 \* The set of all quorums of a given set.
 Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
@@ -84,9 +83,9 @@ ConfigIsCommitted(s) ==
 
 -------------------------------------------------------------------------------------------
 
-(***************************************************************************)
-(* Next state actions.                                                     *)
-(***************************************************************************)
+\*
+\* Next state actions.
+\*
 
 \* Update terms if node 'i' has a newer term than node 'j' and ensure 'j' reverts to Secondary state.
 UpdateTermsExpr(i, j) ==
@@ -96,7 +95,7 @@ UpdateTermsExpr(i, j) ==
 
 UpdateTerms(i, j) == 
     /\ UpdateTermsExpr(i, j)
-    /\ UNCHANGED <<configVars>>
+    /\ UNCHANGED <<configVersion, configTerm, config>>
 
 BecomeLeader(i, voteQuorum) == 
     \* Primaries make decisions based on their current configuration.
@@ -133,9 +132,6 @@ SendConfig(i, j) ==
     /\ configTerm' = [configTerm EXCEPT ![j] = configTerm[i]]
     /\ config' = [config EXCEPT ![j] = config[i]]
     /\ UNCHANGED <<currentTerm, state>>
-
-
-csmVars == <<configVersion, configTerm, config>>
 
 Init == 
     /\ currentTerm = [i \in Server |-> 0]
