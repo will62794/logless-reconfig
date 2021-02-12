@@ -193,6 +193,11 @@ ElectionSafety ==
     \A e1, e2 \in elections : 
         (e1.term = e2.term) => (e1.leader = e2.leader)
 
+\* When a node gets elected as primary it contains all entries committed in previous terms.
+LeaderCompleteness == 
+    \A s \in Server : (state[s] = Primary) => 
+        \A c \in committed : (c.term < currentTerm[s] => InLog(c.entry, s))
+
 \* If two entries are committed at the same index, they must be the same entry.
 StateMachineSafety == 
     \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)

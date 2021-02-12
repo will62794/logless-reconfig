@@ -85,7 +85,7 @@ OSMNext ==
     \/ \E s \in Server : OSM!ClientRequest(s)
     \/ \E s, t \in Server : OSM!GetEntries(s, t)
     \/ \E s, t \in Server : OSM!RollbackEntries(s, t)
-    \/ \E s \in Server :  \E Q \in OSM!MWR!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+    \/ \E s \in Server :  \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
 
 \* Check whether the entry at "index" on "primary" is committed in the primary's current config.
 IsCommitted(index, primary) ==
@@ -154,6 +154,6 @@ ElectionSafety == OSM!ElectionSafety
 
 StateMachineSafety == OSM!StateMachineSafety
 
-LeaderCompleteness == OSM!MWR!LeaderCompleteness
+LeaderCompleteness == OSM!LeaderCompleteness
 
 =============================================================================
