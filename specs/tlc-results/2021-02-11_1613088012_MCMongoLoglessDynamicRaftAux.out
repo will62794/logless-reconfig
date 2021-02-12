@@ -1,0 +1,58 @@
+Git Revision: b712ba1
+Platform: Linux login-faculty.ccs.neu.edu 3.10.0-1127.19.1.el7.x86_64 #1 SMP Tue Aug 25 17:23:54 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+CPU Info Linux: model name	: Intel(R) Xeon(R) Gold 5118 CPU @ 2.30GHz
+CPU Cores Linux: 48
+CPU Info Mac: 
+CPU Cores Mac: 
+Spec: MCMongoLoglessDynamicRaftAux.tla
+Config: models/MCMongoLoglessDynamicRaftAux-3Servers-T2-CV3.cfg
+----
+INIT InitAux
+NEXT NextAux
+CONSTANTS 
+Nil = Nil
+Server = {n1, n2, n3}
+Secondary = Secondary
+Primary = Primary
+MaxTerm = 2
+MaxConfigVersion = 3
+CONSTRAINT StateConstraint
+INVARIANT StateMachineSafety
+VIEW ViewRemoveElectionsAndLogVars
+SYMMETRY ServerSymmetry
+ALIAS Alias
+----
+
+TLC2 Version 2.15 of Day Month 20?? (rev: fe75b8e)
+Running breadth-first search Model-Checking with fp 43 and seed 6844433050054410437 with 1 worker on 48 cores with 27305MB heap and 4096MB offheap memory (Linux 3.10.0-1127.19.1.el7.x86_64 amd64, Oracle Corporation 1.8.0_262 x86_64, OffHeapDiskFPSet, DiskStateQueue).
+Parsing file /proj/will-fm/logless-reconfig/specs/MCMongoLoglessDynamicRaftAux.tla
+Parsing file /tmp/TLC.tla
+Parsing file /proj/will-fm/logless-reconfig/specs/MongoLoglessDynamicRaftAux.tla
+Parsing file /proj/will-fm/logless-reconfig/specs/MongoLoglessDynamicRaft.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/Integers.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Parsing file /proj/will-fm/logless-reconfig/specs/MongoWeakRaft.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module MongoLoglessDynamicRaft
+Semantic processing of module MongoWeakRaft
+Semantic processing of module MongoLoglessDynamicRaftAux
+Semantic processing of module MCMongoLoglessDynamicRaftAux
+Starting... (2021-02-11 19:00:13)
+Computing initial states...
+Computed 2 initial states...
+Computed 4 initial states...
+Finished computing initial states: 7 states generated, with 3 of them distinct at 2021-02-11 19:00:15.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 9.5E-11
+119341 states generated, 17156 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 14.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 11 and the 95th percentile is 4).
+Finished in 05s at (2021-02-11 19:00:18)
