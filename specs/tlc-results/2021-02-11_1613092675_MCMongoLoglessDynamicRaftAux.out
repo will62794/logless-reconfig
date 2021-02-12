@@ -1,0 +1,81 @@
+Git Revision: c15f159
+Platform: Linux login-faculty.ccs.neu.edu 3.10.0-1127.19.1.el7.x86_64 #1 SMP Tue Aug 25 17:23:54 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+CPU Info Linux: model name	: Intel(R) Xeon(R) Gold 5118 CPU @ 2.30GHz
+CPU Cores Linux: 48
+CPU Info Mac: 
+CPU Cores Mac: 
+Spec: MCMongoLoglessDynamicRaftAux.tla
+Config: models/MCMongoLoglessDynamicRaftAux-4Servers-T3-CV4.cfg
+----
+INIT InitAux
+NEXT NextAux
+CONSTANTS 
+Nil = Nil
+Server = {n1, n2, n3, n4}
+Secondary = Secondary
+Primary = Primary
+MaxTerm = 3
+MaxConfigVersion = 4
+CONSTRAINT StateConstraint
+INVARIANT StateMachineSafety
+VIEW ViewRemoveElectionsAndLogVars
+SYMMETRY ServerSymmetry
+ALIAS Alias
+----
+
+TLC2 Version 2.15 of Day Month 20?? (rev: fe75b8e)
+Warning: Please run the Java VM, which executes TLC with a throughput optimized garbage collector, by passing the "-XX:+UseParallelGC" property.
+(Use the -nowarning option to disable this warning.)
+Running breadth-first search Model-Checking with fp 108 and seed -2021807658224127577 with 12 workers on 48 cores with 30688MB heap and 4096MB offheap memory [pid: 175451] (Linux 3.10.0-1127.19.1.el7.x86_64 amd64, Oracle Corporation 11.0.8 x86_64, OffHeapDiskFPSet, DiskStateQueue).
+Parsing file /proj/will-fm/logless-reconfig/specs/MCMongoLoglessDynamicRaftAux.tla
+Parsing file /tmp/TLC.tla
+Parsing file /proj/will-fm/logless-reconfig/specs/MongoLoglessDynamicRaftAux.tla
+Parsing file /proj/will-fm/logless-reconfig/specs/MongoLoglessDynamicRaft.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/Integers.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Parsing file /proj/will-fm/logless-reconfig/specs/MongoWeakRaft.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module MongoLoglessDynamicRaft
+Semantic processing of module MongoWeakRaft
+Semantic processing of module MongoLoglessDynamicRaftAux
+Semantic processing of module MCMongoLoglessDynamicRaftAux
+Starting... (2021-02-11 20:17:56)
+Computing initial states...
+Computed 2 initial states...
+Computed 4 initial states...
+Computed 8 initial states...
+Finished computing initial states: 15 states generated, with 4 of them distinct at 2021-02-11 20:17:57.
+Progress(12) at 2021-02-11 20:18:00: 449,127 states generated (449,127 s/min), 141,092 distinct states found (141,092 ds/min), 92,425 states left on queue.
+Progress(15) at 2021-02-11 20:19:00: 11,895,075 states generated (11,445,948 s/min), 2,607,655 distinct states found (2,466,563 ds/min), 1,349,621 states left on queue.
+Progress(15) at 2021-02-11 20:20:00: 23,938,257 states generated (12,043,182 s/min), 4,702,513 distinct states found (2,094,858 ds/min), 2,192,366 states left on queue.
+Progress(16) at 2021-02-11 20:21:00: 40,213,913 states generated (16,275,656 s/min), 7,207,102 distinct states found (2,504,589 ds/min), 3,031,926 states left on queue.
+Progress(16) at 2021-02-11 20:22:00: 57,022,529 states generated (16,808,616 s/min), 9,679,968 distinct states found (2,472,866 ds/min), 3,786,925 states left on queue.
+Progress(17) at 2021-02-11 20:23:00: 75,031,362 states generated (18,008,833 s/min), 11,822,988 distinct states found (2,143,020 ds/min), 4,138,431 states left on queue.
+Progress(17) at 2021-02-11 20:24:00: 92,954,921 states generated (17,923,559 s/min), 13,945,308 distinct states found (2,122,320 ds/min), 4,467,516 states left on queue.
+Progress(17) at 2021-02-11 20:25:00: 111,096,425 states generated (18,141,504 s/min), 15,887,353 distinct states found (1,942,045 ds/min), 4,651,066 states left on queue.
+Progress(18) at 2021-02-11 20:26:00: 129,422,723 states generated (18,326,298 s/min), 17,650,450 distinct states found (1,763,097 ds/min), 4,625,027 states left on queue.
+Progress(18) at 2021-02-11 20:27:00: 147,815,799 states generated (18,393,076 s/min), 19,673,312 distinct states found (2,022,862 ds/min), 4,844,071 states left on queue.
+Progress(18) at 2021-02-11 20:28:00: 166,595,559 states generated (18,779,760 s/min), 21,002,916 distinct states found (1,329,604 ds/min), 4,449,675 states left on queue.
+Progress(19) at 2021-02-11 20:29:00: 184,909,693 states generated (18,314,134 s/min), 22,429,251 distinct states found (1,426,335 ds/min), 4,150,964 states left on queue.
+Progress(19) at 2021-02-11 20:30:00: 203,724,087 states generated (18,814,394 s/min), 24,165,258 distinct states found (1,736,007 ds/min), 4,089,084 states left on queue.
+Progress(19) at 2021-02-11 20:31:00: 222,554,504 states generated (18,830,417 s/min), 25,230,031 distinct states found (1,064,773 ds/min), 3,506,513 states left on queue.
+Progress(20) at 2021-02-11 20:32:00: 240,956,294 states generated (18,401,790 s/min), 26,674,732 distinct states found (1,444,701 ds/min), 3,204,070 states left on queue.
+Progress(20) at 2021-02-11 20:33:00: 260,313,333 states generated (19,357,039 s/min), 27,557,743 distinct states found (883,011 ds/min), 2,458,284 states left on queue.
+Progress(21) at 2021-02-11 20:34:00: 278,598,669 states generated (18,285,336 s/min), 28,720,474 distinct states found (1,162,731 ds/min), 1,946,685 states left on queue.
+Progress(21) at 2021-02-11 20:35:00: 297,250,163 states generated (18,651,494 s/min), 29,473,252 distinct states found (752,778 ds/min), 1,149,462 states left on queue.
+Progress(23) at 2021-02-11 20:36:00: 315,554,029 states generated (18,303,866 s/min), 30,139,718 distinct states found (666,466 ds/min), 321,074 states left on queue.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 4.8E-4
+  based on the actual fingerprints:  val = 3.3E-5
+321405885 states generated, 30257145 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 26.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 20 and the 95th percentile is 4).
+Finished in 18min 25s at (2021-02-11 20:36:21)
