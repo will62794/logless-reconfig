@@ -191,6 +191,16 @@ ElectionSafety ==
     \A e1, e2 \in elections : 
         (e1.term = e2.term) => (e1.leader = e2.leader)
 
+LeaderAppendOnly == 
+    [][\A s \in Server : state[s] = Primary => Len(log'[s]) >= Len(log[s])]_vars
+
+\* <<index, term>> pairs uniquely identify log prefixes.
+LogMatching == 
+    \A s,t \in Server : 
+    \A i \in DOMAIN log[s] :
+        (\E j \in DOMAIN log[t] : i = j /\ log[s][i] = log[t][j]) => 
+        (SubSeq(log[s],1,i) = SubSeq(log[t],1,i)) \* prefixes must be the same.
+
 \* When a node gets elected as primary it contains all entries committed in previous terms.
 LeaderCompleteness == 
     \A s \in Server : (state[s] = Primary) => 
