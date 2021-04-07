@@ -147,9 +147,9 @@ CommitEntry(i, commitQuorum) ==
     /\ ImmediatelyCommitted(<<ind,currentTerm[i]>>, commitQuorum)
     \* Don't mark an entry as committed more than once.
     /\ ~\E c \in committed : c.entry = <<ind, currentTerm[i]>>
-    /\ committed' = committed \cup
-            {[ entry  |-> <<ind, currentTerm[i]>>,
-               term  |-> currentTerm[i]]}
+    \* Commit all entries in the log prefix.
+    /\ LET committedPrefix == {[entry |-> <<p,log[i][p]>>, term |-> currentTerm[i]] : p \in 1..ind} IN
+        committed' = committed \cup committedPrefix
     /\ UNCHANGED <<currentTerm, state, log, config, elections>>
 
 \* Action that exchanges terms between two nodes and step down the primary if
@@ -208,6 +208,6 @@ LeaderCompleteness ==
 
 \* If two entries are committed at the same index, they must be the same entry.
 StateMachineSafety == 
-    \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
+    \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1.entry = c2.entry)
 
 =============================================================================
