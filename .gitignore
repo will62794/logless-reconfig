@@ -6,6 +6,7 @@
 *.toolbox/*___Reconfig*_SnapShot*.launch
 *.toolbox/*___Inductive*_SnapShot*.launch
 *.toolbox/**/*.tla
+*.toolbox/**/*.tlaps
 *.toolbox/**/*.out
 *.toolbox/**/MC.cfg
 latex/
