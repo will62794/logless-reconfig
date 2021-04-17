@@ -174,7 +174,15 @@ PROOF
         <2>2. QED BY <2>1 DEF TypeOK
     <1>1. QED BY PrimaryAndSecondaryAreDifferent DEF TypeOK
 
-
+THEOREM AllLogsSmallerOrEqToElectedLeadersTerm ==
+ASSUME TypeOK, LemmaBasic,
+       NEW p \in Server, NEW Q \in QuorumsAt(p), BecomeLeader(p, Q)
+PROVE \A s \in Server : LastTerm(log[s]) <= currentTerm[p]
+PROOF
+    <1>. \A s \in Server : currentTerm[p] >= currentTerm[s]
+        BY ElectedLeadersHaveLatestTerm
+    <1>1. QED
+        BY DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm, LastTerm, TypeOK
 
 
 (* LemmaBasic /\ TypeOK /\ Next => LemmaBasic *)
@@ -258,11 +266,10 @@ PROOF
         <2>3. QED BY <2>1, <2>2 DEF TypeOK, UpdateTerms, UpdateTermsExpr
     <1>7. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
 
-THEOREM LemmaBasic /\ TypeOK /\ Next => CurrentTermAtLeastAsLargeAsLogTermsForPrimary'
+THEOREM CurrentTermAtLeastAsLargeAsLogTermsForPrimaryAndNext ==
+ASSUME LemmaBasic, TypeOK, Next
+PROVE CurrentTermAtLeastAsLargeAsLogTermsForPrimary'
 PROOF
-    <1>. SUFFICES ASSUME LemmaBasic, TypeOK, Next
-         PROVE CurrentTermAtLeastAsLargeAsLogTermsForPrimary'
-         OBVIOUS
     <1>. TypeOK'
         BY TypeOKAndNext
     <1>1. (\E s \in Server : ClientRequest(s)) => CurrentTermAtLeastAsLargeAsLogTermsForPrimary'
@@ -346,17 +353,16 @@ PROOF
         <2>1. state'[p] = Primary => (\A i \in DOMAIN log'[p] : currentTerm'[p] >= log'[p][i])
             <3>. state'[p] = Primary
                 BY DEF BecomeLeader
-            <3>. DEFINE AllTerms == {currentTerm[i] : i \in Server}
-            <3>. DEFINE MaxAllTerms == Max(AllTerms)
+            <3>. DEFINE MaxAllTerms == currentTerm[p]
             <3>1. currentTerm'[p] = currentTerm[p]+1
                 BY DEF BecomeLeader
             <3>5. currentTerm'[p] > LastTerm(log[p])
                 <4>1. \A u \in Server : currentTerm[p] >= currentTerm[u]
                     BY ElectedLeadersHaveLatestTerm
                 <4>2. \A t \in Server : LastTerm(log[t]) <= MaxAllTerms
-                    BY DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+                    BY AllLogsSmallerOrEqToElectedLeadersTerm
                 <4>3. \A t \in Server : currentTerm[p] >= LastTerm(log[t])
-                    BY <4>1, <4>2 DEF Max
+                    BY <4>1, <4>2
                 <4>4. currentTerm'[p] > LastTerm(log[p])
                     BY <3>1, <4>3 DEF TypeOK, LastTerm
                 <4>5. QED BY <4>4
@@ -441,11 +447,10 @@ PROOF
         <2>3. QED BY <2>1, <2>2
     <1>3. QED BY <1>1, <1>2, AppendDomain
 
-THEOREM LemmaBasic /\ TypeOK /\ Next => TermsOfEntriesGrowMonotonically'
+THEOREM TermsOfEntriesGrowMonotonicallyAndNext ==
+ASSUME LemmaBasic, TypeOK, Next
+PROVE TermsOfEntriesGrowMonotonically'
 PROOF
-    <1>. SUFFICES ASSUME LemmaBasic, TypeOK, Next
-         PROVE TermsOfEntriesGrowMonotonically'
-         PROOF OBVIOUS
     <1>. \A s \in Server : log'[s] = log[s] => \A i,j \in DOMAIN log'[s] : (i <= j) => (log'[s][i] <= log'[s][j])
         BY DEF LemmaBasic, TermsOfEntriesGrowMonotonically
     <1>. UNCHANGED log => TermsOfEntriesGrowMonotonically'
@@ -520,16 +525,13 @@ PROOF
             <3>. CASE log' = [log EXCEPT ![s] = Append(log[s], currentTerm[s]+1)]
                 <4>. log'[s] = Append(log[s], currentTerm[s]+1)
                     BY EXCEPT_Eq DEF TypeOK
-                <4>. DEFINE AllTerms == {currentTerm[i] : i \in Server}
-                <4>1. currentTerm[s] = Max(AllTerms)
-                    BY ElectedLeadersHaveLatestTerm DEF Max
-                <4>2. LastTerm(log[s]) <= currentTerm[s]
-                    BY <4>1 DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
-                <4>3. \A i \in DOMAIN log[s] : log[s][i] <= currentTerm[s] + 1
+                <4>1. LastTerm(log[s]) <= currentTerm[s]
+                    BY AllLogsSmallerOrEqToElectedLeadersTerm
+                <4>2. \A i \in DOMAIN log[s] : log[s][i] <= currentTerm[s] + 1
                     <5>1. \A i \in DOMAIN log[s] : log[s][i] <= LastTerm(log[s])
                         BY DEF LemmaBasic, TermsOfEntriesGrowMonotonically, LastTerm
-                    <5>2. QED BY <4>2, <5>1 DEF TypeOK, LastTerm
-                <4>4. QED BY <4>3, AppendLogProperties
+                    <5>2. QED BY <4>1, <5>1 DEF TypeOK, LastTerm
+                <4>3. QED BY <4>2, AppendLogProperties
             <3>1. QED BY DEF BecomeLeader
         <2>3 QED BY <2>1, <2>2 DEF TermsOfEntriesGrowMonotonically
     <1>5. (\E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => TermsOfEntriesGrowMonotonically'
@@ -539,11 +541,10 @@ PROOF
     <1>7. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
 
 
-THEOREM LemmaBasic /\ TypeOK /\ Next => OnePrimaryPerTerm'
+THEOREM OnePrimaryPerTermAndNext ==
+ASSUME LemmaBasic, TypeOK, Next
+PROVE OnePrimaryPerTerm'
 PROOF
-    <1>. SUFFICES ASSUME LemmaBasic, TypeOK, Next
-         PROVE OnePrimaryPerTerm'
-         PROOF OBVIOUS
     <1>1. (\E s \in Server : ClientRequest(s)) => OnePrimaryPerTerm'
         BY DEF ClientRequest, LemmaBasic, OnePrimaryPerTerm
     <1>2. (\E s, t \in Server : GetEntries(s, t)) => OnePrimaryPerTerm'
@@ -612,65 +613,370 @@ PROOF
 
 
 
-THEOREM LemmaBasic /\ TypeOK /\ Next => NonZeroLogsImplyExistsPrimary'
+THEOREM RollbackImpliesDifferentServers ==
+ASSUME TypeOK,
+       NEW s \in Server, NEW t \in Server,
+       RollbackEntries(s, t)
+PROVE s # t
 PROOF
-    <1>. SUFFICES ASSUME LemmaBasic, TypeOK, Next
-         PROVE NonZeroLogsImplyExistsPrimary'
-         PROOF OBVIOUS
+    <1>1. LastTerm(log[s]) < LastTerm(log[t])
+        BY DEF RollbackEntries, CanRollback
+    <1>2. log[s] # log[t]
+        <2>. Len(log[t]) > 0
+            BY DEF RollbackEntries, CanRollback, LastTerm, TypeOK
+        <2>. CASE Len(log[s]) = 0
+            <3>1. QED OBVIOUS
+        <2>. CASE Len(log[s]) > 0
+            <3>1. LastTerm(log[s]) = log[s][Len(log[s])]
+                BY DEF RollbackEntries, CanRollback, LastTerm
+            <3>2. LastTerm(log[t]) = log[t][Len(log[t])]
+                BY DEF RollbackEntries, CanRollback, LastTerm
+            <3>. DEFINE i == Len(log[s])
+            <3>3. \/ Len(log[t]) # Len(log[s])
+                  \/ /\ i = Len(log[t])
+                     /\ log[s][i] # log[t][i]
+                BY <1>1, <3>1, <3>2 DEF LastTerm, TypeOK
+            <3>4. QED BY <3>3
+        <2>1. QED OBVIOUS
+    <1>3. QED BY <1>2
+
+THEOREM NonZeroLogsImplyExistsPrimaryAndNext ==
+ASSUME LemmaBasic, TypeOK, Next
+PROVE NonZeroLogsImplyExistsPrimary'
+PROOF
     <1>1. (\E s \in Server : ClientRequest(s)) => NonZeroLogsImplyExistsPrimary'
         BY DEF ClientRequest, NonZeroLogsImplyExistsPrimary
     <1>2. (\E s, t \in Server : GetEntries(s, t)) => NonZeroLogsImplyExistsPrimary'
-        <2>. SUFFICES ASSUME NEW s \in Server, NEW t \in Server, GetEntries(s, t)
-             PROVE NonZeroLogsImplyExistsPrimary'
-             OBVIOUS
-        <2>. Len(log[t]) > Len(log[s])
-            BY DEF GetEntries
-        <2>1. Len(log[t]) > 0
-            BY LenProperties
-        <2>2. \E u \in Server : state[u] = Primary
-            BY <2>1 DEF LemmaBasic, NonZeroLogsImplyExistsPrimary
-        <2>3. QED BY <2>2 DEF GetEntries, NonZeroLogsImplyExistsPrimary
+        BY DEF GetEntries, LemmaBasic, NonZeroLogsImplyExistsPrimary
     <1>3. (\E s, t \in Server : RollbackEntries(s, t)) => NonZeroLogsImplyExistsPrimary'
-        <2>. SUFFICES ASSUME NEW s \in Server, \E t \in Server : RollbackEntries(s, t)
+        <2>. SUFFICES ASSUME NEW s \in Server, NEW t \in Server, RollbackEntries(s, t)
              PROVE NonZeroLogsImplyExistsPrimary'
              OBVIOUS
-        <2>1. Len(log[s]) > 0
-            BY DEF RollbackEntries, CanRollback
-        <2>2. \E u \in Server : state[u] = Primary
-            BY <2>1 DEF LemmaBasic, NonZeroLogsImplyExistsPrimary
-        <2>3. QED BY <2>2 DEF RollbackEntries, NonZeroLogsImplyExistsPrimary
+        <2>. Len(log[t]) > 0
+            BY DEF RollbackEntries, CanRollback, LastTerm, TypeOK
+        <2>. PICK p \in Server : state[p] = Primary
+            BY DEF LemmaBasic, NonZeroLogsImplyExistsPrimary
+        <2>1. state'[p] = Primary
+            BY RollbackImpliesDifferentServers DEF RollbackEntries
+        <2>2. QED BY <2>1 DEF NonZeroLogsImplyExistsPrimary
     <1>4. (\E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)) => NonZeroLogsImplyExistsPrimary'
         BY DEF BecomeLeader, NonZeroLogsImplyExistsPrimary
     <1>5. (\E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => NonZeroLogsImplyExistsPrimary'
         BY DEF CommitEntry, NonZeroLogsImplyExistsPrimary
     <1>6. (\E s,t \in Server : UpdateTerms(s, t)) => NonZeroLogsImplyExistsPrimary'
+        <2>. SUFFICES ASSUME NEW s \in Server, NEW t \in Server, UpdateTerms(s, t)
+             PROVE NonZeroLogsImplyExistsPrimary'
+             OBVIOUS
+        <2>1. currentTerm[s] > 0
+            BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+        <2>2. \E p \in Server : state[p] = Primary
+            BY <2>1, PrimaryAndSecondaryAreDifferent DEF LemmaBasic, AllSecondariesImplyInitialState, TypeOK
+        <2>. PICK p \in Server :
+                /\ state[p] = Primary
+                /\ \A u \in Server : currentTerm[p] >= currentTerm[u]
+            BY <2>2 DEF LemmaBasic, LargestPrimaryMustHaveAQuorumInTerm
+        <2>3. p # t
+            BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+        <2>4. state'[p] = Primary
+            BY <2>3 DEF UpdateTerms, UpdateTermsExpr, TypeOK
+        <2>5. QED
+            BY <2>4 DEF NonZeroLogsImplyExistsPrimary
     <1>7. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
 
 
-(* Template
 
-THEOREM LemmaBasic /\ TypeOK /\ Next => TypeOK'
+THEOREM AllSecondariesImplyInitialStateAndNext ==
+ASSUME LemmaBasic, TypeOK, Next
+PROVE AllSecondariesImplyInitialState'
 PROOF
-    <1>. SUFFICES ASSUME LemmaBasic, TypeOK, Next
-         PROVE TypeOK'
-         PROOF OBVIOUS
-    <1>1. (\E s \in Server : ClientRequest(s)) => TypeOK'
-    <1>2. (\E s, t \in Server : GetEntries(s, t)) => TypeOK'
-    <1>3. (\E s, t \in Server : RollbackEntries(s, t)) => TypeOK'
-    <1>4. (\E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)) => TypeOK'
-    <1>5. (\E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => TypeOK'
-    <1>6. (\E s,t \in Server : UpdateTerms(s, t)) => TypeOK'
+    <1>1. (\E s \in Server : ClientRequest(s)) => AllSecondariesImplyInitialState'
+        BY PrimaryAndSecondaryAreDifferent DEF ClientRequest, AllSecondariesImplyInitialState
+    <1>2. (\E s, t \in Server : GetEntries(s, t)) => AllSecondariesImplyInitialState'
+        <2>. SUFFICES ASSUME NEW s \in Server, NEW t \in Server, GetEntries(s, t)
+             PROVE AllSecondariesImplyInitialState'
+             OBVIOUS
+        <2>. PICK p \in Server : state[p] = Primary
+            BY DEF GetEntries, LemmaBasic, NonZeroLogsImplyExistsPrimary, TypeOK
+        <2>1. p # s
+            BY PrimaryAndSecondaryAreDifferent DEF GetEntries
+        <2>2. state'[p] = Primary
+            BY DEF GetEntries
+        <2>3. QED BY <2>2, PrimaryAndSecondaryAreDifferent DEF AllSecondariesImplyInitialState
+    <1>3. (\E s, t \in Server : RollbackEntries(s, t)) => AllSecondariesImplyInitialState'
+        <2>. SUFFICES ASSUME NEW s \in Server, NEW t \in Server, RollbackEntries(s, t)
+             PROVE AllSecondariesImplyInitialState'
+             OBVIOUS
+        <2>. PICK p \in Server : state[p] = Primary
+            <3>1. log[s] # <<>>
+                BY EmptySeq DEF RollbackEntries, CanRollback
+            <3>2. QED BY <3>1 DEF LemmaBasic, AllSecondariesImplyInitialState, TypeOK
+        <2>1. log[t] # <<>>
+            BY DEF RollbackEntries, CanRollback, LastTerm, TypeOK
+        <2>2. log'[t] = log[t]
+            BY RollbackImpliesDifferentServers DEF RollbackEntries, TypeOK
+        <2>3. QED BY <2>1, <2>2, PrimaryAndSecondaryAreDifferent DEF RollbackEntries, AllSecondariesImplyInitialState
+    <1>4. (\E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)) => AllSecondariesImplyInitialState'
+        BY PrimaryAndSecondaryAreDifferent DEF BecomeLeader, AllSecondariesImplyInitialState
+    <1>5. (\E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => AllSecondariesImplyInitialState'
+        BY PrimaryAndSecondaryAreDifferent DEF CommitEntry, AllSecondariesImplyInitialState
+    <1>6. (\E s,t \in Server : UpdateTerms(s, t)) => AllSecondariesImplyInitialState'
+        <2>. SUFFICES ASSUME NEW p \in Server, NEW s \in Server, UpdateTerms(p, s)
+             PROVE AllSecondariesImplyInitialState'
+             OBVIOUS
+        <2>1. \E t \in Server : state[t] = Primary
+              BY DEF UpdateTerms, UpdateTermsExpr, LemmaBasic, AllSecondariesImplyInitialState, TypeOK
+        <2>. PICK lp \in Server :
+                /\ state[lp] = Primary
+                /\ \A u \in Server : currentTerm[lp] >= currentTerm[u]
+            BY <2>1 DEF LemmaBasic, LargestPrimaryMustHaveAQuorumInTerm
+        <2>2. lp # s
+            BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+        <2>3. state'[lp] = state[lp]
+            BY <2>2 DEF UpdateTerms, UpdateTermsExpr
+        <2>4. QED BY <2>3, PrimaryAndSecondaryAreDifferent DEF AllSecondariesImplyInitialState
     <1>7. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
-*)
+
+
+
+THEOREM LargestPrimaryMustHaveAQuorumInTermAndNext ==
+ASSUME LemmaBasic, TypeOK, Next
+PROVE LargestPrimaryMustHaveAQuorumInTerm'
+PROOF
+    <1>1. (\E s \in Server : ClientRequest(s)) => LargestPrimaryMustHaveAQuorumInTerm'
+        BY DEF ClientRequest, LemmaBasic, QuorumsAt, Quorums, LargestPrimaryMustHaveAQuorumInTerm
+    <1>2. (\E s, t \in Server : GetEntries(s, t)) => LargestPrimaryMustHaveAQuorumInTerm'
+        BY DEF GetEntries, LemmaBasic, QuorumsAt, Quorums, LargestPrimaryMustHaveAQuorumInTerm
+    <1>3. (\E s, t \in Server : RollbackEntries(s, t)) => LargestPrimaryMustHaveAQuorumInTerm'
+        BY DEF RollbackEntries, LemmaBasic, QuorumsAt, Quorums, LargestPrimaryMustHaveAQuorumInTerm
+    <1>4. (\E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)) => LargestPrimaryMustHaveAQuorumInTerm'
+        <2>. SUFFICES ASSUME NEW p \in Server, NEW Q \in QuorumsAt(p), BecomeLeader(p, Q)
+             PROVE LargestPrimaryMustHaveAQuorumInTerm'
+             OBVIOUS
+        <2>1. state'[p] = Primary
+            BY DEF BecomeLeader
+        <2>2. \A u \in Server : currentTerm'[p] >= currentTerm'[u]
+            BY ElectedLeadersHaveLatestTerm DEF BecomeLeader, TypeOK
+        <2>3. \A q \in Q : currentTerm'[q] = currentTerm'[p]
+            BY QuorumsAreServerSubsets DEF BecomeLeader, TypeOK
+        <2>4. QED
+            BY <2>1, <2>2, <2>3 DEF LargestPrimaryMustHaveAQuorumInTerm, BecomeLeader, QuorumsAt, Quorums
+    <1>5. (\E s \in Server : \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => LargestPrimaryMustHaveAQuorumInTerm'
+        BY DEF CommitEntry, LemmaBasic, QuorumsAt, Quorums, LargestPrimaryMustHaveAQuorumInTerm
+    <1>6. (\E s,t \in Server : UpdateTerms(s, t)) => LargestPrimaryMustHaveAQuorumInTerm'
+        <2>. SUFFICES ASSUME NEW s \in Server, NEW t \in Server, UpdateTerms(s, t)
+             PROVE LargestPrimaryMustHaveAQuorumInTerm'
+             OBVIOUS
+        <2>. \E p \in Server : state[p] = Primary \* this could be a theorem
+            BY DEF UpdateTerms, UpdateTermsExpr, LemmaBasic, AllSecondariesImplyInitialState, TypeOK
+        <2>. PICK p \in Server :
+                     /\ state[p] = Primary
+                     /\ \A u \in Server : currentTerm[p] >= currentTerm[u]
+                     /\ \E Q \in QuorumsAt(p) :
+                           \A q \in Q : currentTerm[q] = currentTerm[p]
+            BY DEF LemmaBasic, LargestPrimaryMustHaveAQuorumInTerm
+        <2>. PICK Q \in QuorumsAt(p) : \A q \in Q : currentTerm[q] = currentTerm[p]
+            OBVIOUS
+        <2>. p # t
+            BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+        <2>1. state'[p] = Primary /\ currentTerm'[p] = currentTerm[p]
+            BY DEF UpdateTerms, UpdateTermsExpr
+        <2>2. \A u \in Server : currentTerm'[p] >= currentTerm'[u]
+            BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+        <2>3. \A q \in Q : currentTerm'[q] = currentTerm'[p]
+            <3>. t \notin Q
+                BY DEF UpdateTerms, UpdateTermsExpr, TypeOK, LargestPrimaryMustHaveAQuorumInTerm
+            <3>1. QED BY <2>2 DEF UpdateTerms, UpdateTermsExpr
+        <2>6. QED BY <2>1, <2>2, <2>3 DEF UpdateTerms, QuorumsAt, Quorums, LargestPrimaryMustHaveAQuorumInTerm
+    <1>7. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
+
+
+
+THEOREM AppendLogIsSafe ==
+ASSUME TypeOK, Next, LemmaBasic,
+       NEW s \in Server, NEW newEntry,
+       log' = [log EXCEPT ![s] = Append(log[s], newEntry)],
+       currentTerm' = currentTerm
+PROVE (\E t \in Server : currentTerm[t] >= newEntry) => LogsMustBeSmallerThanOrEqualToLargestTerm'
+PROOF
+    <1>. SUFFICES ASSUME NEW t \in Server, currentTerm[t] >= newEntry
+         PROVE \A u \in Server : \E v \in Server : LastTerm(log'[u]) <= currentTerm'[v]
+         BY DEF LogsMustBeSmallerThanOrEqualToLargestTerm
+    <1>. TAKE u \in Server
+    <1>. PICK v \in Server : LastTerm(log[u]) <= currentTerm[v]
+        BY DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+    <1>. CASE u = s
+        <2>. LastTerm(log'[u]) <= currentTerm[t]
+            BY DEF LastTerm, TypeOK
+        <2>1. QED OBVIOUS
+    <1>. CASE u # s
+        <2>. LastTerm(log'[u]) = LastTerm(log[u])
+            BY DEF LastTerm, TypeOK
+        <2>1. QED OBVIOUS
+    <1>1. QED OBVIOUS
+
+THEOREM LogsMustBeSmallerThanOrEqualToLargestTermAndNext ==
+ASSUME LemmaBasic, TypeOK, Next
+PROVE LogsMustBeSmallerThanOrEqualToLargestTerm'
+PROOF
+    <1>1. (\E s \in Server : ClientRequest(s)) => LogsMustBeSmallerThanOrEqualToLargestTerm'
+        <2>. SUFFICES ASSUME NEW s \in Server, ClientRequest(s)
+             PROVE LogsMustBeSmallerThanOrEqualToLargestTerm'
+             OBVIOUS
+        <2>. DEFINE newEntry == currentTerm[s]
+        <2>1. log' = [log EXCEPT ![s] = Append(log[s], newEntry)]
+            BY DEF ClientRequest
+        <2>2. currentTerm[s] >= newEntry
+            BY DEF TypeOK
+        <2>3. currentTerm' = currentTerm
+            BY DEF ClientRequest
+        <2>4. QED BY <2>1, <2>2, <2>3, AppendLogIsSafe DEF TypeOK
+    <1>2. (\E s, t \in Server : GetEntries(s, t)) => LogsMustBeSmallerThanOrEqualToLargestTerm'
+        \* very messy, could use some clean up
+        <2>. SUFFICES ASSUME NEW s \in Server, NEW p \in Server, GetEntries(s, p)
+             PROVE \A u \in Server : \E v \in Server : LastTerm(log'[u]) <= currentTerm'[v]
+             BY DEF LogsMustBeSmallerThanOrEqualToLargestTerm
+        <2>1. LastTerm(log'[s]) <= LastTerm(log[p])
+            <3>. DEFINE idx == IF Empty(log[s]) THEN 1 ELSE Len(log[s]) + 1
+            <3>. idx = Len(log[s]) + 1
+                BY DEF Empty
+            <3>. idx = Len(log'[s])
+                BY AppendProperties DEF GetEntries, TypeOK
+            <3>1. log'[s][idx] = log[p][idx]
+                BY AppendProperties DEF GetEntries, TypeOK
+            <3>2. LastTerm(log'[s]) = log[p][idx]
+                BY <3>1 DEF LastTerm
+            <3>3. log[p][idx] <= LastTerm(log[p])
+                <4>. idx <= Len(log[p])
+                    BY DEF GetEntries, TypeOK
+                <4>1. QED BY <3>2, LenProperties DEF LemmaBasic, TermsOfEntriesGrowMonotonically, TypeOK, LastTerm
+            <3>4. QED BY <3>2, <3>3 DEF TypeOK
+        <2>. PICK t \in Server : LastTerm(log[p]) <= currentTerm[t]
+            BY DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+        <2>4. LastTerm(log'[s]) <= currentTerm'[t]
+            <3>1. LastTerm(log'[s]) <= LastTerm(log'[p])
+                BY <2>1 DEF GetEntries, TypeOK
+            <3>2. LastTerm(log'[p]) <= currentTerm'[t]
+                BY DEF GetEntries, TypeOK
+            <3>3. QED BY <3>1, <3>2, TypeOKAndNext DEF TypeOK, LastTerm
+        <2>7. \A u \in Server : u # s => \E v \in Server : LastTerm(log'[u]) <= currentTerm'[v]
+            <3>. \A u \in Server : u # s => log'[u] = log[u]
+                BY DEF GetEntries, TypeOK
+            <3>1. \A u \in Server : currentTerm'[u] = currentTerm[u]
+                BY DEF GetEntries, TypeOK
+            <3>. TAKE u \in Server
+            <3>2. PICK v \in Server : LastTerm(log[u]) <= currentTerm[v]
+                BY DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+            <3>3. QED BY <3>1, <3>2 DEF TypeOK
+        <2>8. QED
+            BY <2>4, <2>7 DEF LogsMustBeSmallerThanOrEqualToLargestTerm
+    <1>3. (\E s, t \in Server : RollbackEntries(s, t)) => LogsMustBeSmallerThanOrEqualToLargestTerm'
+        <2>. SUFFICES ASSUME NEW s \in Server, \E t \in Server : RollbackEntries(s, t)
+             PROVE \A u \in Server : \E v \in Server : LastTerm(log'[u]) <= currentTerm'[v]
+             BY DEF LogsMustBeSmallerThanOrEqualToLargestTerm
+        <2>. TAKE t \in Server
+        <2>. PICK p \in Server : LastTerm(log[t]) <= currentTerm[p]
+            BY DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+        <2>. currentTerm'[p] = currentTerm[p]
+            BY DEF RollbackEntries, TypeOK
+        <2>1. t # s => LastTerm(log'[t]) <= currentTerm'[p]
+            <3>. t # s => LastTerm(log'[t]) = LastTerm(log[t])
+                BY DEF RollbackEntries, LastTerm
+            <3>1. QED BY DEF RollbackEntries
+        <2>2. t = s => LastTerm(log'[t]) <= currentTerm'[p]
+            <3>. CASE log'[t] = <<>>
+                <4>. LastTerm(log'[t]) = 0
+                    BY DEF LastTerm
+                <4>1. QED BY DEF RollbackEntries, TypeOK
+            <3>. CASE log'[t] # <<>>
+                <4>. \A i \in DOMAIN log'[t] : log'[t][i] = log[t][i]
+                    BY DEF RollbackEntries
+                <4>. \A i \in DOMAIN log'[t] : log[t][i] <= LastTerm(log[t])
+                    BY DEF RollbackEntries, LastTerm, LemmaBasic, TermsOfEntriesGrowMonotonically
+                <4>. LastTerm(log'[t]) <= LastTerm(log[t])
+                    BY DEF LastTerm
+                <4>1. QED BY TypeOKAndNext DEF LastTerm, TypeOK
+            <3>1. QED OBVIOUS
+        <2>3. QED BY <2>1, <2>2
+    <1>4. (\E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)) => LogsMustBeSmallerThanOrEqualToLargestTerm'
+        <2>. SUFFICES ASSUME NEW p \in Server, \E Q \in QuorumsAt(p) : BecomeLeader(p, Q)
+             PROVE \A u \in Server : \E v \in Server : LastTerm(log'[u]) <= currentTerm'[v]
+             BY DEF LogsMustBeSmallerThanOrEqualToLargestTerm
+        <2>. \A s \in Server : currentTerm[p] >= currentTerm[s]
+            BY ElectedLeadersHaveLatestTerm
+        <2>. currentTerm'[p] = currentTerm[p] + 1
+            BY DEF BecomeLeader
+        <2>. TAKE s \in Server
+        <2>. PICK t \in Server : LastTerm(log[s]) <= currentTerm[t]
+            BY DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+        <2>1. LastTerm(log[s]) <= currentTerm[p]
+            BY DEF TypeOK, LastTerm
+        <2>. CASE s # p \/ UNCHANGED log
+            <3>. LastTerm(log'[s]) = LastTerm(log[s])
+                BY DEF BecomeLeader, LastTerm, TypeOK
+            <3>1. QED BY <2>1 DEF TypeOK, LastTerm
+        <2>. CASE s = p /\ log' = [log EXCEPT ![p] = Append(log[p], currentTerm[p]+1)]
+            <3>. log'[p] = Append(log[p], currentTerm'[p])
+                BY DEF TypeOK
+            <3>1. LastTerm(log'[p]) <= currentTerm'[p]
+                BY AppendProperties DEF LastTerm, TypeOK
+            <3>2. QED BY <3>1
+        <2>2. QED BY DEF BecomeLeader
+    <1>5. (\E s \in Server : \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => LogsMustBeSmallerThanOrEqualToLargestTerm'
+        BY DEF CommitEntry, LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+    <1>6. (\E s,t \in Server : UpdateTerms(s, t)) => LogsMustBeSmallerThanOrEqualToLargestTerm'
+        <2>. SUFFICES ASSUME NEW s \in Server, NEW t \in Server, UpdateTerms(s, t)
+             PROVE \A u \in Server : \E v \in Server : LastTerm(log'[u]) <= currentTerm'[v]
+             BY DEF LogsMustBeSmallerThanOrEqualToLargestTerm
+        <2>. TAKE u \in Server
+        <2>. LastTerm(log'[u]) = LastTerm(log[u])
+            BY DEF UpdateTerms, LastTerm
+        <2>. PICK p \in Server : LastTerm(log[u]) <= currentTerm[p]
+            BY DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+        <2>. CASE p = t
+            <3>1. currentTerm[p] < currentTerm'[p]
+                BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+            <3>2. LastTerm(log[u]) <= currentTerm'[p]
+                BY <3>1, TypeOKAndNext DEF TypeOK, LastTerm
+            <3>3. QED BY <3>2 DEF LogsMustBeSmallerThanOrEqualToLargestTerm
+        <2>. CASE p # t
+            <3>1. currentTerm'[p] = currentTerm[p]
+                BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+            <3>2. QED BY <3>1 DEF LogsMustBeSmallerThanOrEqualToLargestTerm
+        <2>1. QED OBVIOUS
+    <1>7. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
+
+
+
+THEOREM AllConfigsAreServerAndNext ==
+ASSUME LemmaBasic, TypeOK, Next
+PROVE AllConfigsAreServer'
+PROOF
+    <1>1. (\E s \in Server : ClientRequest(s)) => AllConfigsAreServer'
+        BY DEF LemmaBasic, AllConfigsAreServer, ClientRequest
+    <1>2. (\E s, t \in Server : GetEntries(s, t)) => AllConfigsAreServer'
+        BY DEF LemmaBasic, AllConfigsAreServer, GetEntries
+    <1>3. (\E s, t \in Server : RollbackEntries(s, t)) => AllConfigsAreServer'
+        BY DEF LemmaBasic, AllConfigsAreServer, RollbackEntries
+    <1>4. (\E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)) => AllConfigsAreServer'
+        BY DEF LemmaBasic, AllConfigsAreServer, BecomeLeader
+    <1>5. (\E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => AllConfigsAreServer'
+        BY DEF LemmaBasic, AllConfigsAreServer, CommitEntry
+    <1>6. (\E s,t \in Server : UpdateTerms(s, t)) => AllConfigsAreServer'
+        BY DEF LemmaBasic, AllConfigsAreServer, UpdateTerms
+    <1>7. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
 
 -----------------------------------------------------------------------------------
 
 (* Init => *)
 
-THEOREM Init => TypeOK
+THEOREM InitImpliesTypeOK ==
+ASSUME TRUE
+PROVE Init => TypeOK
 PROOF BY DEF Init, TypeOK
 
-THEOREM Init => LemmaBasic
+THEOREM InitImpliesLemmaBasic ==
+ASSUME TRUE
+PROVE Init => LemmaBasic
 PROOF
     <1> SUFFICES ASSUME Init
         PROVE LemmaBasic
@@ -692,6 +998,31 @@ PROOF
     <1>8. AllConfigsAreServer
         BY DEF Init, AllConfigsAreServer
     <1>9. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6, <1>7, <1>8 DEF LemmaBasic
+
+
+-----------------------------------------------------------------------------------
+
+(* Overall Result *)
+
+THEOREM LemmaBasicAndNext ==
+ASSUME TypeOK, LemmaBasic, Next
+PROVE TypeOK' /\ LemmaBasic'
+PROOF BY InitImpliesTypeOK, InitImpliesLemmaBasic, TypeOKAndNext,
+         CurrentTermAtLeastAsLargeAsLogTermsForPrimaryAndNext,
+         TermsOfEntriesGrowMonotonicallyAndNext,
+         OnePrimaryPerTermAndNext,
+         NonZeroLogsImplyExistsPrimaryAndNext,
+         AllSecondariesImplyInitialStateAndNext,
+         LargestPrimaryMustHaveAQuorumInTermAndNext,
+         LogsMustBeSmallerThanOrEqualToLargestTermAndNext,
+         AllConfigsAreServerAndNext
+      DEF LemmaBasic
+
+THEOREM LemmaBasicIsInductiveInvariant ==
+ASSUME TRUE
+PROVE /\ Init => (TypeOK /\ LemmaBasic)
+      /\ (TypeOK /\ LemmaBasic /\ Next) => (TypeOK /\ LemmaBasic)'
+PROOF BY InitImpliesTypeOK, InitImpliesLemmaBasic, TypeOKAndNext, LemmaBasicAndNext
 
 =============================================================================
 

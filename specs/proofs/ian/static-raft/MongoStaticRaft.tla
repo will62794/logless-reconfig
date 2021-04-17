@@ -192,9 +192,6 @@ Spec == Init /\ [][Next]_vars
 (* Not needed for the II *)
 
 (*
-ConfigsMustBeSame ==
-    \A s,t \in Server : config[s] = config[t]
-
 HighestPrimaryCanRollbackNonconformingEntries ==
     \A p \in Server :
         (/\ state[p] = Primary
@@ -280,6 +277,9 @@ CanVoteForOplogOnlyBasedOnLog(i, j, term) ==
 
 (* LemmaBasic Properties *)
 
+AllConfigsAreServer ==
+    \A s \in Server : config[s] = Server
+
 \* A server's current term is always at least as large as the terms in its log.
 \* This is LEMMA 6 from the Raft dissertation.
 CurrentTermAtLeastAsLargeAsLogTermsForPrimary == 
@@ -288,19 +288,15 @@ CurrentTermAtLeastAsLargeAsLogTermsForPrimary ==
 \* The terms of entries grow monotonically in each log.
 \* This is LEMMA 7 from the Raft dissertation.
 TermsOfEntriesGrowMonotonically ==
-    \A s \in Server : \A i \in 1..(Len(log[s])-1) : log[s][i] <= log[s][i+1] 
+    \A s \in Server : \A i,j \in DOMAIN log[s] : i <= j => log[s][i] <= log[s][j]
 
 OnePrimaryPerTerm ==
     \A s \in Server : state[s] = Primary =>
-        \A t \in config[s] :
+        \A t \in Server :
             (state[t] = Primary /\ currentTerm[s] = currentTerm[t]) => s = t
 
-\* needs to be generalized to use cofig
 NonZeroLogsImplyExistsPrimary ==
-    (\E s \in Server : Len(log[s]) > 0) =>
-     \E s \in Server :
-         /\ Len(log[s]) > 0
-         /\ \E t \in config[s] : state[t] = Primary
+    (\E s \in Server : Len(log[s]) > 0) => (\E s \in Server : state[s] = Primary)
 
 AllSecondariesImplyInitialState ==
   (\A s \in Server : state[s] = Secondary) =>
@@ -313,15 +309,12 @@ LargestPrimaryMustHaveAQuorumInTerm ==
     (\E s \in Server : state[s] = Primary) =>
      \E p \in Server :
          /\ state[p] = Primary
-         /\ \A u \in config[p] : currentTerm[p] >= currentTerm[u]
+         /\ \A u \in Server : currentTerm[p] >= currentTerm[u]
          /\ \E Q \in QuorumsAt(p) :
                \A q \in Q : currentTerm[q] = currentTerm[p]
 
 LogsMustBeSmallerThanOrEqualToLargestTerm ==
-    \A s \in Server :
-        LET AllTerms == {currentTerm[i] : i \in config[s]}
-            MaxAllTerms == Max(AllTerms)
-        IN  \A t \in config[s] : LastTerm(log[t]) <= MaxAllTerms
+    \A s \in Server : \E t \in Server : LastTerm(log[s]) <= currentTerm[t]
 
 
 (* LemmaSecondariesLogFollowsPrimary *)
@@ -338,10 +331,10 @@ SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm ==
                   /\ currentTerm[p] = currentTerm[s]
                   /\ LastTerm(log[p]) >= LastTerm(log[s])
                   /\ Len(log[p]) >= Len(log[s])
-                  /\ ExistsLogSubset(log[s],log[p])
+                  \*/\ ExistsLogSubset(log[s],log[p])
            \/ \E p \in config[s] :
                   /\ state[p] = Primary
-                  /\ currentTerm[p] > currentTerm[s]
+                  /\ currentTerm[p] > currentTerm[s] \* different from exceeds
            \/ \A t \in config[s]: state[t] = Secondary
 
 SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm ==
@@ -352,10 +345,10 @@ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm ==
                   /\ currentTerm[p] = LastTerm(log[s])
                   /\ LastTerm(log[p]) >= LastTerm(log[s])
                   /\ Len(log[p]) >= Len(log[s])
-                  /\ ExistsLogSubset(log[s],log[p])
+                  \*/\ ExistsLogSubset(log[s],log[p])
            \/ \E p \in config[s] :
                   /\ state[p] = Primary
-                  /\ currentTerm[p] > LastTerm(log[s])
+                  /\ currentTerm[p] > LastTerm(log[s]) \* different from matches
 
 
 (* SMS_LC_II *)

@@ -63,6 +63,7 @@ CommittedType ==
     [ entry  : PositiveNat \times PositiveNat,
       term : Nat]
 
+(*
 TypeOK == 
     /\ currentTerm \in SUBSET [Server -> Nat]
     /\ state \in SUBSET [Server -> {Secondary, Primary}]
@@ -70,6 +71,7 @@ TypeOK ==
     /\ config = [i \in Server |-> Server]
     /\ elections = {}
     /\ committed \in SUBSET CommittedType
+*)
 
 TypeOKRandom == 
     /\ currentTerm \in RandomSubset(NumRandSubsets, [Server -> Nat])
@@ -96,6 +98,7 @@ TypeOKRandom ==
 \* Adding log matching is a whole different direction
 
 LemmaBasic ==
+    /\ AllConfigsAreServer
     /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
     /\ TermsOfEntriesGrowMonotonically
     /\ OnePrimaryPerTerm
@@ -140,8 +143,8 @@ InitDebug ==
 
 IInit_StateMachineSafetyNew ==  
     /\ TypeOKRandom 
-    \*/\ SMS_LC_II 
-    /\ LemmaBasic
+    /\ SMS_LC_II 
+    \*/\ LemmaBasic
 
 INext_StateMachineSafety == Next
 
