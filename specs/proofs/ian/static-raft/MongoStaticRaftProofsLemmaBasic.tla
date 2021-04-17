@@ -766,27 +766,31 @@ PROOF
         <2>. SUFFICES ASSUME NEW s \in Server, NEW t \in Server, UpdateTerms(s, t)
              PROVE LargestPrimaryMustHaveAQuorumInTerm'
              OBVIOUS
-        <2>. \E p \in Server : state[p] = Primary \* this could be a theorem
-            BY DEF UpdateTerms, UpdateTermsExpr, LemmaBasic, AllSecondariesImplyInitialState, TypeOK
-        <2>. PICK p \in Server :
-                     /\ state[p] = Primary
-                     /\ \A u \in Server : currentTerm[p] >= currentTerm[u]
-                     /\ \E Q \in QuorumsAt(p) :
-                           \A q \in Q : currentTerm[q] = currentTerm[p]
-            BY DEF LemmaBasic, LargestPrimaryMustHaveAQuorumInTerm
-        <2>. PICK Q \in QuorumsAt(p) : \A q \in Q : currentTerm[q] = currentTerm[p]
-            OBVIOUS
-        <2>. p # t
-            BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
-        <2>1. state'[p] = Primary /\ currentTerm'[p] = currentTerm[p]
-            BY DEF UpdateTerms, UpdateTermsExpr
-        <2>2. \A u \in Server : currentTerm'[p] >= currentTerm'[u]
-            BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
-        <2>3. \A q \in Q : currentTerm'[q] = currentTerm'[p]
-            <3>. t \notin Q
-                BY DEF UpdateTerms, UpdateTermsExpr, TypeOK, LargestPrimaryMustHaveAQuorumInTerm
-            <3>1. QED BY <2>2 DEF UpdateTerms, UpdateTermsExpr
-        <2>6. QED BY <2>1, <2>2, <2>3 DEF UpdateTerms, QuorumsAt, Quorums, LargestPrimaryMustHaveAQuorumInTerm
+        <2>. CASE \A u \in Server : state[u] = Secondary
+            <3>. \A u \in Server : state'[u] = Secondary
+                BY DEF UpdateTerms, UpdateTermsExpr
+            <3>1. QED BY PrimaryAndSecondaryAreDifferent DEF LargestPrimaryMustHaveAQuorumInTerm
+        <2>. CASE \E p \in Server : state[p] = Primary
+            <3>. PICK p \in Server :
+                         /\ state[p] = Primary
+                         /\ \A u \in Server : currentTerm[p] >= currentTerm[u]
+                         /\ \E Q \in QuorumsAt(p) :
+                               \A q \in Q : currentTerm[q] = currentTerm[p]
+                BY DEF LemmaBasic, LargestPrimaryMustHaveAQuorumInTerm
+            <3>. PICK Q \in QuorumsAt(p) : \A q \in Q : currentTerm[q] = currentTerm[p]
+                OBVIOUS
+            <3>. p # t
+                BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+            <3>1. state'[p] = Primary /\ currentTerm'[p] = currentTerm[p]
+                BY DEF UpdateTerms, UpdateTermsExpr
+            <3>2. \A u \in Server : currentTerm'[p] >= currentTerm'[u]
+                BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+            <3>3. \A q \in Q : currentTerm'[q] = currentTerm'[p]
+                <4>. t \notin Q
+                    BY DEF UpdateTerms, UpdateTermsExpr, TypeOK, LargestPrimaryMustHaveAQuorumInTerm
+                <4>1. QED BY <3>2 DEF UpdateTerms, UpdateTermsExpr
+            <3>4. QED BY <3>1, <3>2, <3>3 DEF UpdateTerms, QuorumsAt, Quorums, LargestPrimaryMustHaveAQuorumInTerm
+        <2>1. QED BY PrimaryAndSecondaryAreDifferent DEF TypeOK
     <1>7. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
 
 
