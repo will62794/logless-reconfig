@@ -698,15 +698,15 @@ PROOF
                         \A q \in Qp : currentTerm'[q] = currentTerm'[a]
                 <4>. \E Qp \in (QuorumsAt(p))' : TRUE
                     BY QuorumsAreServerSubsets DEF QuorumsAt, Quorums, UpdateTerms, UpdateTermsExpr, TypeOK
-                <4>1. QED BY <3>1, QuorumsAreServerSubsets DEF QuorumsAt, Quorums, UpdateTerms, UpdateTermsExpr
+                <4>1. QED BY <3>1, QuorumsAreServerSubsets DEF QuorumsAt, Quorums, UpdateTerms, UpdateTermsExpr, TypeOK
             <3>3. QED BY <3>2 DEF ExistsQuorumInLargestTerm
         <2>. CASE ~ExistsPrimary
+            <3>. \A u \in Server : state[u] = Secondary
+                BY PrimaryAndSecondaryAreDifferent DEF TypeOK, ExistsPrimary
+            <3>. \A u \in Server : state'[u] = Secondary
+                BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
             <3>. ~(ExistsPrimary')
-                <4>. \A u \in Server : state[u] = Secondary
-                    BY PrimaryAndSecondaryAreDifferent DEF TypeOK, ExistsPrimary
-                <4>. \A u \in Server : state'[u] = Secondary
-                    BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
-                <4>1. QED BY DEF ExistsPrimary
+                BY DEF ExistsPrimary
             <3>. PICK p \in Server :
                          /\ \A u \in Server : currentTerm[p] >= currentTerm[u]
                          /\ \E Q \in QuorumsAt(p) :
@@ -727,15 +727,36 @@ PROOF
                     <5>1. QED BY QuorumsAreServerSubsets DEF UpdateTerms, UpdateTermsExpr, TypeOK
                 <4>1. QED OBVIOUS
             <3>2. \E a \in Server :
-                    /\ ExistsPrimary' => state'[a] = Primary
+                    \*/\ ExistsPrimary' => state'[a] = Primary
                     /\ \A u \in Server : currentTerm'[a] >= currentTerm'[u]
                     /\ \E Qp \in (QuorumsAt(a))' :
                         \A q \in Qp : currentTerm'[q] = currentTerm'[a]
                 <4>. \E Qp \in (QuorumsAt(p))' : TRUE
                     BY QuorumsAreServerSubsets DEF QuorumsAt, Quorums, UpdateTerms, UpdateTermsExpr, TypeOK
-                <4>1. QED BY <3>1, QuorumsAreServerSubsets DEF QuorumsAt, Quorums, UpdateTerms, UpdateTermsExpr
+                <4>1. QED BY <3>1, QuorumsAreServerSubsets DEF QuorumsAt, Quorums, UpdateTerms, UpdateTermsExpr, TypeOK
             <3>3. QED BY <3>2 DEF ExistsQuorumInLargestTerm
-        <2>1. QED BY DEF ExistsQuorumInLargestTerm
+        <2>1. QED BY DEF ExistsQuorumInLargestTerm \*PrimaryAndSecondaryAreDifferent DEF ExistsPrimary, ExistsQuorumInLargestTerm
+            \*BY QuorumsExistForNonEmptySets DEF UpdateTerms, UpdateTermsExpr, QuorumsAt, Quorums, TypeOK, ExistsQuorumInLargestTerm, ExistsPrimary
+            
+            
+        (* 
+        
+            <3>. p # t
+                BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+        <2>. CASE \E u \in Server : state[u] = Server
+            <3>. state[p] = Primary
+                BY DEF LemmaBasic, ExistsQuorumInLargestTerm, ExistsPrimary
+            <3>. state'[p] = Primary /\ currentTerm'[p] = currentTerm[p]
+                BY DEF UpdateTerms, UpdateTermsExpr
+            <3>. \A u \in Server : currentTerm'[p] >= currentTerm'[u]
+                BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+            <3>. \A q \in Q : currentTerm'[q] = currentTerm'[p]
+                <4>. t \notin Q
+                    BY DEF UpdateTerms, UpdateTermsExpr, TypeOK, ExistsQuorumInLargestTerm
+                <4>1. QED BY DEF UpdateTerms, UpdateTermsExpr
+            <3>1. QED BY DEF UpdateTerms, QuorumsAt, Quorums, ExistsQuorumInLargestTerm
+        <2>. CASE \A u \in Server : state[u] = Secondary
+        <2>1. QED BY PrimaryAndSecondaryAreDifferent DEF TypeOK*)
     <1>7. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
 
 

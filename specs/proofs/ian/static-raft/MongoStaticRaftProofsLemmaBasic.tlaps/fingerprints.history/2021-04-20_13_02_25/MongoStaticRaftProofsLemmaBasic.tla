@@ -733,9 +733,30 @@ PROOF
                         \A q \in Qp : currentTerm'[q] = currentTerm'[a]
                 <4>. \E Qp \in (QuorumsAt(p))' : TRUE
                     BY QuorumsAreServerSubsets DEF QuorumsAt, Quorums, UpdateTerms, UpdateTermsExpr, TypeOK
-                <4>1. QED BY <3>1, QuorumsAreServerSubsets DEF QuorumsAt, Quorums, UpdateTerms, UpdateTermsExpr
+                <4>1. QED BY <3>1, QuorumsAreServerSubsets DEF QuorumsAt, Quorums, UpdateTerms, UpdateTermsExpr, TypeOK
             <3>3. QED BY <3>2 DEF ExistsQuorumInLargestTerm
-        <2>1. QED BY DEF ExistsQuorumInLargestTerm
+        <2>1. QED BY DEF ExistsQuorumInLargestTerm \*PrimaryAndSecondaryAreDifferent DEF ExistsPrimary, ExistsQuorumInLargestTerm
+            \*BY QuorumsExistForNonEmptySets DEF UpdateTerms, UpdateTermsExpr, QuorumsAt, Quorums, TypeOK, ExistsQuorumInLargestTerm, ExistsPrimary
+            
+            
+        (* 
+        
+            <3>. p # t
+                BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+        <2>. CASE \E u \in Server : state[u] = Server
+            <3>. state[p] = Primary
+                BY DEF LemmaBasic, ExistsQuorumInLargestTerm, ExistsPrimary
+            <3>. state'[p] = Primary /\ currentTerm'[p] = currentTerm[p]
+                BY DEF UpdateTerms, UpdateTermsExpr
+            <3>. \A u \in Server : currentTerm'[p] >= currentTerm'[u]
+                BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+            <3>. \A q \in Q : currentTerm'[q] = currentTerm'[p]
+                <4>. t \notin Q
+                    BY DEF UpdateTerms, UpdateTermsExpr, TypeOK, ExistsQuorumInLargestTerm
+                <4>1. QED BY DEF UpdateTerms, UpdateTermsExpr
+            <3>1. QED BY DEF UpdateTerms, QuorumsAt, Quorums, ExistsQuorumInLargestTerm
+        <2>. CASE \A u \in Server : state[u] = Secondary
+        <2>1. QED BY PrimaryAndSecondaryAreDifferent DEF TypeOK*)
     <1>7. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
 
 

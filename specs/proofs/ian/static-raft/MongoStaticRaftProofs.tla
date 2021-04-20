@@ -98,23 +98,21 @@ TypeOKRandom ==
 \* Adding log matching is a whole different direction
 
 LemmaBasic ==
-    /\ AllConfigsAreServer
     /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
     /\ TermsOfEntriesGrowMonotonically
     /\ OnePrimaryPerTerm
-    /\ NonZeroLogsImplyExistsPrimary
-    /\ AllSecondariesImplyInitialState 
-    /\ LargestPrimaryMustHaveAQuorumInTerm
+    /\ ExistsQuorumInLargestTerm
     /\ LogsMustBeSmallerThanOrEqualToLargestTerm
+    /\ AllConfigsAreServer
 
-LemmaSecondariesLogFollowsPrimary ==
+LemmaSecondariesFollowPrimary ==
     /\ LemmaBasic
-    /\ CommittedTermMatchesEntry
     /\ SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm
     /\ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
 
 SMS_LC_II ==
-    /\ LemmaSecondariesLogFollowsPrimary
+    /\ LemmaSecondariesFollowPrimary
+    /\ CommittedTermMatchesEntry
     /\ LogsLaterThanCommittedMustHaveCommitted
     /\ LogsEqualToCommittedMustHaveCommittedIfItFits
     /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
@@ -144,6 +142,7 @@ InitDebug ==
 IInit_StateMachineSafetyNew ==  
     /\ TypeOKRandom 
     /\ SMS_LC_II 
+    \*/\ LemmaSecondariesFollowPrimary
     \*/\ LemmaBasic
 
 INext_StateMachineSafety == Next
