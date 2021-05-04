@@ -54,4 +54,11 @@ NextAux ==
 StateMachineSafety == 
     \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
 
+\* If a config is committed, then every primary in a higher term contains the config or a 
+\* newer one.
+LeaderCompleteness == 
+    \A s \in Server :
+    \A c \in committed : 
+        (state[s]=Primary /\ c.term <= currentTerm[s]) => NewerOrEqualConfig(<<configVersion[s], configTerm[s]>>, <<c.entry[1], c.entry[2]>>)
+
 ====
