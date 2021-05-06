@@ -39,7 +39,9 @@ CommitConfigAux ==
         /\ ConfigIsCommitted(s)
         /\ committed' = committed \cup 
             {[ entry  |-> <<Len(log[s]), configTerm[s]>>,
-                term  |-> currentTerm[s]]}
+                term  |-> currentTerm[s],
+                configVersion |-> configVersion[s],
+                configTerm |-> configTerm[s]]}
         /\ UNCHANGED <<currentTerm, log, state, config, configVersion, configTerm>>
 
 \* Next state relation with auxiliary variables.
@@ -54,11 +56,12 @@ NextAux ==
 StateMachineSafety == 
     \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
 
-\* If a config is committed, then every primary in a higher term contains the config or a 
-\* newer one.
-LeaderCompleteness == 
+\* If a configuration C is committed in term T, then every primary in a higher term 
+\* contains C or a newer config.
+CommittedConfigSafety == 
     \A s \in Server :
     \A c \in committed : 
-        (state[s]=Primary /\ c.term <= currentTerm[s]) => NewerOrEqualConfig(<<configVersion[s], configTerm[s]>>, <<c.entry[1], c.entry[2]>>)
+        (state[s]=Primary /\ currentTerm[s] > c.term) => 
+        NewerOrEqualConfig(<<configVersion[s], configTerm[s]>>, <<c.configVersion, c.configTerm>>)
 
 ====
