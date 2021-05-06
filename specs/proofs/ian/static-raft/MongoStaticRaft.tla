@@ -340,28 +340,28 @@ LogsMustBeSmallerThanOrEqualToLargestTerm ==
 SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm ==
     \A s \in Server :
         (state[s] = Secondary /\ LastTerm(log[s]) = currentTerm[s]) =>
-           \/ \E p \in config[s] :
+           \/ \E p \in Server :
                   /\ state[p] = Primary
                   /\ currentTerm[p] = currentTerm[s] \* different from exceeds
                   /\ LastTerm(log[p]) >= LastTerm(log[s])
                   /\ Len(log[p]) >= Len(log[s])
-           \/ \E p \in config[s] :
+           \/ \E p \in Server :
                   /\ state[p] = Primary
                   /\ currentTerm[p] > currentTerm[s] \* different from exceeds
-           \/ \A t \in config[s]: state[t] = Secondary
+           \/ \A t \in Server : state[t] = Secondary
 
 SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm ==
     \A s \in Server :
         (state[s] = Secondary /\ LastTerm(log[s]) > currentTerm[s]) =>
-           \/ \E p \in config[s] :
+           \/ \E p \in Server :
                   /\ state[p] = Primary
                   /\ currentTerm[p] = LastTerm(log[s]) \* different from matches
                   /\ LastTerm(log[p]) >= LastTerm(log[s])
                   /\ Len(log[p]) >= Len(log[s])
-           \/ \E p \in config[s] :
+           \/ \E p \in Server :
                   /\ state[p] = Primary
                   /\ currentTerm[p] > LastTerm(log[s]) \* different from matches
-           \/ \A t \in config[s]: state[t] = Secondary
+           \/ \A t \in Server : state[t] = Secondary
 
 
 (* SMS_LC_II *)

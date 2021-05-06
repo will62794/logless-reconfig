@@ -1,7 +1,5 @@
 ------------------------- MODULE MongoStaticRaftProofsLemmaBasic -------------------
 
-\* Finding inductive invariants for MongoStaticRaft protocol.
-
 EXTENDS MongoStaticRaft, SequenceTheorems, FunctionTheorems, FiniteSetTheorems
 
 CONSTANT MaxLogLen
@@ -961,7 +959,7 @@ PROOF
 THEOREM LemmaBasicAndNext ==
 ASSUME TypeOK, LemmaBasic, Next
 PROVE TypeOK' /\ LemmaBasic'
-PROOF BY InitImpliesTypeOK, InitImpliesLemmaBasic, TypeOKAndNext,
+PROOF BY InitImpliesLemmaBasic, TypeOKAndNext,
          CurrentTermAtLeastAsLargeAsLogTermsForPrimaryAndNext,
          TermsOfEntriesGrowMonotonicallyAndNext,
          OnePrimaryPerTermAndNext,

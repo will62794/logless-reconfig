@@ -18,3 +18,5 @@ states/
 graphs
 tla2tools.jar
 *TTrace*
+**/*.tlaps/
+**/*.toolbox/
