@@ -9,6 +9,8 @@ StateConstraint == \A s \in Server :
 
 ServerSymmetry == Permutations(Server)
 
+ViewNoLog == <<currentTerm, state, configVersion, configTerm, config, committed>>
+
 \*
 \* For easier debugging.
 \*

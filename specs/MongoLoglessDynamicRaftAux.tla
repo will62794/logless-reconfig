@@ -61,7 +61,7 @@ StateMachineSafety ==
 CommittedConfigSafety == 
     \A s \in Server :
     \A c \in committed : 
-        (state[s]=Primary /\ currentTerm[s] > c.term) => 
+        (state[s]=Primary /\ currentTerm[s] > c.configTerm) => 
         NewerOrEqualConfig(<<configVersion[s], configTerm[s]>>, <<c.configVersion, c.configTerm>>)
 
 ====
