@@ -2,25 +2,15 @@
 
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC, TLAPS, MongoRaftReconfig
 
-\************************
-\* Refinement Proof
-\************************
+\*
+\* Refinement proof of MongoRaftReconfig => MongoLoglessDynamicRaft.
+\*
+\* This proof is sufficient to establish that any properties of MongoLoglessDynamicRaft 
+\* hold when operating as a subprotocol of MongoRaftReconfig.
+\*
 
-CommittedType == 
-    [ entry  : Nat \times Nat,
-      quorum : SUBSET Server,
-      term : Nat]
-
-TypeOK == 
-    /\ currentTerm \in [Server -> Nat]
-    /\ state \in [Server -> {Secondary, Primary}]
-    /\ log \in [Server -> Seq(Nat)]
-    /\ config = [i \in Server |-> SUBSET Server]
-    /\ configVersion = [Server -> Nat]
-    /\ configTerm = [Server -> Nat]
-    /\ committed \in CommittedType
-
-
+\* Create an instance of MongoLoglessDynamicRaft that uses a subset of the 
+\* variables of MongoRaftReconfig.
 IMLDR == INSTANCE MongoLoglessDynamicRaft WITH 
             currentTerm <- currentTerm,
             state <- state,
@@ -29,7 +19,8 @@ IMLDR == INSTANCE MongoLoglessDynamicRaft WITH
             config <- config
 
 
-THEOREM RefinesNext == [Next]_vars => [IMLDR!Next]_IMLDR!vars
+\* Prove that any step of MongoRaftReconfig is a valid step of MongoLoglessDynamicRaft. 
+THEOREM MRRNextRefinesMLDRNext == [Next]_vars => [IMLDR!Next]_IMLDR!vars
     <1>a. SUFFICES ASSUME [Next]_vars PROVE [IMLDR!Next]_IMLDR!vars
             OBVIOUS
     <1>b. [IMLDR!Next]_IMLDR!vars
@@ -75,15 +66,28 @@ THEOREM RefinesNext == [Next]_vars => [IMLDR!Next]_IMLDR!vars
 
 
 \* See https://github.com/tlaplus/Examples/blob/9d7de44a8a37e415c8ba6e24d167632d53c24176/specifications/Paxos/Voting.tla#L179-L198
-\* for example of refinement proof in TLAPS.
+\* for one example of a refinement proof in TLAPS.
 
 \* MongoRaftReconfig => MongoLoglessDynamicRaft
-THEOREM Spec => IMLDR!Spec
+THEOREM MRRRefinesMLDR == Spec => IMLDR!Spec
     <1>1. Init => IMLDR!Init 
         BY DEF Init, OSM!Init, CSM!Init, IMLDR!Init
-    <1>2. [Next]_vars => [IMLDR!Next]_IMLDR!vars BY RefinesNext
+    <1>2. [Next]_vars => [IMLDR!Next]_IMLDR!vars BY MRRNextRefinesMLDRNext
     <1>3. QED BY <1>1, <1>2, PTL DEF Spec, IMLDR!Spec
 
 
+\* CommittedType == 
+\*     [ entry  : Nat \times Nat,
+\*       quorum : SUBSET Server,
+\*       term : Nat]
+
+\* TypeOK == 
+\*     /\ currentTerm \in [Server -> Nat]
+\*     /\ state \in [Server -> {Secondary, Primary}]
+\*     /\ log \in [Server -> Seq(Nat)]
+\*     /\ config = [i \in Server |-> SUBSET Server]
+\*     /\ configVersion = [Server -> Nat]
+\*     /\ configTerm = [Server -> Nat]
+\*     /\ committed \in CommittedType
 
 =============================================================================
