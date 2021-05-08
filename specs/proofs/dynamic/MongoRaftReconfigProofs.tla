@@ -340,7 +340,7 @@ ConfigInTermImpliesQuorumOfConfigInTerm ==
 \*         }
 \*     ELSE {}
 
-\* If a config C=(v,t) and C'=(v',t) both exist with v' >= v+2, then there must have been a parent
+\* If a config C=(v,t) and C'=(v',t) both exist with v' >= v+1, then there must have been a parent
 \* of C' that was committed before C' came into existence.
 ConfigSameTermAncestorMustBeCommitted == 
     \A s,t \in Server :
