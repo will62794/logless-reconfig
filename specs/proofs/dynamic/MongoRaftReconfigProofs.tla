@@ -290,11 +290,6 @@ ActiveConfigsInSameTermOverlap ==
          /\ ActiveConfig(configVersion[j], configTerm[j])) => 
          QuorumsOverlap(config[i], config[j])
 
-PrimaryInTermContainsNewestConfigOfTerm == 
-    \A i,j \in Server : 
-    (state[i] = Primary /\ configTerm[j] = currentTerm[i]) =>
-    (configVersion[j] <= configVersion[i])
-
 \* If a config exists in term T, there must be some node with a current term
 \* of that config or newer.
 ConfigInTermImpliesSomeNodeInThatTerm == 
@@ -323,6 +318,45 @@ ConfigInTermImpliesQuorumOfConfigInTerm ==
     \A s \in Server : 
     \E Q \in config[s] : currentTerm[s] >= configTerm[s]
 
+
+\* If a config C=(v,t) and C'=(v',t) both exist with v' >= v+2, then there must have been a parent
+\* of C' that was committed before C' came into existence.
+ConfigSameTermAncestorMustBeCommitted == 
+    \A s,t \in Server :
+        (/\ configVersion[s] >= configVersion[t] + 2
+         /\ configTerm[s] = configTerm[t]) =>
+         \* If these configs differ by 2 or more reconfig edges, then there must exist
+         \* a chain of configs between them that are all committed and have pairwise
+         \* quorum overlap.
+         (\E chain \in [(configVersion[t]..(configVersion[s]-1)) -> SUBSET Server] :
+            /\ \A vi \in DOMAIN chain : chain[vi] # {}
+            \* Config t starts the chain.
+            /\ chain[configVersion[t]] = config[t]
+            \* Last config in chain overlaps with config s.
+            /\ QuorumsOverlap(chain[configVersion[s]-1], config[s])
+            \* The configs in between satisfy pairwise quorum overlap.
+            /\ \A vx,vy \in DOMAIN chain : 
+                /\ chain[vx] # {}
+                /\ chain[vy] # {}
+                /\ (vx = (vy + 1)) => QuorumsOverlap(chain[vx], chain[vy])
+                /\ \E Q \in Quorums(chain[vx]) : 
+                   \A n \in Q : 
+                    CSM!NewerOrEqualConfig(<<configVersion[n], configTerm[n]>>, <<vx, configTerm[s]>>))
+
+
+\* For configs C=(v,t) and C'=(v+1,t), we know their quorums overlap, by explicit preconditions
+\* of reconfiguration.
+ConfigOverlapsWithDirectAncestor ==
+    \A s,t \in Server :
+        (/\ configVersion[s] = (configVersion[t] + 1)
+         /\ configTerm[s] = configTerm[t]) => QuorumsOverlap(config[s], config[t])
+
+\* If there is a primary in some term, it should be the only one who can create configs
+\* in that term, so it should have the newest config in that term.
+PrimaryInTermContainsNewestConfigOfTerm == 
+    \A i,j \in Server : 
+    (state[i] = Primary /\ configTerm[j] = currentTerm[i]) =>
+    (configVersion[j] <= configVersion[i]) 
 
 ViewNoElections == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
 
@@ -356,13 +390,19 @@ Ind ==
     \*
     /\ PrimaryConfigTermEqualToCurrentTerm
     /\ ConfigsNonEmpty
-    /\ ConfigInTermImpliesSomeNodeInThatTerm
+
     /\ ConfigVersionAndTermUnique
-    /\ ActiveConfigsInSameTermOverlap
+    /\ ConfigSameTermAncestorMustBeCommitted
+    /\ ConfigOverlapsWithDirectAncestor
     /\ PrimaryInTermContainsNewestConfigOfTerm
-    /\ ConfigsWithSameVersionHaveSameMemberSet
-    /\ ConfigSeparationImpliesPreviousCommit
-    /\ ConfigInTermImpliesQuorumOfConfigInTerm
+
+    \* /\ ConfigInTermImpliesSomeNodeInThatTerm
+    \* /\ ConfigVersionAndTermUnique
+    \* /\ ActiveConfigsInSameTermOverlap
+    \* /\ PrimaryInTermContainsNewestConfigOfTerm
+    \* /\ ConfigsWithSameVersionHaveSameMemberSet
+    \* /\ ConfigSeparationImpliesPreviousCommit
+    \* /\ ConfigInTermImpliesQuorumOfConfigInTerm
     \* /\ ConfigInTermDisablesAllOlderConfigsWithDifferingMemberSets
 
     \*
