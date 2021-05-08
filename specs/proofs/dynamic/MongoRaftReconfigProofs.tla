@@ -372,6 +372,14 @@ ConfigOverlapsWithDirectAncestor ==
         (/\ configVersion[s] = (configVersion[t] + 1)
          /\ configTerm[s] = configTerm[t]) => QuorumsOverlap(config[s], config[t])
 
+\* A reconfig on step up from C=(v,t) to C'=(v,t+1) does not change the config
+\* member set.
+ElectionReconfigDoesntChangeMemberSet ==
+    \A s,t \in Server :
+        (/\ configVersion[s] = configVersion[t] 
+         /\ configTerm[s] > configTerm[t]) => config[s] = config[t]
+
+
 \* If there is a primary in some term, it should be the only one who can create configs
 \* in that term, so it should have the newest config in that term.
 PrimaryInTermContainsNewestConfigOfTerm == 
@@ -412,10 +420,15 @@ Ind ==
     /\ PrimaryConfigTermEqualToCurrentTerm
     /\ ConfigsNonEmpty
 
+    \* Establish basic, intra-term config safety.
     /\ ConfigVersionAndTermUnique
     /\ ConfigSameTermAncestorMustBeCommitted
     /\ ConfigOverlapsWithDirectAncestor
     /\ PrimaryInTermContainsNewestConfigOfTerm
+
+    \* Establish inter-term config safety.
+    /\ ElectionReconfigDoesntChangeMemberSet
+
 
     \* /\ ConfigInTermImpliesSomeNodeInThatTerm
     \* /\ ConfigVersionAndTermUnique
