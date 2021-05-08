@@ -329,7 +329,6 @@ ConfigSameTermAncestorMustBeCommitted ==
          \* a chain of configs between them that are all committed and have pairwise
          \* quorum overlap.
          (\E chain \in [(configVersion[t]..(configVersion[s]-1)) -> SUBSET Server] :
-            /\ \A vi \in DOMAIN chain : chain[vi] # {}
             \* Config t starts the chain.
             /\ chain[configVersion[t]] = config[t]
             \* Last config in chain overlaps with config s.
@@ -339,8 +338,9 @@ ConfigSameTermAncestorMustBeCommitted ==
                 /\ chain[vx] # {}
                 /\ chain[vy] # {}
                 /\ (vx = (vy + 1)) => QuorumsOverlap(chain[vx], chain[vy])
-                /\ \E Q \in Quorums(chain[vx]) : 
-                   \A n \in Q : 
+            /\ \A vx \in DOMAIN chain:
+                \E Q \in Quorums(chain[vx]) : 
+                \A n \in Q : 
                     CSM!NewerOrEqualConfig(<<configVersion[n], configTerm[n]>>, <<vx, configTerm[s]>>))
 
 
