@@ -65,9 +65,6 @@ THEOREM MRRNextRefinesMLDRNext == [Next]_vars => [IMLDR!Next]_IMLDR!vars
     <1>c. QED BY <1>b, <1>a
 
 
-\* See https://github.com/tlaplus/Examples/blob/9d7de44a8a37e415c8ba6e24d167632d53c24176/specifications/Paxos/Voting.tla#L179-L198
-\* for one example of a refinement proof in TLAPS.
-
 \* MongoRaftReconfig => MongoLoglessDynamicRaft
 THEOREM MRRRefinesMLDR == Spec => IMLDR!Spec
     <1>1. Init => IMLDR!Init 
@@ -76,18 +73,7 @@ THEOREM MRRRefinesMLDR == Spec => IMLDR!Spec
     <1>3. QED BY <1>1, <1>2, PTL DEF Spec, IMLDR!Spec
 
 
-\* CommittedType == 
-\*     [ entry  : Nat \times Nat,
-\*       quorum : SUBSET Server,
-\*       term : Nat]
-
-\* TypeOK == 
-\*     /\ currentTerm \in [Server -> Nat]
-\*     /\ state \in [Server -> {Secondary, Primary}]
-\*     /\ log \in [Server -> Seq(Nat)]
-\*     /\ config = [i \in Server |-> SUBSET Server]
-\*     /\ configVersion = [Server -> Nat]
-\*     /\ configTerm = [Server -> Nat]
-\*     /\ committed \in CommittedType
+\* Note: See https://github.com/tlaplus/Examples/blob/9d7de44a8a37e415c8ba6e24d167632d53c24176/specifications/Paxos/Voting.tla#L179-L198
+\* for one example of a refinement proof in TLAPS.
 
 =============================================================================
