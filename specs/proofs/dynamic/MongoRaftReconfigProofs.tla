@@ -372,12 +372,23 @@ ConfigSameTermAncestorMustBeCommitted ==
 
 \* If a config C=(v,t) and C'=(v',t') with v > v' and t' > t, there must be a chain
 \* of configs between C and C' with some committed config in there.
+
+\* If two configs have different terms, then there are two cases:
+\* (I)  one is an ancestor of the other.
+\* (II) they are siblings of each other.
+\*
+\* In case I, there must be a linear chain of configs from C to C', respecting
+\* the rules of reconfig/election edges.
+\* In case II, there must be a common ancestor config Ca such that there is a path
+\* from Ca to both C and C' respecting the election edge rule.
 ConfigDiffTermAndVersionAncestorMustBeCommitted == 
     \A s,t \in Server :
-        (/\ configVersion[s] > configVersion[t]
+        (\*/\ configVersion[s] > configVersion[t]
          /\ configTerm[s] > configTerm[t]) =>
-         LET versionDomain == (configVersion[t]..configVersion[s])
-             termDomain    == (configTerm[t]..configTerm[s]) IN
+
+        LET versionDomain == (configVersion[t]..configVersion[s])
+            termDomain    == (configTerm[t]..configTerm[s]) IN
+        \* CASE I (one is descendant of other)
          (\E chain \in [(versionDomain \X termDomain) -> SUBSET Server] :
             \* /\ \E branch \in DOMAIN chain :
             \*     /\ branch[2] = configTerm[s]
@@ -385,18 +396,50 @@ ConfigDiffTermAndVersionAncestorMustBeCommitted ==
             \*     /\ chain[<<branch[1]-1,branch[2]>>] = chain[branch]
             \* Config t starts the chain.
             /\ chain[<<configVersion[t], configTerm[t]>>] = config[t]
-            \* Last config in chain overlaps with config s.
-            /\ QuorumsOverlap(chain[<<configVersion[s]-1, configTerm[s]>>], config[s])
+            \* Max config in chain overlaps with config s.
+            /\ LET maxcv == CHOOSE cvx \in DOMAIN chain : \A cvy \in DOMAIN chain : CSM!NewerOrEqualConfig(cvx, cvy) IN 
+               QuorumsOverlap(chain[maxcv], config[s])
             \* The configs in between satisfy pairwise quorum overlap.
             /\ \A vtx,vty \in DOMAIN chain : 
                 /\ chain[vtx] # {}
                 /\ chain[vty] # {}
                 /\ (vtx[1] = (vty[1] + 1) /\ vtx[2] = vty[2]) => QuorumsOverlap(chain[vtx], chain[vty])
                 /\ (vtx[1] = vty[1] /\ vtx[2] > vty[2]) => chain[vtx] = chain[vty]
-            /\ \A vtx \in DOMAIN chain:
-                \E Q \in Quorums(chain[vtx]) : 
-                \A n \in Q : 
-                    CSM!NewerOrEqualConfig(<<configVersion[n], configTerm[n]>>, vtx))
+            /\ \A vtx,vty \in DOMAIN chain :
+                \* If this is a reconfig edge in the chain, then the parent must be committed.
+                (vtx[2] = vtx[2] /\ vtx[1] > vty[1]) =>
+                    (\E Q \in Quorums(chain[vtx]) : 
+                     \A n \in Q : 
+                        CSM!NewerOrEqualConfig(<<configVersion[n], configTerm[n]>>, vtx)))
+
+
+        \* \* CASE II (siblings)
+        \* \E commonAncestor :
+
+
+        \*  LET versionDomain == (configVersion[t]..configVersion[s])
+        \*      termDomain    == (configTerm[t]..configTerm[s]) IN
+
+        \* \* Either C' is an ancestor of C or C and C' are siblings.
+        \*  (\E chain \in [(versionDomain \X termDomain) -> SUBSET Server] :
+        \*     \* /\ \E branch \in DOMAIN chain :
+        \*     \*     /\ branch[2] = configTerm[s]
+        \*     \*      \* election edges doesn't change config.
+        \*     \*     /\ chain[<<branch[1]-1,branch[2]>>] = chain[branch]
+        \*     \* Config t starts the chain.
+        \*     /\ chain[<<configVersion[t], configTerm[t]>>] = config[t]
+        \*     \* Last config in chain overlaps with config s.
+        \*     /\ QuorumsOverlap(chain[<<configVersion[s]-1, configTerm[s]>>], config[s])
+        \*     \* The configs in between satisfy pairwise quorum overlap.
+        \*     /\ \A vtx,vty \in DOMAIN chain : 
+        \*         /\ chain[vtx] # {}
+        \*         /\ chain[vty] # {}
+        \*         /\ (vtx[1] = (vty[1] + 1) /\ vtx[2] = vty[2]) => QuorumsOverlap(chain[vtx], chain[vty])
+        \*         /\ (vtx[1] = vty[1] /\ vtx[2] > vty[2]) => chain[vtx] = chain[vty]
+        \*     /\ \A vtx \in DOMAIN chain:
+        \*         \E Q \in Quorums(chain[vtx]) : 
+        \*         \A n \in Q : 
+        \*             CSM!NewerOrEqualConfig(<<configVersion[n], configTerm[n]>>, vtx))
 
 
 
@@ -409,10 +452,10 @@ ConfigOverlapsWithDirectAncestor ==
 
 \* A reconfig on step up from C=(v,t) to C'=(v,t+1) does not change the config
 \* member set.
-\* ElectionReconfigDoesntChangeMemberSet ==
-\*     \A s,t \in Server :
-\*         (/\ configVersion[s] = configVersion[t] 
-\*          /\ configTerm[s] = (configTerm[t] + 1)) => config[s] = config[t]
+ElectionReconfigDoesntChangeMemberSet ==
+    \A s,t \in Server :
+        (/\ configVersion[s] = configVersion[t] 
+         /\ configTerm[s] = (configTerm[t] + 1)) => config[s] = config[t]
 
 
 \* If there is a primary in some term, it should be the only one who can create configs
@@ -421,6 +464,40 @@ PrimaryInTermContainsNewestConfigOfTerm ==
     \A i,j \in Server : 
     (state[i] = Primary /\ configTerm[j] = currentTerm[i]) =>
     (configVersion[j] <= configVersion[i]) 
+
+\* If a config C=(v,t) exists and there is another config C=(v',t') with t' < t, and the
+\* quorums of C and C' don't overlap, then there must be some committed config in t that overlaps
+\* with C.
+ConfigInTermNewerThanNonoverlappingImpliesCommittmentInTerm ==
+    \A s,t \in Server :
+        \* (configTerm[s] > configTerm[t] /\ ~QuorumsOverlap(config[s], config[t])) =>
+        (configTerm[s] > configTerm[t] /\ config[s] # config[t]) =>
+        \A Q \in Quorums(config[t]) : \E n \in Q : 
+            \/ configTerm[n] > configTerm[t]
+            \/ configVersion[n] > configVersion[t]
+
+\* ConfigInNewerTermNewerDisablesOlderConfigs ==
+\*     \A s,t \in Server :
+\*         (configTerm[s] > configTerm[t] /\ ~QuorumsOverlap(config[s], config[t])) =>
+\*         \A Q \in Quorums(config[t]) : \E n \in Q : 
+\*             \/ currentTerm[n] >= configTerm[s]
+            \* \/ configTerm[n] > configTerm[t]
+            \* \/ configVersion[n] > configVersion[t]
+
+
+\* Config in term T implies all older configs are either disabled or
+\* have a quorum of nodes in term >= T.
+ConfigInTermPreventsOlderConfigs == 
+    \A s,t \in Server :
+        (configTerm[t] < configTerm[s]) => 
+        \* This config either overlaps with some node in the newer term, 
+        \* or the config is disabled.
+        \A Q \in Quorums(config[t]) : 
+        \E n \in Q : 
+            \/ currentTerm[n] >= configTerm[s]
+            \/ CSM!NewerConfig(<<configVersion[n], configTerm[n]>>,<<configVersion[t],configTerm[t]>>)
+            
+    
 
 ViewNoElections == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
 
@@ -443,7 +520,7 @@ Ind ==
     /\ TermsOfEntriesGrowMonotonically
     /\ OnePrimaryPerTerm
     \* /\ ExistsQuorumInLargestTerm \* quorum based.
-    /\ ElectionDisablesLesserOrEqualTerms
+    \* /\ ElectionDisablesLesserOrEqualTerms
     \* /\ LogEntryInTermDisablesLesserOrEqualTerms
 
     /\ LogsMustBeSmallerThanOrEqualToLargestTerm
@@ -462,9 +539,13 @@ Ind ==
     /\ PrimaryInTermContainsNewestConfigOfTerm
 
     \* Establish inter-term config safety.
+    /\ ConfigInTermPreventsOlderConfigs
+    /\ ConfigInTermImpliesQuorumOfConfigInTerm
+
     \* /\ ElectionReconfigDoesntChangeMemberSet
     \* /\ ConfigDiffTermAndVersionAncestorMustBeCommitted
-    /\ ConfigInTermImpliesQuorumOfConfigInTerm
+    \* /\ ConfigInTermNewerThanNonoverlappingImpliesCommittmentInTerm
+    \* /\ ConfigInNewerTermNewerDisablesOlderConfigs
 
 
     \* /\ ConfigInTermImpliesSomeNodeInThatTerm
@@ -479,12 +560,12 @@ Ind ==
     \*
     \* LEMMA Extra
     \*
-    /\ CommittedTermMatchesEntry
-    /\ LogsLaterThanCommittedMustHaveCommitted
-    /\ LogsEqualToCommittedMustHaveCommittedIfItFits
-    \* /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
-    \* /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
-    /\ LeaderCompletenessGeneralized
+    \* /\ CommittedTermMatchesEntry
+    \* /\ LogsLaterThanCommittedMustHaveCommitted
+    \* /\ LogsEqualToCommittedMustHaveCommittedIfItFits
+    \* \* /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
+    \* \* /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
+    \* /\ LeaderCompletenessGeneralized
 
     \* /\ ElectableNodesHaveCommittedEntrielslss
     \* /\ CommittedEntriesMustHaveQuorums \* quorum based.
