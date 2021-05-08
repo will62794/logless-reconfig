@@ -319,13 +319,34 @@ ConfigInTermImpliesQuorumOfConfigInTerm ==
     \E Q \in config[s] : currentTerm[s] >= configTerm[s]
 
 
+\* \* A chain of non-empty config member sets between config[t] and config[s], inclusive of t and non-inclusive of s
+\* \* where each config in the chain has pairwise quorum overlap and differs by a version of 1.
+\* ConfigChains(s,t) == 
+\*     IF (configVersion[s] >= configVersion[t] + 1 /\ configTerm[s] = configTerm[t]) THEN
+\*     {chain \in [(configVersion[t]..(configVersion[s]-1)) -> SUBSET Server] :
+\*             \* Config t starts the chain.
+\*             /\ chain[configVersion[t]] = config[t]
+\*             \* Last config in chain overlaps with config s.
+\*             /\ QuorumsOverlap(chain[configVersion[s]-1], config[s])
+\*             \* The configs in between satisfy pairwise quorum overlap.
+\*             /\ \A vx,vy \in DOMAIN chain : 
+\*                 /\ chain[vx] # {}
+\*                 /\ chain[vy] # {}
+\*                 /\ (vx = (vy + 1)) => QuorumsOverlap(chain[vx], chain[vy])
+\*             /\ \A vx \in DOMAIN chain:
+\*                 \E Q \in Quorums(chain[vx]) : 
+\*                 \A n \in Q : 
+\*                     CSM!NewerOrEqualConfig(<<configVersion[n], configTerm[n]>>, <<vx, configTerm[s]>>)
+\*         }
+\*     ELSE {}
+
 \* If a config C=(v,t) and C'=(v',t) both exist with v' >= v+2, then there must have been a parent
 \* of C' that was committed before C' came into existence.
 ConfigSameTermAncestorMustBeCommitted == 
     \A s,t \in Server :
-        (/\ configVersion[s] >= configVersion[t] + 2
+        (/\ configVersion[s] >= configVersion[t] + 1
          /\ configTerm[s] = configTerm[t]) =>
-         \* If these configs differ by 2 or more reconfig edges, then there must exist
+         \* If these configs differ by 1 or more reconfig edges, then there must exist
          \* a chain of configs between them that are all committed and have pairwise
          \* quorum overlap.
          (\E chain \in [(configVersion[t]..(configVersion[s]-1)) -> SUBSET Server] :
@@ -449,6 +470,7 @@ ServerStr(s) ==
     ToString(log[s]) \o " " \o
     ToString(config[s]) \o " (" \o ToString(configVersion[s]) \o "," \o ToString(configTerm[s]) \o ")"
 
+ServerPair == Server \X Server
 Alias == 
     [
         \* currentTerm |-> currentTerm,
@@ -463,7 +485,7 @@ Alias ==
         \* latestBeforeTerm |-> [s \in Server |-> [ i \in ((DOMAIN log[s]) \{1}) |-> LatestEntryBeforeTerm(s, log[s][i])]]
         nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)],
         activeConfig |-> [s \in Server |-> ActiveConfig(configVersion[s], configTerm[s])]
-
+        \* configChains |-> [<<s,t>> \in ServerPair |-> ConfigChains(s,t)]
     ]
 
 
