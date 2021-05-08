@@ -224,13 +224,14 @@ CommittedEntriesMustHaveQuorums ==
                     /\ i = c.entry[1]
 
 \* \* Is node i electable in term T
-\* Electable(i, T) == \E Q \in QuorumsAt(i) : ENABLED BecomeLeader(i, Q, T)
+Electable(i) == \E Q \in QuorumsAt(i) : ENABLED JointBecomeLeader(i, Q)
 
 \* \*TODO: Generalize ExistsQuorumInLargestTerm to avoid reliance on quorum definition.
-\* ElectionDisablesLesserOrEqualTerms == 
-\*     \A i,j \in Server : 
-\*         (state[i] = Primary) => 
-\*         (\A leqT \in 1..currentTerm[i] : ~Electable(j, leqT))
+ElectionDisablesLesserOrEqualTerms == 
+    \A i,j \in Server : 
+        \* TODO: Generalize notion of "electable in term" rather than
+        \* hard-coding (currentTerm + 1)
+        ((state[i] = Primary) /\ (currentTerm[j] + 1) <= currentTerm[i]) => ~Electable(j)
 
 \* \* If a log entry exists in term T, then an election must have occurred in term T, 
 \* \* and so all future elections in terms <= T must be disabled. 
@@ -257,16 +258,84 @@ PrimaryHasEntriesItCreated ==
 \*         \E Q \in QuorumsAt(i) : \A n \in Q : InLog(c.entry, n)
 
 
-TypeOKRandom == 
-    /\ currentTerm \in RandomSubset(NumRandSubsets, [Server -> Nat])
-    /\ state \in RandomSubset(NumRandSubsets, [Server -> {Secondary, Primary}])
-    /\ log \in RandomSubset(NumRandSubsets, [Server -> Seq(PositiveNat)])
-    /\ config \in RandomSubset(NumRandSubsets, [Server -> SUBSET Server])
-    /\ configVersion \in RandomSubset(NumRandSubsets, [Server -> PositiveNat])
-    /\ configTerm \in RandomSubset(NumRandSubsets, [Server -> PositiveNat])
-    /\ elections = {}
-    /\ committed \in RandomSetOfSubsets(NumRandSubsets, 1, CommittedType)
+\*
+\* Reconfiguration stuff.
+\*
 
+\* Can someone get elected in config c.
+ActiveConfig(v,t) ==
+    \E i \in Server : 
+        /\ configVersion[i] = v 
+        /\ configTerm[i] = t
+        /\ Electable(i)
+
+QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
+
+PrimaryConfigTermEqualToCurrentTerm == 
+    \A s \in Server : (state[s] = Primary) => (configTerm[s] = currentTerm[s])
+
+ConfigsNonEmpty == 
+    \A s \in Server : config[s] # {}
+
+\* (version, term) pair uniquely identifies a configuration.
+ConfigVersionAndTermUnique ==
+    \A i,j \in Server :
+        (<<configVersion[i],configTerm[i]>> = <<configVersion[j],configTerm[j]>> )=>
+        config[i] = config[j]
+
+ActiveConfigsInSameTermOverlap ==
+    \A i,j \in Server : 
+        (\*/\ configTerm[i] = configTerm[j] 
+         /\ ActiveConfig(configVersion[i], configTerm[i])
+         /\ ActiveConfig(configVersion[j], configTerm[j])) => 
+         QuorumsOverlap(config[i], config[j])
+
+PrimaryInTermContainsNewestConfigOfTerm == 
+    \A i,j \in Server : 
+    (state[i] = Primary /\ configTerm[j] = currentTerm[i]) =>
+    (configVersion[j] <= configVersion[i])
+
+\* If a config exists in term T, there must be some node with a current term
+\* of that config or newer.
+ConfigInTermImpliesSomeNodeInThatTerm == 
+    \A s \in Server : \E t \in config[s] : currentTerm[t] >= configTerm[s]
+
+ConfigInTermDisablesAllOlderConfigsWithDifferingMemberSets == 
+    \A s,t \in Server :
+    ( /\ configTerm[t] < configTerm[s] 
+      /\ QuorumsOverlap(config[s], config[t])) => ~ActiveConfig(configVersion[t], configTerm[t])
+
+ConfigsWithSameVersionHaveSameMemberSet == 
+    \A s,t \in Server : (configVersion[s] = configVersion[t]) => (config[s] = config[t])
+
+ConfigSeparationImpliesPreviousCommit ==
+    \A s,t \in Server :
+        \* If config version and config term differ b/w two configs,
+        \* they must have been separated by a commit of the newer term in
+        \* the original config.
+        (/\ configTerm[s] > configTerm[t] 
+         /\ configVersion[s] > configVersion[t]
+        \*  /\ ~QuorumsOverlap(config[s], config[t])
+         /\ config[s] # config[t]) =>
+         \E Q \in Quorums(config[t]) : \A n \in Q : configTerm[n] >= configTerm[s]
+
+ConfigInTermImpliesQuorumOfConfigInTerm ==
+    \A s \in Server : 
+    \E Q \in config[s] : currentTerm[s] >= configTerm[s]
+
+
+ViewNoElections == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
+
+TypeOKRandom == 
+    /\ currentTerm \in RandomSubset(NumRandSubsets, [Server -> 0..MaxTerm])
+    /\ state \in RandomSubset(NumRandSubsets, [Server -> {Secondary, Primary}])
+    /\ log \in RandomSubset(NumRandSubsets, [Server -> Seq(0..MaxLogLen)])
+    /\ config \in RandomSubset(NumRandSubsets, [Server -> SUBSET Server])
+    /\ configVersion \in RandomSubset(NumRandSubsets, [Server -> 0..MaxConfigVersion])
+    /\ configTerm \in RandomSubset(NumRandSubsets, [Server -> 0..MaxTerm])
+    /\ elections = {}
+    \* /\ committed \in RandomSetOfSubsets(NumRandSubsets, 1, CommittedType)
+    /\ committed = {}
 
 Ind ==
     \*
@@ -276,19 +345,25 @@ Ind ==
     /\ TermsOfEntriesGrowMonotonically
     /\ OnePrimaryPerTerm
     \* /\ ExistsQuorumInLargestTerm \* quorum based.
-
-    \* /\ ElectionDisablesLesserOrEqualTerms
+    /\ ElectionDisablesLesserOrEqualTerms
     \* /\ LogEntryInTermDisablesLesserOrEqualTerms
 
     /\ LogsMustBeSmallerThanOrEqualToLargestTerm
-    /\ AllConfigsAreServer
     /\ PrimaryHasEntriesItCreated
 
     \*
-    \* LEMMA Secondaries Follow Primary.
+    \* LEMMA Reconfigs.
     \*
-    \* /\ SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm
-    \* /\ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm  
+    /\ PrimaryConfigTermEqualToCurrentTerm
+    /\ ConfigsNonEmpty
+    /\ ConfigInTermImpliesSomeNodeInThatTerm
+    /\ ConfigVersionAndTermUnique
+    /\ ActiveConfigsInSameTermOverlap
+    /\ PrimaryInTermContainsNewestConfigOfTerm
+    /\ ConfigsWithSameVersionHaveSameMemberSet
+    /\ ConfigSeparationImpliesPreviousCommit
+    /\ ConfigInTermImpliesQuorumOfConfigInTerm
+    \* /\ ConfigInTermDisablesAllOlderConfigsWithDifferingMemberSets
 
     \*
     \* LEMMA Extra
@@ -296,16 +371,60 @@ Ind ==
     /\ CommittedTermMatchesEntry
     /\ LogsLaterThanCommittedMustHaveCommitted
     /\ LogsEqualToCommittedMustHaveCommittedIfItFits
-    /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
-    /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
+    \* /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
+    \* /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
     /\ LeaderCompletenessGeneralized
 
     \* /\ ElectableNodesHaveCommittedEntrielslss
-    /\ CommittedEntriesMustHaveQuorums \* quorum based.
+    \* /\ CommittedEntriesMustHaveQuorums \* quorum based.
 
 IInit == 
     /\ TypeOKRandom
     /\ Ind
+
+
+\*
+\* DEBUGGING
+\*
+
+\* Alias == 
+\*     [
+\*         state |-> state,
+\*         config |-> config,
+\*         configVersion |-> configVersion,
+\*         configTerm |-> configTerm,
+\*         currentTerm |-> currentTerm,
+\*         committed |-> committed,
+\*         log |-> log,
+\*         activeConfig |-> [s \in Server |-> ActiveConfig(configVersion[s], configTerm[s])]
+\*     ]
+
+
+StateStr(st) == 
+    IF st = Primary THEN "P" ELSE "S"
+
+ServerStr(s) == 
+    IF s = Nil THEN "----------------------------" ELSE
+    "t" \o ToString(currentTerm[s]) \o " " \o StateStr(state[s]) \o " " \o
+    ToString(log[s]) \o " " \o
+    ToString(config[s]) \o " (" \o ToString(configVersion[s]) \o "," \o ToString(configTerm[s]) \o ")"
+
+Alias == 
+    [
+        \* currentTerm |-> currentTerm,
+        \* state |-> state,
+        \* log |-> log,
+        \* config |-> config,
+        \* elections |-> elections,
+        \* committed |-> committed,
+        \* config |-> config,
+        \* reconfigs |-> ReconfigPairsAll,
+        \* electionLogIndexes |-> [s \in Server |-> ElectionLogIndex(s)]
+        \* latestBeforeTerm |-> [s \in Server |-> [ i \in ((DOMAIN log[s]) \{1}) |-> LatestEntryBeforeTerm(s, log[s][i])]]
+        nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)],
+        activeConfig |-> [s \in Server |-> ActiveConfig(configVersion[s], configTerm[s])]
+
+    ]
 
 
 =============================================================================

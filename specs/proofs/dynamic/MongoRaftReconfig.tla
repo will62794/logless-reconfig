@@ -123,10 +123,9 @@ CSMNext ==
         /\ CSM!Reconfig(s, newConfig)
     \/ \E s,t \in Server : CSM!SendConfig(s, t)
 
-JointBecomeLeader == 
-    \/ \E i \in Server : \E Q \in Quorums(config[i]) : 
-        /\ OSM!BecomeLeader(i, Q)
-        /\ CSM!BecomeLeader(i, Q)
+JointBecomeLeader(i, Q) == 
+    /\ OSM!BecomeLeader(i, Q)
+    /\ CSM!BecomeLeader(i, Q)
         
 \* Actions shared by the CSM and OSM i.e. that must be executed jointly by both protocols.
 JointNext == 
@@ -154,5 +153,11 @@ Spec == Init /\ [][Next]_vars
 ElectionSafety == OSM!ElectionSafety
 StateMachineSafety == OSM!StateMachineSafety
 LeaderCompleteness == OSM!LeaderCompleteness
+
+ConfigTermsMonotonic == 
+    [][\A s \in Server : configTerm'[s] >= configTerm[s]]_vars
+
+CurrentTermGreaterOrEqualToConfigTerm ==
+    \A s \in Server : currentTerm[s] >= configTerm[s]
 
 =============================================================================
