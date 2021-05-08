@@ -12,6 +12,8 @@ StateConstraint == \A s \in Server :
                     /\ currentTerm[s] <= MaxTerm
                     /\ Len(log[s]) <= MaxLogLen
 
+Symmetry == Permutations(Server)
+
 (***************************************************************************)
 (* Proving an inductive invariant.  (experimental)                         *)
 (***************************************************************************)
@@ -97,28 +99,93 @@ TypeOKRandom ==
 
 \* Adding log matching is a whole different direction
 
-LemmaBasic ==
+\* Return the range of a given function.
+Range(f) == {f[x] : x \in DOMAIN f}
+
+\* Is node i electable in term T
+Electable(i, T) == \E Q \in QuorumsAt(i) : ENABLED BecomeLeader(i, Q, T)
+
+\*TODO: Generalize ExistsQuorumInLargestTerm to avoid reliance on quorum definition.
+ElectionDisablesLesserOrEqualTerms == 
+    \A i,j \in Server : 
+        (state[i] = Primary) => 
+        (\A leqT \in 1..currentTerm[i] : ~Electable(j, leqT))
+
+\* If a log entry exists in term T, then an election must have occurred in term T, 
+\* and so all future elections in terms <= T must be disabled. 
+LogEntryInTermDisablesLesserOrEqualTerms == 
+    \A i,j \in Server :
+    \A term \in Range(log[i]) : 
+    \A leqT \in 1..term : ~Electable(j, leqT)
+
+\* If a log entry exists in term T and there is a primary in term T, then this
+\* log entry should be present in that primary's log.
+PrimaryHasEntriesItCreated == 
+    \A i,j \in Server :
+    (state[i] = Primary) => 
+    \* Can't be that another node has an entry in this primary's term
+    \* but the primary doesn't have it.
+        ~(\E k \in DOMAIN log[j] :
+            /\ log[j][k] = currentTerm[i]
+            /\ ~InLog(<<k,log[j][k]>>, i))
+    
+ElectableNodesHaveCommittedEntries ==
+    \A i \in Server :
+    \A c \in committed :
+        Electable(i, currentTerm[i] + 1) => 
+        \E Q \in QuorumsAt(i) : \A n \in Q : InLog(c.entry, n)
+
+LemmaBasic == TRUE
+\*     /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+\*     /\ TermsOfEntriesGrowMonotonically
+\*     /\ OnePrimaryPerTerm
+
+\*     \* /\ ExistsQuorumInLargestTerm \* quorum based.
+\*     /\ ElectionDisablesLesserOrEqualTerms
+\*     /\ LogEntryInTermDisablesLesserOrEqualTerms
+
+\*     /\ LogsMustBeSmallerThanOrEqualToLargestTerm
+\*     /\ AllConfigsAreServer
+
+\*     /\ PrimaryHasEntriesItCreated
+
+LemmaSecondariesFollowPrimary == TRUE
+\*     /\ LemmaBasic
+\*     /\ SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm
+\*     /\ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
+
+SMS_LC_II ==
+    \*
+    \* LEMMA Basic
+    \*
     /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
     /\ TermsOfEntriesGrowMonotonically
     /\ OnePrimaryPerTerm
-    /\ ExistsQuorumInLargestTerm
+    \* /\ ExistsQuorumInLargestTerm \* quorum based.
+    /\ ElectionDisablesLesserOrEqualTerms
+    /\ LogEntryInTermDisablesLesserOrEqualTerms
     /\ LogsMustBeSmallerThanOrEqualToLargestTerm
     /\ AllConfigsAreServer
+    /\ PrimaryHasEntriesItCreated
 
-LemmaSecondariesFollowPrimary ==
-    /\ LemmaBasic
-    /\ SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm
-    /\ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
+    \*
+    \* LEMMA Secondaries Follow Primary.
+    \*
+    \* /\ SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm
+    \* /\ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm  
 
-SMS_LC_II ==
-    /\ LemmaSecondariesFollowPrimary
+    \*
+    \* LEMMA Extra
+    \*
     /\ CommittedTermMatchesEntry
     /\ LogsLaterThanCommittedMustHaveCommitted
     /\ LogsEqualToCommittedMustHaveCommittedIfItFits
     /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
     /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
     /\ LeaderCompletenessGeneralized
-    /\ CommittedEntriesMustHaveQuorums
+
+    \* /\ ElectableNodesHaveCommittedEntries
+    /\ CommittedEntriesMustHaveQuorums \* quorum based.
 
 
 CONSTANT n1
@@ -152,5 +219,16 @@ THEOREM InitImpliesLemmaBasic ==
 ASSUME TRUE
 PROVE Init => LemmaBasic 
 PROOF BY DEF Init, LemmaBasic
+
+
+Alias == 
+    [
+        state |-> state,
+        log |-> log,
+        config |-> config,
+        currentTerm |-> currentTerm,
+        committed |-> committed,
+        electable |-> [s \in (Server) |-> Electable(s, currentTerm[s]+1)]
+    ]
 
 =============================================================================

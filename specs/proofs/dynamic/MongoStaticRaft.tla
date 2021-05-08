@@ -109,7 +109,7 @@ GetEntries(i, j) ==
 
 \*  Node 'i' rolls back against the log of node 'j'.  
 RollbackEntries(i, j) ==
-    \*/\ state[i] = Secondary
+    /\ state[i] = Secondary
     /\ CanRollback(i, j)
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
@@ -177,13 +177,27 @@ Init ==
     /\ elections = {}
     /\ committed = {}
 
+
+ClientRequestAction == \E s \in Server : ClientRequest(s)
+GetEntriesAction == \E s, t \in Server : GetEntries(s, t)
+RollbackEntriesAction == \E s, t \in Server : RollbackEntries(s, t)
+BecomeLeaderAction == \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
+UpdateTermsActions == \E s,t \in Server : UpdateTerms(s, t)
+
+\* Next == 
+\*     \/ \E s \in Server : ClientRequest(s)
+\*     \/ \E s, t \in Server : GetEntries(s, t)
+\*     \/ \E s, t \in Server : RollbackEntries(s, t)
+\*     \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
+\*     \/ \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
+\*     \/ \E s,t \in Server : UpdateTerms(s, t)
+
 Next == 
-    \/ \E s \in Server : ClientRequest(s)
-    \/ \E s, t \in Server : GetEntries(s, t)
-    \/ \E s, t \in Server : RollbackEntries(s, t)
-    \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
-    \/ \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
-    \/ \E s,t \in Server : UpdateTerms(s, t)
+    \/ ClientRequestAction
+    \/ GetEntriesAction
+    \/ RollbackEntriesAction
+    \/ BecomeLeaderAction
+    \/ UpdateTermsActions
 
 Spec == Init /\ [][Next]_vars
 
