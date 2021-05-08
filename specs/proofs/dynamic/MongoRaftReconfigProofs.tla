@@ -314,9 +314,14 @@ ConfigSeparationImpliesPreviousCommit ==
          /\ config[s] # config[t]) =>
          \E Q \in Quorums(config[t]) : \A n \in Q : configTerm[n] >= configTerm[s]
 
+\* If a config C=(v,t) exists, then there must have been an election
+\* in term T in the original config of this term, and those terms must 
+\* have been propagated on a quorum through configs, so any quorum must
+\* overlap with some node in this term.
 ConfigInTermImpliesQuorumOfConfigInTerm ==
     \A s \in Server : 
-    \E Q \in config[s] : currentTerm[s] >= configTerm[s]
+    \A Q \in Quorums(config[s]) :
+    \E n \in Q : currentTerm[n] >= configTerm[s]
 
 
 \* \* A chain of non-empty config member sets between config[t] and config[s], inclusive of t and non-inclusive of s
@@ -365,6 +370,36 @@ ConfigSameTermAncestorMustBeCommitted ==
                     CSM!NewerOrEqualConfig(<<configVersion[n], configTerm[n]>>, <<vx, configTerm[s]>>))
 
 
+\* If a config C=(v,t) and C'=(v',t') with v > v' and t' > t, there must be a chain
+\* of configs between C and C' with some committed config in there.
+ConfigDiffTermAndVersionAncestorMustBeCommitted == 
+    \A s,t \in Server :
+        (/\ configVersion[s] > configVersion[t]
+         /\ configTerm[s] > configTerm[t]) =>
+         LET versionDomain == (configVersion[t]..configVersion[s])
+             termDomain    == (configTerm[t]..configTerm[s]) IN
+         (\E chain \in [(versionDomain \X termDomain) -> SUBSET Server] :
+            \* /\ \E branch \in DOMAIN chain :
+            \*     /\ branch[2] = configTerm[s]
+            \*      \* election edges doesn't change config.
+            \*     /\ chain[<<branch[1]-1,branch[2]>>] = chain[branch]
+            \* Config t starts the chain.
+            /\ chain[<<configVersion[t], configTerm[t]>>] = config[t]
+            \* Last config in chain overlaps with config s.
+            /\ QuorumsOverlap(chain[<<configVersion[s]-1, configTerm[s]>>], config[s])
+            \* The configs in between satisfy pairwise quorum overlap.
+            /\ \A vtx,vty \in DOMAIN chain : 
+                /\ chain[vtx] # {}
+                /\ chain[vty] # {}
+                /\ (vtx[1] = (vty[1] + 1) /\ vtx[2] = vty[2]) => QuorumsOverlap(chain[vtx], chain[vty])
+                /\ (vtx[1] = vty[1] /\ vtx[2] > vty[2]) => chain[vtx] = chain[vty]
+            /\ \A vtx \in DOMAIN chain:
+                \E Q \in Quorums(chain[vtx]) : 
+                \A n \in Q : 
+                    CSM!NewerOrEqualConfig(<<configVersion[n], configTerm[n]>>, vtx))
+
+
+
 \* For configs C=(v,t) and C'=(v+1,t), we know their quorums overlap, by explicit preconditions
 \* of reconfiguration.
 ConfigOverlapsWithDirectAncestor ==
@@ -374,10 +409,10 @@ ConfigOverlapsWithDirectAncestor ==
 
 \* A reconfig on step up from C=(v,t) to C'=(v,t+1) does not change the config
 \* member set.
-ElectionReconfigDoesntChangeMemberSet ==
-    \A s,t \in Server :
-        (/\ configVersion[s] = configVersion[t] 
-         /\ configTerm[s] > configTerm[t]) => config[s] = config[t]
+\* ElectionReconfigDoesntChangeMemberSet ==
+\*     \A s,t \in Server :
+\*         (/\ configVersion[s] = configVersion[t] 
+\*          /\ configTerm[s] = (configTerm[t] + 1)) => config[s] = config[t]
 
 
 \* If there is a primary in some term, it should be the only one who can create configs
@@ -427,7 +462,9 @@ Ind ==
     /\ PrimaryInTermContainsNewestConfigOfTerm
 
     \* Establish inter-term config safety.
-    /\ ElectionReconfigDoesntChangeMemberSet
+    \* /\ ElectionReconfigDoesntChangeMemberSet
+    \* /\ ConfigDiffTermAndVersionAncestorMustBeCommitted
+    /\ ConfigInTermImpliesQuorumOfConfigInTerm
 
 
     \* /\ ConfigInTermImpliesSomeNodeInThatTerm
