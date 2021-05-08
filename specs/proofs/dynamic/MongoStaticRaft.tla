@@ -131,7 +131,7 @@ BecomeLeader(i, voteQuorum) ==
         {[ leader  |-> i, 
             term   |-> newTerm ]}
     \* Allow new leaders to write a no-op on step up if they want to. It is optional, but permissible.
-    /\ \/ log' = [log EXCEPT ![i] = Append(log[i], newTerm)]
+    /\ \/ log' = log \* [log EXCEPT ![i] = Append(log[i], newTerm)]
        \/ UNCHANGED log
     /\ UNCHANGED <<config, committed>>   
             
