@@ -300,8 +300,16 @@ ConfigInTermDisablesAllOlderConfigsWithDifferingMemberSets ==
     ( /\ configTerm[t] < configTerm[s] 
       /\ QuorumsOverlap(config[s], config[t])) => ~ActiveConfig(configVersion[t], configTerm[t])
 
-ConfigsWithSameVersionHaveSameMemberSet == 
-    \A s,t \in Server : (configVersion[s] = configVersion[t]) => (config[s] = config[t])
+\* If two configs have the same version but one has a newer term,
+\* then they either have the same member set or the config in the lesser
+\* term is disabled.
+ConfigsWithSameVersionHaveSameMemberSetOrDisable == 
+    \A s,t \in Server : 
+        (/\ configTerm[s] > configTerm[t]
+         /\ configVersion[s] = configVersion[t]) => 
+            \/ (config[s] = config[t])
+            \/ \A Q \in Quorums(config[t]) : \E n \in Q :
+                CSM!NewerConfig(<<configVersion[n], configTerm[n]>>,<<configVersion[t], configTerm[t]>>) 
 
 ConfigSeparationImpliesPreviousCommit ==
     \A s,t \in Server :
@@ -485,19 +493,14 @@ ConfigInTermNewerThanNonoverlappingImpliesCommittmentInTerm ==
             \* \/ configVersion[n] > configVersion[t]
 
 
-\* Config in term T implies all older configs are either disabled or
-\* have a quorum of nodes in term >= T.
 ConfigInTermPreventsOlderConfigs == 
     \A s,t \in Server :
-        (configTerm[t] < configTerm[s]) => 
-        \* This config either overlaps with some node in the newer term, 
-        \* or the config is disabled.
-        \A Q \in Quorums(config[t]) : 
-        \E n \in Q : 
-            \/ currentTerm[n] >= configTerm[s]
-            \/ CSM!NewerConfig(<<configVersion[n], configTerm[n]>>,<<configVersion[t],configTerm[t]>>)
-            
-    
+        /\ (/\ configTerm[t] < configTerm[s]
+            /\ ~QuorumsOverlap(config[s], config[t])) => 
+            (\A Q \in Quorums(config[t]) : 
+             \E n \in Q : 
+                \/ CSM!NewerConfig(<<configVersion[n], configTerm[n]>>,
+                                <<configVersion[t],configTerm[t]>>))
 
 ViewNoElections == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
 
@@ -513,22 +516,8 @@ TypeOKRandom ==
     /\ committed = {}
 
 Ind ==
-    \*
-    \* LEMMA Basic
-    \*
-    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
-    /\ TermsOfEntriesGrowMonotonically
+    \* Establishing config safety.
     /\ OnePrimaryPerTerm
-    \* /\ ExistsQuorumInLargestTerm \* quorum based.
-    \* /\ ElectionDisablesLesserOrEqualTerms
-    \* /\ LogEntryInTermDisablesLesserOrEqualTerms
-
-    /\ LogsMustBeSmallerThanOrEqualToLargestTerm
-    /\ PrimaryHasEntriesItCreated
-
-    \*
-    \* LEMMA Reconfigs.
-    \*
     /\ PrimaryConfigTermEqualToCurrentTerm
     /\ ConfigsNonEmpty
 
@@ -539,8 +528,30 @@ Ind ==
     /\ PrimaryInTermContainsNewestConfigOfTerm
 
     \* Establish inter-term config safety.
-    /\ ConfigInTermPreventsOlderConfigs
     /\ ConfigInTermImpliesQuorumOfConfigInTerm
+    /\ ConfigsWithSameVersionHaveSameMemberSetOrDisable
+    /\ ConfigInTermPreventsOlderConfigs
+
+
+    
+
+
+    \*
+    \* LEMMA Basic
+    \*
+    \* /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    \* /\ TermsOfEntriesGrowMonotonically
+    \* /\ ExistsQuorumInLargestTerm \* quorum based.
+    \* /\ ElectionDisablesLesserOrEqualTerms
+    \* /\ LogEntryInTermDisablesLesserOrEqualTerms
+
+    \* /\ LogsMustBeSmallerThanOrEqualToLargestTerm
+    \* /\ PrimaryHasEntriesItCreated
+
+    \*
+    \* LEMMA Reconfigs.
+    \*
+
 
     \* /\ ElectionReconfigDoesntChangeMemberSet
     \* /\ ConfigDiffTermAndVersionAncestorMustBeCommitted
