@@ -400,9 +400,6 @@ PROOF
             BY DEF GetEntries
         
         <2>. CASE \E t \in Server : GetEntries(s, t)
-            (*<3>. PICK p \in Server : state'[p] = Primary /\ (\A u \in Server : currentTerm'[p] >= currentTerm'[u])
-                BY LemmaBasicAndNext, ExistsQuorumInLargestTermAndNext, TypeOKAndNext
-                    DEF LemmaBasic, ExistsQuorumInLargestTerm, TypeOK, GetEntries, ExistsPrimary*)
             <3>. PICK p \in Server : state[p] = Primary /\ (\A u \in Server : currentTerm[p] >= currentTerm[u])
                 BY DEF LemmaBasic, ExistsQuorumInLargestTerm, TypeOK, ExistsPrimary
             <3>. state'[p] = Primary /\ (\A u \in Server : currentTerm'[p] >= currentTerm'[u])
@@ -450,8 +447,8 @@ PROOF
                             BY <4>1 DEF GetEntries
                         <6>. QED OBVIOUS
                     <5>. CASE currentTerm[t] < currentTerm[p]
-                        <6>. LastTerm(log[t]) > currentTerm[t]
-                            BY DEF LastTerm
+                        \*<6>1. LastTerm(log[t]) > currentTerm[t]
+                        \*    BY DEF LastTerm
                         <6>. PICK lp \in Server : E1(t,lp) \/ E2(t,lp)
                             BY DEF LemmaSecondariesFollowPrimary, SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
                         <6>. CASE E1(t,lp)
@@ -490,10 +487,162 @@ PROOF
             <3>. QED BY DEF LastTerm, TypeOK
         <2>. QED OBVIOUS
     <1>3. (\E s, t \in Server : RollbackEntries(s, t)) => SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm'
+        <2>. SUFFICES ASSUME \E s,t \in Server : RollbackEntries(s, t)
+             PROVE \A s \in Server : Reqs(s)'
+             BY DEF SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
+        <2>. TAKE s \in Server
+        <2>. SUFFICES ASSUME state'[s] = Secondary, LastTerm(log'[s]) > currentTerm'[s], ~E3
+             PROVE (\E p \in Server : E1(s,p)' \/ E2(s,p)') \/ E3'
+             BY DEF Reqs, RollbackEntries
+        <2>. state[s] = Secondary
+            BY DEF RollbackEntries
+        
+        <2>. CASE \E t,u \in Server : RollbackEntries(u, t) /\ u # s
+            <3>1. LastTerm(log[s]) > currentTerm[s]
+                BY DEF RollbackEntries, LastTerm, TypeOK
+            <3>. PICK p \in Server : E1(s,p) \/ E2(s,p)
+                BY <3>1 DEF LemmaSecondariesFollowPrimary, SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
+            <3>. CASE E1(s,p)
+                <4>. CASE \E t,u \in Server : RollbackEntries(u, t) /\ u # p
+                    <5>. QED BY DEF RollbackEntries, TypeOK
+                <4>. CASE \E t \in Server : RollbackEntries(p, t)
+                    <5>. PICK t \in Server : RollbackEntries(p, t)
+                        OBVIOUS
+                    <5>1. LastTerm(log[s]) < LastTerm(log[t])
+                        BY DEF RollbackEntries, CanRollback, LastTerm, TypeOK
+                    <5>. PICK lp \in Server : state[lp] = Primary /\ \A u \in Server : currentTerm[lp] >= currentTerm[u]
+                        BY DEF LemmaBasic, ExistsQuorumInLargestTerm, ExistsPrimary
+                    <5>. CASE currentTerm[p] = currentTerm[lp]
+                        \* proof by contradiction
+                        <6>. p = lp
+                            BY DEF LemmaBasic, OnePrimaryPerTerm
+                        <6>. LastTerm(log[s]) >= LastTerm(log[t])
+                            BY DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm, LastTerm, TypeOK
+                        <6>. QED BY <5>1 DEF LastTerm, TypeOK
+                    <5>. CASE currentTerm[p] < currentTerm[lp]
+                        <6>. LastTerm(log[s]) < currentTerm[lp]
+                            BY DEF LastTerm, TypeOK
+                        <6>. QED BY DEF RollbackEntries, LastTerm, TypeOK
+                    <5>. QED BY DEF TypeOK
+                <4>. QED OBVIOUS
+            <3>. CASE E2(s,p)
+                <4>. QED BY DEF RollbackEntries, TypeOK
+            <3>. QED OBVIOUS
+        <2>. CASE \E t \in Server : RollbackEntries(s, t)
+            <3>. PICK lp \in Server : state[lp] = Primary /\ \A u \in Server : currentTerm[lp] >= currentTerm[u]
+                BY DEF LemmaBasic, ExistsQuorumInLargestTerm, ExistsPrimary, TypeOK
+            <3>. state'[lp] = Primary /\ \A u \in Server : currentTerm'[lp] >= currentTerm'[u]
+                BY DEF RollbackEntries, TypeOK
+            <3>. SUFFICES ASSUME LastTerm(log'[s]) >= currentTerm'[lp]
+                 PROVE (\E p \in Server : E1(s,p)' \/ E2(s,p)') \/ E3'
+                 BY TypeOKAndNext DEF LastTerm, TypeOK
+            <3>. LastTerm(log'[s]) < currentTerm'[lp]
+                <4>. PICK t \in Server : RollbackEntries(s, t)
+                    OBVIOUS
+                <4>1. LastTerm(log[s]) < LastTerm(log[t])
+                    BY DEF RollbackEntries, CanRollback
+                <4>. LastTerm(log[s]) < currentTerm[lp]
+                    BY <4>1 DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm, LastTerm, TypeOK
+                <4>. LastTerm(log'[s]) <= LastTerm(log[s])
+                    BY DEF RollbackEntries, LemmaBasic, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+                <4>. QED BY TypeOKAndNext DEF RollbackEntries, LastTerm, TypeOK
+            <3>. QED BY DEF LastTerm
+        <2>. QED OBVIOUS
     <1>4. (\E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)) => SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm'
+        <2>. SUFFICES ASSUME NEW p \in Server, \E Q \in QuorumsAt(p) : BecomeLeader(p, Q)
+             PROVE \A s \in Server : Reqs(s)'
+             BY DEF SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
+        <2>. TAKE s \in Server
+        <2>. PICK lt \in Server : LastTerm(log[s]) <= currentTerm[lt]
+            BY DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+        <2>. CASE s = p
+            <3>. QED BY DEF BecomeLeader, TypeOK
+        <2>. CASE s # p
+            <3>. LastTerm(log'[s]) = LastTerm(log[s])
+                BY DEF LastTerm, BecomeLeader, TypeOK
+            <3>. currentTerm[lt] < currentTerm'[p]
+                BY ElectedLeadersHaveLatestTerm DEF BecomeLeader, TypeOK
+            <3>. QED BY TypeOKAndNext DEF BecomeLeader, LastTerm, TypeOK
+        <2>. QED OBVIOUS
     <1>5. (\E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm'
         BY DEF CommitEntry, TypeOK, LemmaSecondariesFollowPrimary, SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
     <1>6. (\E s,t \in Server : UpdateTerms(s, t)) => SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm'
+        <2>. SUFFICES ASSUME \E s,t \in Server : UpdateTerms(s, t)
+             PROVE \A s \in Server : Reqs(s)'
+             BY DEF SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
+        <2>. TAKE s \in Server
+        <2>. SUFFICES ASSUME state'[s] = Secondary, LastTerm(log'[s]) > currentTerm'[s], ~E3
+             PROVE (\E p \in Server : E1(s,p)' \/ E2(s,p)') \/ E3'
+             BY DEF Reqs, UpdateTerms, UpdateTermsExpr
+        <2>. PICK lp \in Server : state[lp] = Primary /\ (\A u \in Server : currentTerm[lp] >= currentTerm[u])
+            BY DEF LemmaBasic, ExistsQuorumInLargestTerm, ExistsPrimary, TypeOK
+        <2>. state'[lp] = Primary /\ (\A u \in Server : currentTerm'[lp] >= currentTerm'[u])
+            BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+        (*<2>. PICK lp \in Server : state'[lp] = Primary /\ (\A u \in Server : currentTerm'[lp] >= currentTerm'[u])
+            BY LemmaBasicAndNext, ExistsQuorumInLargestTermAndNext, TypeOKAndNext
+                DEF LemmaBasic, ExistsQuorumInLargestTerm, ExistsPrimary, TypeOK, UpdateTerms, UpdateTermsExpr*)
+        <2>. CASE \E t \in Server : UpdateTerms(t, s)
+            <3>. CASE currentTerm'[s] = currentTerm'[lp]
+                <4>. PICK p \in Server : LastTerm(log'[s]) <= currentTerm'[p]
+                    BY LemmaBasicAndNext, LogsMustBeSmallerThanOrEqualToLargestTermAndNext DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+                <4>. LastTerm(log'[s]) <= currentTerm'[lp]
+                    BY TypeOKAndNext DEF LastTerm, TypeOK
+                <4>. QED BY TypeOKAndNext DEF LastTerm, TypeOK
+            <3>. CASE currentTerm'[s] < currentTerm'[lp]
+                <4>. CASE currentTerm'[lp] > LastTerm(log'[s])
+                    <5>. QED OBVIOUS
+                <4>. CASE currentTerm'[lp] = LastTerm(log'[s])
+                    <5>. CASE state[s] = Primary
+                        \* proof by contradiction
+                        <6>. LastTerm(log'[s]) < currentTerm'[lp]
+                            <7>. LastTerm(log[s]) <= currentTerm[s]
+                                BY DEF LemmaBasic, CurrentTermAtLeastAsLargeAsLogTermsForPrimary, LastTerm, TypeOK
+                            <7>. PICK t \in Server : UpdateTerms(t, s)
+                                OBVIOUS
+                            <7>. currentTerm[s] < currentTerm[t]
+                                BY DEF UpdateTerms, UpdateTermsExpr
+                            <7>. currentTerm[s] < currentTerm[lp]
+                                BY DEF TypeOK
+                            <7>. LastTerm(log[s]) < currentTerm[lp]
+                                BY DEF LastTerm, TypeOK
+                            <7>. QED BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+                        <6>. QED OBVIOUS
+                    <5>. CASE state[s] = Secondary
+                        <6>. LastTerm(log[s]) > currentTerm[s]
+                            BY DEF UpdateTerms, UpdateTermsExpr, LastTerm, TypeOK
+                        <6>. PICK p \in Server : E1(s,p) \/ E2(s,p)
+                            BY DEF LemmaSecondariesFollowPrimary, SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
+                        <6>. CASE E1(s,p)
+                            <7>. QED BY DEF UpdateTerms, UpdateTermsExpr, LastTerm, TypeOK
+                        <6>. CASE E2(s,p)
+                            \* proof by contradiction
+                            <7>1. currentTerm[lp] = LastTerm(log[s])
+                                BY DEF UpdateTerms, UpdateTermsExpr, LastTerm, TypeOK
+                            <7>. currentTerm[p] <= LastTerm(log[s])
+                                BY <7>1 DEF LastTerm, TypeOK
+                            <7>. QED BY DEF LastTerm, TypeOK
+                        <6>. QED BY DEF TypeOK
+                    <5>. QED BY DEF TypeOK
+                <4>. CASE currentTerm'[lp] < LastTerm(log'[s])
+                    \* proof by contradiction
+                    <5>. PICK p \in Server : LastTerm(log'[s]) <= currentTerm'[p]
+                        BY LemmaBasicAndNext, LogsMustBeSmallerThanOrEqualToLargestTermAndNext DEF LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+                    <5>. LastTerm(log'[s]) <= currentTerm'[lp]
+                        BY TypeOKAndNext DEF LastTerm, TypeOK
+                    <5>. QED BY TypeOKAndNext DEF LastTerm, TypeOK
+                <4>. QED BY TypeOKAndNext DEF LastTerm, TypeOK
+            <3>. QED BY TypeOKAndNext DEF LastTerm, TypeOK
+        <2>. CASE \E t,u \in Server : UpdateTerms(t, u) /\ u # s
+            <3>1. state[s] = Secondary /\ LastTerm(log[s]) > currentTerm[s]
+                BY DEF UpdateTerms, UpdateTermsExpr, LastTerm, TypeOK
+            <3>. PICK p \in Server : E1(s,p) \/ E2(s,p)
+                BY <3>1 DEF LemmaSecondariesFollowPrimary, SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
+            <3>. CASE p = lp
+                <4>. QED BY DEF UpdateTerms, UpdateTermsExpr, TypeOK
+            <3>. CASE p # lp
+                <4>. QED BY DEF UpdateTerms, UpdateTermsExpr, LastTerm, TypeOK
+            <3>. QED OBVIOUS
+        <2>. QED OBVIOUS
     <1>7. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
 
 
