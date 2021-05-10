@@ -366,7 +366,7 @@ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm ==
 
 (* SMS_LC_II *)
 
-\* Belongs in TypeOK, or considered a completely separate II
+\* Basically TypeOK for commits
 CommittedTermMatchesEntry ==
     \A c \in committed : c.term = c.entry[2]
 
@@ -391,13 +391,13 @@ LogsEqualToCommittedMustHaveCommittedIfItFits ==
 
 CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens ==
     \A s \in Server :
-        LET MaxLogLen == Max({ Len(log[t]) : t \in config[s] })
-        IN \A c \in committed : c.entry[1] <= MaxLogLen
+        \A c \in committed :
+            \E t \in Server : c.entry[1] <= Len(log[t])
 
 CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms ==
     \A s \in Server :
-        LET MaxLogTerm == Max({ LastTerm(log[t]) : t \in config[s] })
-        IN \A c \in committed : c.term <= MaxLogTerm
+        \A c \in committed :
+            \E t \in Server : c.term <= LastTerm(log[t])
 
 \* If a node is primary, it must contain all committed entries from previous terms in its log.
 LeaderCompletenessGeneralized ==
@@ -410,7 +410,7 @@ LeaderCompletenessGeneralized ==
 CommittedEntriesMustHaveQuorums ==
     \A c \in committed :
         \A s \in Server :
-            \E Q \in Quorums(config[s]) : \A q \in Q :
+            \E Q \in QuorumsAt(s) : \A q \in Q :
                 \E i \in DOMAIN log[q] :
                     /\ log[q][i] = c.term
                     /\ i = c.entry[1]
