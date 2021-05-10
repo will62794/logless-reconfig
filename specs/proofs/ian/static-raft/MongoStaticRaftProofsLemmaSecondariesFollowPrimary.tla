@@ -617,9 +617,9 @@ PROOF
                             \* proof by contradiction
                             <7>1. currentTerm[lp] = LastTerm(log[s])
                                 BY DEF UpdateTerms, UpdateTermsExpr, LastTerm, TypeOK
-                            <7>. currentTerm[p] <= LastTerm(log[s])
+                            <7>. currentTerm[p] <= LastTerm(log[s]) \* this contradicts E2(s,p)
                                 BY <7>1 DEF LastTerm, TypeOK
-                            <7>. QED BY <6>1 DEF LastTerm, TypeOK
+                            <7>. QED BY DEF LastTerm, TypeOK
                         <6>. QED BY DEF TypeOK
                     <5>. QED BY DEF TypeOK
                 <4>. CASE currentTerm'[lp] < LastTerm(log'[s])
