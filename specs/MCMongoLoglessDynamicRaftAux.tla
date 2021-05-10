@@ -9,7 +9,7 @@ StateConstraint == \A s \in Server :
 
 ServerSymmetry == Permutations(Server)
 
-ViewNoLog == <<currentTerm, state, configVersion, configTerm, config, committed>>
+ViewNoLog == <<currentTerm, state, configVersion, configTerm, config, committedConfigs>>
 
 \*
 \* For easier debugging.
@@ -29,7 +29,7 @@ Alias ==
         \* state |-> state,
         log |-> log,
         \* config |-> config,
-        committed |-> committed,
+        committedConfigs |-> committedConfigs,
         \* config |-> config,
         \* reconfigs |-> ReconfigPairsAll,
         \* electionLogIndexes |-> [s \in Server |-> ElectionLogIndex(s)]
