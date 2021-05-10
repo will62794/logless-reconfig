@@ -450,14 +450,10 @@ PROOF
                         <6>. PICK lp \in Server : E1(t,lp) \/ E2(t,lp)
                             BY DEF LemmaSecondariesFollowPrimary, SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
                         <6>. CASE E1(t,lp)
-                            \* E1(s,lp)' is true in this case
-                            \* We explicitly ask for extra time to make sure this one gets proved, it still takes an extra run sometimes
                             <7>. E1(t,lp)'
                                 BY DEF GetEntries, TypeOK
-                            <7>. E1(s,lp)'
+                            <7>. E1(s,lp)' \* 2 steps again...
                                 BY TypeOKAndNext DEF GetEntries, TypeOK
-                            \*<7>. LastTerm(log'[lp]) >= LastTerm(log'[s]) /\ Len(log'[lp]) >= Len(log'[s])
-                            \*    BY SMTT(30) DEF GetEntries
                             <7>. QED OBVIOUS
                         <6>. CASE E2(t,lp)
                             <7>. QED BY DEF GetEntries
