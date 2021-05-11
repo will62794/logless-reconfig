@@ -222,6 +222,8 @@ CommittedEntriesMustHaveQuorums ==
 
 \* \* Is node i electable in term T
 Electable(i) == \E Q \in QuorumsAt(i) : ENABLED JointBecomeLeader(i, Q)
+ElectableInQ(i, Q) == ENABLED JointBecomeLeader(i, Q)
+
 
 \* \*TODO: Generalize ExistsQuorumInLargestTerm to avoid reliance on quorum definition.
 ElectionDisablesLesserOrEqualTerms == 
@@ -527,8 +529,39 @@ I2 ==
          /\ ~(\A Q \in Quorums(config[t]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(t)))) => 
             \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
 
+\* If a log entry is committed, then the quorums of every active config must overlap with 
+\* at least some node that contains this log entry.
+I3 ==
+    \A c \in committed :
+    \A s \in Server :
+        \* Electable in config implies quorum overlap with committed entry.
+        \A Q \in QuorumsAt(s) : ElectableInQ(s, Q) => \E n \in Q : InLog(c.entry, n)
+
+\* If an entry e is committed in term T and there exists some node in a config with term
+\* T, one these configs has e on quorum of its config
+I4 == 
+    \A c \in committed :
+    (\E s \in Server : configTerm[s] = c.term) =>
+        \E s \in Server : 
+            /\ configTerm[s] = c.term
+            /\ \E Q \in Quorums(config[s]) : \A n \in Q : InLog(c.entry, n)
+
 PrimaryMustBeInOwnConfig == 
     \A s \in Server : (state[s] = Primary) => s \in config[s]
+
+\* If a log entry in term T exists, there must have been an election in 
+\* term T to create it, implying the existence of a config in term T or newer.
+LogEntryInTermImpliesConfigInTerm == 
+    \A s \in Server : 
+    \A i \in DOMAIN log[s] :
+    \E t \in Server : 
+        configTerm[t] >= log[s][i]
+
+CommittedEntryIntersectsAnyQuorumOfNewestConfig ==
+    \A c \in committed :
+    \A s \in Server :
+    (\A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))) =>
+        \A Q \in QuorumsAt(s) : \E n \in Q : InLog(c.entry, n)
 
 ViewNoElections == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
 
@@ -580,6 +613,10 @@ Ind ==
     /\ LeaderCompletenessGeneralized
     \* /\ CommittedEntriesMustHaveQuorums
 
+    /\ LogEntryInTermImpliesConfigInTerm
+    /\ I3
+    /\ CommittedEntryIntersectsAnyQuorumOfNewestConfig
+
 
 IInit == 
     /\ TypeOKRandom
@@ -620,12 +657,12 @@ Alias ==
         \* log |-> log,
         \* config |-> config,
         \* elections |-> elections,
-        committed |-> committed,
         \* config |-> config,
         \* reconfigs |-> ReconfigPairsAll,
         \* electionLogIndexes |-> [s \in Server |-> ElectionLogIndex(s)]
         \* latestBeforeTerm |-> [s \in Server |-> [ i \in ((DOMAIN log[s]) \{1}) |-> LatestEntryBeforeTerm(s, log[s][i])]]
         nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)],
+        committed |-> committed,
         activeConfig |-> [s \in Server |-> ActiveConfig(configVersion[s], configTerm[s])]
         \* configChains |-> [<<s,t>> \in ServerPair |-> ConfigChains(s,t)]
     ]
