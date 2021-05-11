@@ -554,7 +554,7 @@ Ind ==
 
     \* Establish basic, intra-term config safety.
     /\ ConfigVersionAndTermUnique
-    /\ ConfigSameTermAncestorMustBeCommitted
+    \* /\ ConfigSameTermAncestorMustBeCommitted
     \* /\ ConfigOverlapsWithDirectAncestor
     /\ PrimaryInTermContainsNewestConfigOfTerm
 
