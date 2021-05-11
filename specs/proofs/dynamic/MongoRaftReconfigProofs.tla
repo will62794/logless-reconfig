@@ -65,9 +65,6 @@ ConfigType == [Server -> SUBSET Server]
 ElectionType == [ leader : Server, 
                   term   : Nat ]
 
-CommittedType == 
-    [ entry  : PositiveNat \times PositiveNat,
-      term : Nat]
 
 (*
 TypeOK == 
@@ -535,6 +532,10 @@ PrimaryMustBeInOwnConfig ==
 
 ViewNoElections == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
 
+CommittedType == 
+    [ entry  : (0..MaxLogLen) \X (0..MaxTerm),
+      term   : 1..MaxTerm ]
+
 TypeOKRandom == 
     /\ currentTerm \in RandomSubset(NumRandSubsets, [Server -> 0..MaxTerm])
     /\ state \in RandomSubset(NumRandSubsets, [Server -> {Secondary, Primary}])
@@ -542,9 +543,10 @@ TypeOKRandom ==
     /\ config \in RandomSubset(NumRandSubsets, [Server -> SUBSET Server])
     /\ configVersion \in RandomSubset(NumRandSubsets, [Server -> 0..MaxConfigVersion])
     /\ configTerm \in RandomSubset(NumRandSubsets, [Server -> 0..MaxTerm])
+    \* For checking MongoRaftReconfig with logs.
+    /\ committed \in RandomSetOfSubsets(3, 1, CommittedType)
     /\ elections = {}
-    \* /\ committed \in RandomSetOfSubsets(NumRandSubsets, 1, CommittedType)
-    /\ committed = {}
+
 
 Ind ==
     \* Establishing config safety.
@@ -601,7 +603,7 @@ Ind ==
     \* /\ LogsEqualToCommittedMustHaveCommittedIfItFits
     \* \* /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
     \* \* /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
-    \* /\ LeaderCompletenessGeneralized
+    /\ LeaderCompletenessGeneralized
 
     \* /\ ElectableNodesHaveCommittedEntrielslss
     \* /\ CommittedEntriesMustHaveQuorums \* quorum based.
@@ -645,7 +647,7 @@ Alias ==
         \* log |-> log,
         \* config |-> config,
         \* elections |-> elections,
-        \* committed |-> committed,
+        committed |-> committed,
         \* config |-> config,
         \* reconfigs |-> ReconfigPairsAll,
         \* electionLogIndexes |-> [s \in Server |-> ElectionLogIndex(s)]
