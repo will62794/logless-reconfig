@@ -502,6 +502,37 @@ ConfigInTermPreventsOlderConfigs ==
                 \/ CSM!NewerConfig(<<configVersion[n], configTerm[n]>>,
                                 <<configVersion[t],configTerm[t]>>))
 
+
+
+
+\*** New invariants. ***/
+
+\* (configVersion, term) pair of node i.
+CV(i) == <<configVersion[i], configTerm[i]>>
+
+OlderConfig(ci, cj) == ~CSM!NewerOrEqualConfig(ci, cj) 
+
+I1 == 
+    \A s,t \in Server :
+        \* If t has an older config, and its config
+        \* doesn't overlap with s, then it must be disabled due to
+        \* a quorum in newer config.
+        \* config ordering.
+        (/\ OlderConfig(CV(t), CV(s)) 
+         /\ ~QuorumsOverlap(config[t], config[s])) => 
+            \A Q \in Quorums(config[t]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(t))
+
+I2 == 
+    \A s,t \in Server :
+        \* If t has an older or equal config and it is not disabled via newer config, then its 
+        \* quorum must overlap with some node in the term of config s.
+        (/\ OlderConfig(CV(t), CV(s)) \/ (CV(t) = CV(s))
+         /\ ~(\A Q \in Quorums(config[t]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(t)))) => 
+            \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
+
+PrimaryMustBeInOwnConfig == 
+    \A s \in Server : (state[s] = Primary) => s \in config[s]
+
 ViewNoElections == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
 
 TypeOKRandom == 
@@ -528,13 +559,9 @@ Ind ==
     /\ PrimaryInTermContainsNewestConfigOfTerm
 
     \* Establish inter-term config safety.
-    /\ ConfigInTermImpliesQuorumOfConfigInTerm
-    /\ ConfigsWithSameVersionHaveSameMemberSetOrDisable
-    /\ ConfigInTermPreventsOlderConfigs
-
-
-    
-
+    /\ I1
+    /\ I2
+    /\ PrimaryMustBeInOwnConfig
 
     \*
     \* LEMMA Basic
