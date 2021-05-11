@@ -500,7 +500,7 @@ ConfigInTermPreventsOlderConfigs ==
                                 <<configVersion[t],configTerm[t]>>))
 
 
-
+CommittedEntryIndexesAreNonZero == \A c \in committed : c.entry[1] # 0
 
 \*** New invariants. ***/
 
@@ -549,64 +549,37 @@ TypeOKRandom ==
 
 
 Ind ==
+    \*
     \* Establishing config safety.
+    \*
     /\ OnePrimaryPerTerm
     /\ PrimaryConfigTermEqualToCurrentTerm
     /\ ConfigsNonEmpty
-
-    \* Establish basic, intra-term config safety.
     /\ ConfigVersionAndTermUnique
     /\ PrimaryInTermContainsNewestConfigOfTerm
-
-    \* Establish inter-term config safety.
     /\ I1
     /\ I2
     /\ PrimaryMustBeInOwnConfig
 
+    \* 
+    \* Static safety invariants.
     \*
-    \* LEMMA Basic
-    \*
-    \* /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
-    \* /\ TermsOfEntriesGrowMonotonically
-    \* /\ ExistsQuorumInLargestTerm \* quorum based.
-    \* /\ ElectionDisablesLesserOrEqualTerms
-    \* /\ LogEntryInTermDisablesLesserOrEqualTerms
-
-    \* /\ LogsMustBeSmallerThanOrEqualToLargestTerm
-    \* /\ PrimaryHasEntriesItCreated
-
-    \*
-    \* LEMMA Reconfigs.
-    \*
-
-
-    \* /\ ElectionReconfigDoesntChangeMemberSet
-    \* /\ ConfigDiffTermAndVersionAncestorMustBeCommitted
-    \* /\ ConfigInTermNewerThanNonoverlappingImpliesCommittmentInTerm
-    \* /\ ConfigInNewerTermNewerDisablesOlderConfigs
-
-
-    \* /\ ConfigInTermImpliesSomeNodeInThatTerm
-    \* /\ ConfigVersionAndTermUnique
-    \* /\ ActiveConfigsInSameTermOverlap
-    \* /\ PrimaryInTermContainsNewestConfigOfTerm
-    \* /\ ConfigsWithSameVersionHaveSameMemberSet
-    \* /\ ConfigSeparationImpliesPreviousCommit
-    \* /\ ConfigInTermImpliesQuorumOfConfigInTerm
-    \* /\ ConfigInTermDisablesAllOlderConfigsWithDifferingMemberSets
-
-    \*
-    \* LEMMA Extra
-    \*
-    \* /\ CommittedTermMatchesEntry
-    \* /\ LogsLaterThanCommittedMustHaveCommitted
-    \* /\ LogsEqualToCommittedMustHaveCommittedIfItFits
-    \* \* /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
-    \* \* /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
+    /\ CommittedEntryIndexesAreNonZero
+    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    /\ TermsOfEntriesGrowMonotonically
+    \* /\ ExistsQuorumInLargestTerm
+    /\ LogsMustBeSmallerThanOrEqualToLargestTerm
+    \* /\ AllConfigsAreServer
+    /\ SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm
+    /\ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
+    /\ CommittedTermMatchesEntry
+    /\ LogsLaterThanCommittedMustHaveCommitted
+    /\ LogsEqualToCommittedMustHaveCommittedIfItFits
+    /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
+    /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
     /\ LeaderCompletenessGeneralized
+    \* /\ CommittedEntriesMustHaveQuorums
 
-    \* /\ ElectableNodesHaveCommittedEntrielslss
-    \* /\ CommittedEntriesMustHaveQuorums \* quorum based.
 
 IInit == 
     /\ TypeOKRandom
