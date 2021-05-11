@@ -534,7 +534,7 @@ ViewNoElections == <<currentTerm, state, log, configVersion, configTerm, config,
 
 CommittedType == 
     [ entry  : (0..MaxLogLen) \X (0..MaxTerm),
-      term   : 1..MaxTerm ]
+      term   : 0..MaxTerm ]
 
 TypeOKRandom == 
     /\ currentTerm \in RandomSubset(NumRandSubsets, [Server -> 0..MaxTerm])
