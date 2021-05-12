@@ -51,6 +51,11 @@ PROOF
 
 (* *AndNext *)
 
+\* TODO add this to the II
+THEOREM CommitIndexGreaterThanZero ==
+ASSUME TypeOK
+PROVE \A c \in committed : c.entry[1] > 0
+
 THEOREM CommittedTermMatchesEntryAndNext ==
 ASSUME SMS_LC_II, TypeOK, Next
 PROVE CommittedTermMatchesEntry'
@@ -218,7 +223,88 @@ PROOF
     <1>2. (\E s, t \in Server : GetEntries(s, t)) => LeaderCompletenessGeneralized'
         <2>. QED BY DEF GetEntries, SMS_LC_II, LeaderCompletenessGeneralized, InLog, TypeOK
     <1>3. (\E s, t \in Server : RollbackEntries(s, t)) => LeaderCompletenessGeneralized'
-        \*<2>. QED BY DEF RollbackEntries, CanRollback, SMS_LC_II, LeaderCompletenessGeneralized, InLog, TypeOK
+        <2>. SUFFICES ASSUME \E s, t \in Server : RollbackEntries(s, t)
+             PROVE \A s \in Server : (state'[s] = Primary) => \A c \in committed' : (c.term <= currentTerm'[s]) => InLog(c.entry, s)'
+             BY DEF LeaderCompletenessGeneralized
+        <2>. TAKE s \in Server
+        <2>. SUFFICES ASSUME state[s] = Primary
+             PROVE \A c \in committed' : (c.term <= currentTerm'[s]) => InLog(c.entry, s)'
+             BY DEF RollbackEntries
+        <2>. TAKE c \in committed'
+        <2>. c \in committed
+            BY DEF RollbackEntries
+        <2>. SUFFICES ASSUME c.term <= currentTerm[s]
+             PROVE InLog(c.entry, s)'
+             BY DEF RollbackEntries
+        <2>1. InLog(c.entry, s)
+            BY DEF SMS_LC_II, LeaderCompletenessGeneralized
+        
+        \* to recap: s \in Server, c \in committed, c.term <= currentTerm[s]
+        <2>. CASE \E t,u \in Server : RollbackEntries(u, t) /\ u # s
+            <3>. QED BY DEF SMS_LC_II, LeaderCompletenessGeneralized, InLog, RollbackEntries, TypeOK
+        <2>. CASE \E t \in Server : RollbackEntries(s, t)
+            <3>. PICK t \in Server : RollbackEntries(s, t)
+                OBVIOUS
+            <3>1. LastTerm(log[s]) < LastTerm(log[t])
+                BY DEF RollbackEntries, CanRollback
+            <3>. CASE Len(log[s]) > Len(log[t])
+                \* if c is in t's log then clearly we're not rolling back c
+                <4>1. InLog(c.entry, t)
+                    <5>. PICK i \in DOMAIN log[s] : i = c.entry[1] /\ log[s][i] = c.entry[2]
+                        BY <2>1 DEF InLog
+                    <5>1. log[s][i] < LastTerm(log[t])
+                        \* ridiculous that I need to spell this out
+                        <6>. log[s][i] <= LastTerm(log[s])
+                            BY DEF LastTerm, SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, TermsOfEntriesGrowMonotonically, TypeOK
+                        <6>. QED BY <3>1 DEF LastTerm, TypeOK
+                    <5>2. c.term < LastTerm(log[t])
+                        BY <5>1 DEF InLog, SMS_LC_II, CommittedTermMatchesEntry
+                    <5>3. \E j \in DOMAIN log[t] : log[t][j] > c.term
+                        BY <5>2 DEF LastTerm, TypeOK
+                    <5>4. Len(log[t]) >= c.entry[1] /\ log[t][c.entry[1]] = c.term
+                        BY <5>2, <5>3 DEF LastTerm, SMS_LC_II, LogsLaterThanCommittedMustHaveCommitted, TypeOK
+                    <5>. QED BY <5>4 DEF InLog, SMS_LC_II, CommittedTermMatchesEntry
+                <4>2. c.entry[1] <= Len(log[t])
+                    BY <4>1 DEF InLog, TypeOK
+                <4>3. Len(log[t]) <= Len(log'[s])
+                    BY DEF RollbackEntries, CanRollback, TypeOK
+                <4>4. c.entry[1] <= Len(log'[s])
+                    BY <4>2, <4>3 DEF TypeOK
+                <4>. QED BY <2>1, <4>4 DEF InLog, RollbackEntries
+            <3>. CASE Len(log[s]) <= Len(log[t]) /\ LastTerm(log[s]) # LogTerm(t, Len(log[s]))
+                \* if c is in t's log then we can't be rolling back c because: LastTerm(log[s]) # LogTerm(t, Len(log[s]))
+                <4>1. InLog(c.entry, t)
+                    <5>1. c.term <= LastTerm(log[t])
+                        <6>. c.term <= LastTerm(log[s])
+                            BY <2>1 DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, TermsOfEntriesGrowMonotonically, InLog, CommittedTermMatchesEntry, LastTerm
+                        <6>. QED BY <3>1 DEF LastTerm, TypeOK
+                    <5>2. Len(log[t]) >= c.entry[1]
+                        BY <2>1 DEF InLog
+                    <5>. CASE c.term < LastTerm(log[t])
+                        <6>. Len(log[t]) >= c.entry[1] /\ log[t][c.entry[1]] = c.term
+                            BY DEF SMS_LC_II, LogsLaterThanCommittedMustHaveCommitted, LastTerm, TypeOK
+                        <6>. QED BY CommitIndexGreaterThanZero DEF SMS_LC_II, CommittedTermMatchesEntry, InLog, TypeOK
+                    <5>. CASE c.term = LastTerm(log[t])
+                        <6>1. \E i \in DOMAIN log[t] : log[t][i] = c.term
+                            BY <5>2, CommitIndexGreaterThanZero DEF LastTerm, TypeOK
+                        <6>. log[t][c.entry[1]] = c.term
+                            BY <5>2, <6>1 DEF SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits, LastTerm, TypeOK
+                        <6>. QED BY <5>2, CommitIndexGreaterThanZero DEF SMS_LC_II, CommittedTermMatchesEntry, InLog, TypeOK
+                    <5>. QED BY <5>1 DEF LastTerm, TypeOK
+                <4>2. c.entry[1] # Len(log[s])
+                    <5>. SUFFICES ASSUME c.entry[1] = Len(log[s])
+                         PROVE FALSE
+                         OBVIOUS
+                    <5>1. LastTerm(log[s]) = LogTerm(s, c.entry[1])
+                        BY DEF LastTerm, LogTerm, GetTerm
+                    <5>2. LogTerm(t, Len(log[s])) = LogTerm(t, c.entry[1])
+                        OBVIOUS
+                    <5>3. LastTerm(log[s]) = LogTerm(t, Len(log[s]))
+                        BY <5>1, <5>2, <2>1, <4>1 DEF InLog, LastTerm, LogTerm, GetTerm, TypeOK
+                    <5>. QED BY <5>3
+                <4>. QED BY <2>1, <4>2 DEF RollbackEntries, InLog, TypeOK
+            <3>. QED BY DEF RollbackEntries, CanRollback
+        <2>. QED OBVIOUS
     <1>4. (\E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)) => LeaderCompletenessGeneralized'
         <2>. SUFFICES ASSUME NEW p \in Server, \E Q \in QuorumsAt(p) : BecomeLeader(p, Q)
              PROVE \A s \in Server : (state'[s] = Primary) => \A c \in committed' : (c.term <= currentTerm'[s]) => InLog(c.entry, s)'
@@ -232,18 +318,48 @@ PROOF
             <3>. c \in committed
                 BY DEF BecomeLeader
             <3>1. InLog(c.entry, s)
-                <4>. PICK Q \in Quorums(Server) : \A q \in Q : InLog(c.entry, q)
-                    BY DEF SMS_LC_II, CommittedEntriesMustHaveQuorums
-                \* s is also the largest primary and has a quorum of servers
-                <4>. QED
-            
-                (*<4>. PICK i \in DOMAIN log[s] : log[s][i] >= c.term
-                    <5>. CASE state[s] = Primary
-                    <5>. CASE state[s] = Secondary
-                    <5>. QED BY DEF TypeOK
-                <4>. CASE log[s][i] = c.term
-                <4>. CASE log[s][i] > c.term
-                <4>. QED BY DEF TypeOK*)
+                <4>. PICK cQ \in Quorums(Server) : \A q \in cQ : InLog(c.entry, q)
+                    BY DEF SMS_LC_II, CommittedEntriesMustHaveQuorums, CommittedTermMatchesEntry, InLog
+                <4>. PICK lQ \in QuorumsAt(s) : \A q \in lQ : CanVoteForOplog(q, s, currentTerm[s]+1)
+                    BY DEF BecomeLeader
+                <4>. PICK q \in cQ : q \in lQ
+                    <5>. \E t \in Server : cQ \in QuorumsAt(t)
+                        BY DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, AllConfigsAreServer, QuorumsAt
+                    <5>. QED BY AllQuorumsOverlap DEF SMS_LC_II, LemmaSecondariesFollowPrimary
+                <4>. PICK i \in DOMAIN log[q] : log[q][i] = c.term
+                    BY DEF InLog, SMS_LC_II, CommittedTermMatchesEntry
+                <4>. q \in Server
+                    BY QuorumsAreServerSubsets
+                <4>1. (LastTerm(log[s]) > c.term) => InLog(c.entry, s)
+                    <5>. SUFFICES ASSUME LastTerm(log[s]) > c.term
+                         PROVE InLog(c.entry, s)
+                         OBVIOUS
+                    <5>1. Len(log[s]) >= c.entry[1] /\ log[s][c.entry[1]] = c.term
+                        BY DEF SMS_LC_II, LogsLaterThanCommittedMustHaveCommitted, LastTerm, TypeOK
+                    <5>2. c.entry[1] \in DOMAIN log[s]
+                        BY <5>1, CommitIndexGreaterThanZero, LenProperties DEF TypeOK
+                    <5>. QED BY <5>1, <5>2 DEF InLog, SMS_LC_II, CommittedTermMatchesEntry
+                <4>. CASE LastTerm(log[s]) > LastTerm(log[q])
+                    <5>. LastTerm(log[s]) > c.term
+                        BY DEF CanVoteForOplog, LastTerm, TypeOK,
+                            SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, TermsOfEntriesGrowMonotonically
+                    <5>. QED BY <4>1
+                <4>. CASE LastTerm(log[s]) = LastTerm(log[q]) /\ Len(log[s]) >= Len(log[q])
+                    <5>1. LastTerm(log[s]) >= c.term
+                        BY DEF CanVoteForOplog, LastTerm, TypeOK,
+                            SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, TermsOfEntriesGrowMonotonically
+                    <5>. CASE LastTerm(log[s]) > c.term
+                        BY <4>1
+                    <5>. CASE LastTerm(log[s]) = c.term
+                        <6>1. Len(log[s]) >= c.entry[1]
+                            BY DEF InLog, TypeOK
+                        <6>2. log[s][c.entry[1]] = c.term
+                            BY <6>1 DEF SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits, LastTerm, TypeOK
+                        <6>3. c.entry[1] \in DOMAIN log[s]
+                            BY <6>1, CommitIndexGreaterThanZero, LenProperties DEF TypeOK
+                        <6>. QED BY <6>2, <6>3 DEF InLog, SMS_LC_II, CommittedTermMatchesEntry
+                    <5>. QED BY <5>1 DEF LastTerm, TypeOK
+                <4>. QED BY DEF BecomeLeader, CanVoteForOplog
             <3>. CASE LastTerm(log'[s]) = currentTerm[s] + 1
                 <4>. (DOMAIN log[s]) \in SUBSET Nat /\ (DOMAIN log'[s]) \in SUBSET Nat
                     BY TypeOKAndNext DEF TypeOK
