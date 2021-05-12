@@ -370,14 +370,19 @@ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm ==
 CommittedTermMatchesEntry ==
     \A c \in committed : c.term = c.entry[2]
 
-\* when a server's latest log term EXCEEDS a committed entry c's term, ALL commits
-\* with terms before or equal to c's must be in the server's log
-LogsLaterThanCommittedMustHaveCommitted ==
-    \A s \in Server : \A c \in committed :
-        (\E i \in DOMAIN log[s] : log[s][i] > c.term) =>
-            \A d \in committed :
-                d.term <= c.term => /\ Len(log[s]) >= d.entry[1]
-                                    /\ log[s][d.entry[1]] = d.term
+CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens ==
+    \A c \in committed :
+        \E s \in Server : c.entry[1] <= Len(log[s])
+
+CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms ==
+    \A c \in committed :
+        \E s \in Server : c.term <= LastTerm(log[s])
+
+\* If a node is primary, it must contain all committed entries from previous terms in its log.
+LeaderCompletenessGeneralized ==
+    \A s \in Server : 
+        (state[s] = Primary) =>
+            \A c \in committed : (c.term <= currentTerm[s]) => InLog(c.entry, s)
 
 \* when a server's latest log term is EQUAL to a committed entry c's term, ALL commits
 \* with terms before or equal to c's must be in the server's log (if the entry fits)
@@ -388,31 +393,21 @@ LogsEqualToCommittedMustHaveCommittedIfItFits ==
                 (d.term <= c.term /\ Len(log[s]) >= d.entry[1]) =>
                       log[s][d.entry[1]] = d.term
 
-
-CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens ==
-    \A s \in Server :
-        \A c \in committed :
-            \E t \in Server : c.entry[1] <= Len(log[t])
-
-CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms ==
-    \A s \in Server :
-        \A c \in committed :
-            \E t \in Server : c.term <= LastTerm(log[t])
-
-\* If a node is primary, it must contain all committed entries from previous terms in its log.
-LeaderCompletenessGeneralized ==
-    \A s \in Server : 
-        (state[s] = Primary) =>
-        (\A c \in committed : c.term <= currentTerm[s] => InLog(c.entry, s))
+\* when a server's latest log term EXCEEDS a committed entry c's term, ALL commits
+\* with terms before or equal to c's must be in the server's log
+LogsLaterThanCommittedMustHaveCommitted ==
+    \A s \in Server : \A c \in committed :
+        (\E i \in DOMAIN log[s] : log[s][i] > c.term) =>
+            \A d \in committed :
+                d.term <= c.term => /\ Len(log[s]) >= d.entry[1]
+                                    /\ log[s][d.entry[1]] = d.term
 
 \* Basically the definition of committed--committed entries must appear on a quorum of
 \* servers in a server's config
 CommittedEntriesMustHaveQuorums ==
     \A c \in committed :
-        \A s \in Server :
-            \E Q \in QuorumsAt(s) : \A q \in Q :
-                \E i \in DOMAIN log[q] :
-                    /\ log[q][i] = c.term
-                    /\ i = c.entry[1]
+        \E Q \in Quorums(Server) :
+            \A q \in Q :
+                \E i \in DOMAIN log[q] : log[q][i] = c.term /\ i = c.entry[1]
 
 =============================================================================

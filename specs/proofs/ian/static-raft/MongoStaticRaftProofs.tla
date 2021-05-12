@@ -113,11 +113,11 @@ LemmaSecondariesFollowPrimary ==
 SMS_LC_II ==
     /\ LemmaSecondariesFollowPrimary
     /\ CommittedTermMatchesEntry
-    /\ LogsLaterThanCommittedMustHaveCommitted
-    /\ LogsEqualToCommittedMustHaveCommittedIfItFits
     /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
     /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
     /\ LeaderCompletenessGeneralized
+    /\ LogsEqualToCommittedMustHaveCommittedIfItFits
+    /\ LogsLaterThanCommittedMustHaveCommitted
     /\ CommittedEntriesMustHaveQuorums
 
 
