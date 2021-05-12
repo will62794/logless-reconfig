@@ -5,6 +5,7 @@ EXTENDS MongoStaticRaft, MongoStaticRaftProofsLemmaBasic, MongoStaticRaftProofsL
 
 SMS_LC_II ==
     /\ LemmaSecondariesFollowPrimary
+    /\ CommitIndexGreaterThanZero
     /\ CommittedTermMatchesEntry
     /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
     /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
@@ -51,10 +52,23 @@ PROOF
 
 (* *AndNext *)
 
-\* TODO add this to the II
-THEOREM CommitIndexGreaterThanZero ==
-ASSUME TypeOK
-PROVE \A c \in committed : c.entry[1] > 0
+THEOREM CommitIndexGreaterThanZeroAndNext ==
+ASSUME SMS_LC_II, TypeOK, Next
+PROVE CommitIndexGreaterThanZero'
+PROOF
+    <1>1. (\E s \in Server : ClientRequest(s)) => CommitIndexGreaterThanZero'
+        <2>. QED BY DEF SMS_LC_II, CommitIndexGreaterThanZero, ClientRequest
+    <1>2. (\E s, t \in Server : GetEntries(s, t)) => CommitIndexGreaterThanZero'
+        <2>. QED BY DEF SMS_LC_II, CommitIndexGreaterThanZero, GetEntries
+    <1>3. (\E s, t \in Server : RollbackEntries(s, t)) => CommitIndexGreaterThanZero'
+        <2>. QED BY DEF SMS_LC_II, CommitIndexGreaterThanZero, RollbackEntries
+    <1>4. (\E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)) => CommitIndexGreaterThanZero'
+        <2>. QED BY DEF SMS_LC_II, CommitIndexGreaterThanZero, BecomeLeader
+    <1>5. (\E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => CommitIndexGreaterThanZero'
+        <2>. QED BY DEF SMS_LC_II, CommitIndexGreaterThanZero, CommitEntry
+    <1>6. (\E s,t \in Server : UpdateTerms(s, t)) => CommitIndexGreaterThanZero'
+        <2>. QED BY DEF SMS_LC_II, CommitIndexGreaterThanZero, UpdateTerms
+    <1>. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
 
 THEOREM CommittedTermMatchesEntryAndNext ==
 ASSUME SMS_LC_II, TypeOK, Next
@@ -283,13 +297,13 @@ PROOF
                     <5>. CASE c.term < LastTerm(log[t])
                         <6>. Len(log[t]) >= c.entry[1] /\ log[t][c.entry[1]] = c.term
                             BY DEF SMS_LC_II, LogsLaterThanCommittedMustHaveCommitted, LastTerm, TypeOK
-                        <6>. QED BY CommitIndexGreaterThanZero DEF SMS_LC_II, CommittedTermMatchesEntry, InLog, TypeOK
+                        <6>. QED BY DEF SMS_LC_II, CommitIndexGreaterThanZero, CommittedTermMatchesEntry, InLog, TypeOK
                     <5>. CASE c.term = LastTerm(log[t])
                         <6>1. \E i \in DOMAIN log[t] : log[t][i] = c.term
-                            BY <5>2, CommitIndexGreaterThanZero DEF LastTerm, TypeOK
+                            BY <5>2 DEF SMS_LC_II, CommitIndexGreaterThanZero, LastTerm, TypeOK
                         <6>. log[t][c.entry[1]] = c.term
                             BY <5>2, <6>1 DEF SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits, LastTerm, TypeOK
-                        <6>. QED BY <5>2, CommitIndexGreaterThanZero DEF SMS_LC_II, CommittedTermMatchesEntry, InLog, TypeOK
+                        <6>. QED BY <5>2 DEF SMS_LC_II, CommitIndexGreaterThanZero, CommittedTermMatchesEntry, InLog, TypeOK
                     <5>. QED BY <5>1 DEF LastTerm, TypeOK
                 <4>2. c.entry[1] # Len(log[s])
                     <5>. SUFFICES ASSUME c.entry[1] = Len(log[s])
@@ -337,7 +351,7 @@ PROOF
                     <5>1. Len(log[s]) >= c.entry[1] /\ log[s][c.entry[1]] = c.term
                         BY DEF SMS_LC_II, LogsLaterThanCommittedMustHaveCommitted, LastTerm, TypeOK
                     <5>2. c.entry[1] \in DOMAIN log[s]
-                        BY <5>1, CommitIndexGreaterThanZero, LenProperties DEF TypeOK
+                        BY <5>1, LenProperties DEF SMS_LC_II, CommitIndexGreaterThanZero, TypeOK
                     <5>. QED BY <5>1, <5>2 DEF InLog, SMS_LC_II, CommittedTermMatchesEntry
                 <4>. CASE LastTerm(log[s]) > LastTerm(log[q])
                     <5>. LastTerm(log[s]) > c.term
@@ -356,7 +370,7 @@ PROOF
                         <6>2. log[s][c.entry[1]] = c.term
                             BY <6>1 DEF SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits, LastTerm, TypeOK
                         <6>3. c.entry[1] \in DOMAIN log[s]
-                            BY <6>1, CommitIndexGreaterThanZero, LenProperties DEF TypeOK
+                            BY <6>1, LenProperties DEF SMS_LC_II, CommitIndexGreaterThanZero, TypeOK
                         <6>. QED BY <6>2, <6>3 DEF InLog, SMS_LC_II, CommittedTermMatchesEntry
                     <5>. QED BY <5>1 DEF LastTerm, TypeOK
                 <4>. QED BY DEF BecomeLeader, CanVoteForOplog
@@ -461,11 +475,11 @@ THEOREM InitImpliesSMS_LC_II ==
 ASSUME TRUE
 PROVE Init => SMS_LC_II
 BY InitImpliesLemmaSecondariesFollowPrimary
-DEF Init, SMS_LC_II, 
-    CommittedTermMatchesEntry, CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens,
-    CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms, LeaderCompletenessGeneralized, 
-    LogsEqualToCommittedMustHaveCommittedIfItFits, LogsLaterThanCommittedMustHaveCommitted,
-    CommittedEntriesMustHaveQuorums
+DEF Init, SMS_LC_II,
+    CommitIndexGreaterThanZero, CommittedTermMatchesEntry,
+    CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens, CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms,
+    LeaderCompletenessGeneralized, LogsEqualToCommittedMustHaveCommittedIfItFits,
+    LogsLaterThanCommittedMustHaveCommitted, CommittedEntriesMustHaveQuorums
 
 -----------------------------------------------------------------------------------
 
@@ -476,6 +490,7 @@ ASSUME TypeOK, SMS_LC_II, Next
 PROVE TypeOK' /\ SMS_LC_II'
 PROOF BY InitImpliesSMS_LC_II, TypeOKAndNext,
          LemmaSecondariesFollowPrimaryAndNext,
+         CommitIndexGreaterThanZeroAndNext,
          CommittedTermMatchesEntryAndNext,
          CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLensAndNext,
          CommittedEntryTermMustBeSmallerThanOrEqualtoAllTermsAndNext,

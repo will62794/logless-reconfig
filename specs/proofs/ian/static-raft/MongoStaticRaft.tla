@@ -366,7 +366,10 @@ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm ==
 
 (* SMS_LC_II *)
 
-\* Basically TypeOK for commits
+\* The following four are basically TypeOK for commits
+CommitIndexGreaterThanZero ==
+    \A c \in committed : c.entry[1] > 0
+
 CommittedTermMatchesEntry ==
     \A c \in committed : c.term = c.entry[2]
 
