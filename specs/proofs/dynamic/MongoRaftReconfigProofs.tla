@@ -531,7 +531,7 @@ I2 ==
 
 \* If a log entry is committed, then the quorums of every active config must overlap with 
 \* at least some node that contains this log entry.
-I3 ==
+CommittedEntryIntersectsWithEveryActiveConfig ==
     \A c \in committed :
     \A s \in Server :
         \* Electable in config implies quorum overlap with committed entry.
@@ -563,6 +563,18 @@ CommittedEntryIntersectsAnyQuorumOfNewestConfig ==
     (\A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))) =>
         \A Q \in QuorumsAt(s) : \E n \in Q : InLog(c.entry, n)
 
+\* LogEntryInTermImpliesElectionInTerm == 
+
+
+
+\* Servers in the newest config.
+ServersInNewestConfig == 
+    {s \in Server : \A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))}
+
+NewestConfigHasAPrimary ==
+    \/ \A s \in Server : configTerm[s] = 0 \* initial state.
+    \/ \E s \in ServersInNewestConfig : state[s] = Primary
+
 ViewNoElections == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
 
 CommittedType == 
@@ -580,10 +592,23 @@ TypeOKRandom ==
     /\ committed \in RandomSetOfSubsets(3, 1, CommittedType)
     /\ elections = {}
 
+\* LemmaElectionSafety == 
+\*     /\ OnePrimaryPerTerm
+\*     /\ AllConfigsAreServer
+\*     /\ ExistsQuorumInLargestTerm
+
+\* LemmaLogInvariants ==
+\*     /\ LogMatching
+\*     /\ TermsOfEntriesGrowMonotonically
+\*     /\ PrimaryHasEntriesItCreated
+\*     /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+\*     /\ LogEntryInTermImpliesElectionInTerm
+
+
 
 Ind ==
     \*
-    \* Establishing config safety.
+    \* Establishing election safety under reconfiguration.
     \*
     /\ OnePrimaryPerTerm
     /\ PrimaryConfigTermEqualToCurrentTerm
@@ -594,28 +619,40 @@ Ind ==
     /\ I2
     /\ PrimaryMustBeInOwnConfig
 
-    \* 
-    \* Static safety invariants.
     \*
-    /\ CommittedEntryIndexesAreNonZero
-    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    \* Establishing log invariants.
+    \*
+    /\ LogMatching
     /\ TermsOfEntriesGrowMonotonically
-    \* /\ ExistsQuorumInLargestTerm
-    /\ LogsMustBeSmallerThanOrEqualToLargestTerm
-    \* /\ AllConfigsAreServer
-    /\ SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm
-    /\ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
-    /\ CommittedTermMatchesEntry
-    /\ LogsLaterThanCommittedMustHaveCommitted
-    /\ LogsEqualToCommittedMustHaveCommittedIfItFits
-    /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
-    /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
+    /\ PrimaryHasEntriesItCreated
+    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    /\ LogEntryInTermImpliesConfigInTerm
+    
+    \* 
+    \* Establishing leader completeness invariant.
+    \*
     /\ LeaderCompletenessGeneralized
+    /\ CommittedEntryIntersectsWithEveryActiveConfig
+
+    \* /\ CommittedEntryIndexesAreNonZero
+    \* /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    \* /\ TermsOfEntriesGrowMonotonically
+    \* /\ ExistsQuorumInLargestTerm
+    \* /\ LogsMustBeSmallerThanOrEqualToLargestTerm
+    \* /\ AllConfigsAreServer
+    \* /\ SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm
+    \* /\ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
+    \* /\ CommittedTermMatchesEntry
+    \* /\ LogsLaterThanCommittedMustHaveCommitted
+    \* /\ LogsEqualToCommittedMustHaveCommittedIfItFits
+    \* /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
+    \* /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
+    \* /\ LeaderCompletenessGeneralized
     \* /\ CommittedEntriesMustHaveQuorums
 
-    /\ LogEntryInTermImpliesConfigInTerm
-    /\ I3
-    /\ CommittedEntryIntersectsAnyQuorumOfNewestConfig
+    \* /\ LogEntryInTermImpliesConfigInTerm
+    \* /\ I3
+    \* /\ CommittedEntryIntersectsAnyQuorumOfNewestConfig
 
 
 IInit == 
