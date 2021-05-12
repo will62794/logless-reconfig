@@ -103,20 +103,20 @@ TypeOKRandom ==
 Range(f) == {f[x] : x \in DOMAIN f}
 
 \* Is node i electable in term T
-Electable(i, T) == \E Q \in QuorumsAt(i) : ENABLED BecomeLeader(i, Q, T)
+Electable(i) == \E Q \in QuorumsAt(i) : ENABLED BecomeLeader(i, Q)
 
-\*TODO: Generalize ExistsQuorumInLargestTerm to avoid reliance on quorum definition.
-ElectionDisablesLesserOrEqualTerms == 
-    \A i,j \in Server : 
-        (state[i] = Primary) => 
-        (\A leqT \in 1..currentTerm[i] : ~Electable(j, leqT))
+\* \*TODO: Generalize ExistsQuorumInLargestTerm to avoid reliance on quorum definition.
+\* ElectionDisablesLesserOrEqualTerms == 
+\*     \A i,j \in Server : 
+\*         (state[i] = Primary) => 
+\*         (\A leqT \in 1..currentTerm[i] : ~Electable(j))
 
-\* If a log entry exists in term T, then an election must have occurred in term T, 
-\* and so all future elections in terms <= T must be disabled. 
-LogEntryInTermDisablesLesserOrEqualTerms == 
-    \A i,j \in Server :
-    \A term \in Range(log[i]) : 
-    \A leqT \in 1..term : ~Electable(j, leqT)
+\* \* If a log entry exists in term T, then an election must have occurred in term T, 
+\* \* and so all future elections in terms <= T must be disabled. 
+\* LogEntryInTermDisablesLesserOrEqualTerms == 
+\*     \A i,j \in Server :
+\*     \A term \in Range(log[i]) : 
+\*     \A leqT \in 1..term : ~Electable(j, leqT)
 
 \* If a log entry exists in term T and there is a primary in term T, then this
 \* log entry should be present in that primary's log.
@@ -128,12 +128,29 @@ PrimaryHasEntriesItCreated ==
         ~(\E k \in DOMAIN log[j] :
             /\ log[j][k] = currentTerm[i]
             /\ ~InLog(<<k,log[j][k]>>, i))
-    
-ElectableNodesHaveCommittedEntries ==
-    \A i \in Server :
-    \A c \in committed :
-        Electable(i, currentTerm[i] + 1) => 
-        \E Q \in QuorumsAt(i) : \A n \in Q : InLog(c.entry, n)
+
+LogEntryInTermImpliesElectionInTerm == 
+    \A s \in Server :
+    \A i \in DOMAIN log[s] :
+    \E Q \in Quorums(Server) : \A n \in Q : currentTerm[n] >= log[s][i]
+
+\* ElectableNodesHaveCommittedEntries ==
+\*     \A i \in Server :
+\*     \A c \in committed :
+\*         Electable(i, currentTerm[i] + 1) => 
+\*         \E Q \in QuorumsAt(i) : \A n \in Q : InLog(c.entry, n)
+
+LemmaElectionSafety == 
+    /\ OnePrimaryPerTerm
+    /\ AllConfigsAreServer
+    /\ ExistsQuorumInLargestTerm
+
+LemmaLogInvariants ==
+    /\ LogMatching
+    /\ TermsOfEntriesGrowMonotonically
+    /\ PrimaryHasEntriesItCreated
+    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    /\ LogEntryInTermImpliesElectionInTerm
 
 LemmaBasic == TRUE
 \*     /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
@@ -155,18 +172,18 @@ LemmaSecondariesFollowPrimary == TRUE
 \*     /\ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
 
 SMS_LC_II ==
+    /\ LemmaElectionSafety
+    /\ LemmaLogInvariants
+
     \*
     \* LEMMA Basic
     \*
-    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
-    /\ TermsOfEntriesGrowMonotonically
-    /\ OnePrimaryPerTerm
-    \* /\ ExistsQuorumInLargestTerm \* quorum based.
-    /\ ElectionDisablesLesserOrEqualTerms
-    /\ LogEntryInTermDisablesLesserOrEqualTerms
-    /\ LogsMustBeSmallerThanOrEqualToLargestTerm
-    /\ AllConfigsAreServer
-    /\ PrimaryHasEntriesItCreated
+    \* /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    \* /\ TermsOfEntriesGrowMonotonically
+    \* /\ OnePrimaryPerTerm
+    \* /\ ExistsQuorumInLargestTerm
+    \* /\ LogsMustBeSmallerThanOrEqualToLargestTerm
+    \* /\ AllConfigsAreServer
 
     \*
     \* LEMMA Secondaries Follow Primary.
@@ -177,15 +194,13 @@ SMS_LC_II ==
     \*
     \* LEMMA Extra
     \*
-    /\ CommittedTermMatchesEntry
-    /\ LogsLaterThanCommittedMustHaveCommitted
-    /\ LogsEqualToCommittedMustHaveCommittedIfItFits
-    /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
-    /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
-    /\ LeaderCompletenessGeneralized
-
-    \* /\ ElectableNodesHaveCommittedEntries
-    /\ CommittedEntriesMustHaveQuorums \* quorum based.
+    \* /\ CommittedTermMatchesEntry
+    \* /\ LogsLaterThanCommittedMustHaveCommitted
+    \* /\ LogsEqualToCommittedMustHaveCommittedIfItFits
+    \* /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
+    \* /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
+    \* /\ LeaderCompletenessGeneralized
+    \* /\ CommittedEntriesMustHaveQuorums \* quorum based.
 
 
 CONSTANT n1
@@ -228,7 +243,7 @@ Alias ==
         config |-> config,
         currentTerm |-> currentTerm,
         committed |-> committed,
-        electable |-> [s \in (Server) |-> Electable(s, currentTerm[s]+1)]
+        electable |-> [s \in (Server) |-> Electable(s)]
     ]
 
 =============================================================================
