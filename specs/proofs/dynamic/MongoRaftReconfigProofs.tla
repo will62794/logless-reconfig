@@ -760,14 +760,6 @@ Ind ==
 
 
 
-    \* /\ I3
-    \* /\ CommittedEntryInTermIntersectsNewerConfigs
-    \* /\ NewestConfigIsActive
-    \* /\ NewestConfigHasQuorumWithCommittedEntry
-
-    \* /\ NewestConfigHasSomeNodeInConfigWithCommittedEntry b
-
-    \* /\ SomeActiveConfig
 
     \* /\ CommittedEntryIndexesAreNonZero
     \* /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
@@ -784,9 +776,6 @@ Ind ==
     \* /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
     \* /\ LeaderCompletenessGeneralized
     \* /\ CommittedEntriesMustHaveQuorums
-
-    \* /\ LogEntryInTermImpliesConfigInTerm
-    \* /\ CommittedEntryIntersectsAnyQuorumOfNewestConfig
 
 
 IInit == 
