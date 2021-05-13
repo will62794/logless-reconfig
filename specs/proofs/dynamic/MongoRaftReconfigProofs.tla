@@ -339,8 +339,6 @@ ConfigInTermPreventsOlderConfigs ==
 
 CommittedEntryIndexesAreNonZero == \A c \in committed : c.entry[1] # 0
 
-\*** New invariants. ***/
-
 \* (configVersion, term) pair of node i.
 CV(i) == <<configVersion[i], configTerm[i]>>
 
