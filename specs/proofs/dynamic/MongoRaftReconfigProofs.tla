@@ -576,15 +576,20 @@ Ind ==
     /\ CommittedEntryIndexesAreNonZero
     /\ CommittedTermMatchesEntry
 
-    \* 
-    \* Establishing leader completeness invariant.
     \*
-    /\ LeaderCompletenessGeneralized
+    \* Establishing additional config related invariants that
+    \* help with leader completeness.
+    \*
     /\ ConfigOverlapsWithDirectAncestor
     /\ NewestConfigHasLargestTerm
     /\ NewestConfigHasSomeNodeInConfig
     /\ ConfigsWithSameVersionHaveSameMemberSet
     /\ CommitOfNewConfigPreventsCommitsInOldTerms
+
+    \* 
+    \* Establishing leader completeness invariant.
+    \*
+    /\ LeaderCompletenessGeneralized
     /\ CommittedEntryIntersectsWithNewestConfig
     /\ CommittedEntryIntersectsWithEveryActiveConfig
     /\ LogsLaterThanCommittedMustHaveCommitted
