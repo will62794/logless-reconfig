@@ -18,6 +18,7 @@ outdir="$results_dir/$(date +%F)_$(date +%s)_$SPEC"
 mkdir $outdir
 
 # Copy the complete spec and config to the out directory.
+# TODO: Also save other modules depended on by main module.
 cp "$SPEC.tla" $outdir
 cp $CONFIG $outdir
 
@@ -44,4 +45,6 @@ echo "CPU Cores Mac: $CPUCORESMac" >> $infofile
 
 # Run the model checker.
 tlcoutfile="$outdir/tlc.out"
-$tlc -gzip -workers $WORKERS -config $CONFIG "$SPEC.tla" | tee $tlcoutfile
+cmd="$tlc -gzip -workers $WORKERS -config $CONFIG $SPEC.tla"
+echo "TLC Command: $cmd" >> $infofile
+$cmd | tee $tlcoutfile
