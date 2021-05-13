@@ -392,15 +392,12 @@ ServersInNewestConfig == {s \in Server : NewestConfig(s)}
 
 OlderConfig(ci, cj) == ~CSM!NewerOrEqualConfig(ci, cj) 
 
-I1 == 
+\* If config t has an older config than s, and their configs don't overlap, then
+\* config t must be disabled based on config ordering.
+NewerConfigDisablesOlderNonoverlappingConfigs == 
     \A s,t \in Server :
-        \* If t has an older config, and its config
-        \* doesn't overlap with s, then it must be disabled due to
-        \* a quorum in newer config.
-        \* config ordering.
         (/\ OlderConfig(CV(t), CV(s)) 
-         /\ ~QuorumsOverlap(config[t], config[s])) => 
-            \A Q \in Quorums(config[t]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(t))
+         /\ ~QuorumsOverlap(config[t], config[s])) => ConfigDisabled(t)
 
 I2 == 
     \A s,t \in Server :
@@ -595,7 +592,7 @@ Ind ==
     /\ ConfigsNonEmpty
     /\ ConfigVersionAndTermUnique
     /\ PrimaryInTermContainsNewestConfigOfTerm
-    /\ I1
+    /\ NewerConfigDisablesOlderNonoverlappingConfigs
     /\ I2
     /\ PrimaryMustBeInOwnConfig
 
