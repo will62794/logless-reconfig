@@ -509,6 +509,16 @@ CommittedEntryIndexesAreNonZero == \A c \in committed : c.entry[1] # 0
 \* (configVersion, term) pair of node i.
 CV(i) == <<configVersion[i], configTerm[i]>>
 
+\* Is node i disabled due to a quorum of its config having moved to a newer config.
+ConfigDisabled(i) == 
+    \A Q \in Quorums(config[i]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(i))
+
+\* Does server s have the newest config.
+NewestConfig(s) == \A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))
+
+\* Servers in the newest config.
+ServersInNewestConfig == {s \in Server : NewestConfig(s)}
+
 OlderConfig(ci, cj) == ~CSM!NewerOrEqualConfig(ci, cj) 
 
 I1 == 
@@ -529,6 +539,16 @@ I2 ==
          /\ ~(\A Q \in Quorums(config[t]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(t)))) => 
             \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
 
+I3 == 
+    \A s,t \in Server :
+        \* If t has an older config, and its config
+        \* doesn't overlap with s, then it must be prevented from committing any new writes
+        \* in the the config term of s.
+        (/\ OlderConfig(CV(t), CV(s)) 
+         \*/\ ~QuorumsOverlap(config[t], config[s])
+         /\ state[t] = Primary) => 
+            \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
+
 \* If a log entry is committed, then the quorums of every active config must overlap with 
 \* at least some node that contains this log entry.
 CommittedEntryIntersectsWithEveryActiveConfig ==
@@ -536,6 +556,12 @@ CommittedEntryIntersectsWithEveryActiveConfig ==
     \A s \in Server :
         \* Electable in config implies quorum overlap with committed entry.
         \A Q \in QuorumsAt(s) : ElectableInQ(s, Q) => \E n \in Q : InLog(c.entry, n)
+
+CommittedEntryInTermIntersectsNewerConfigs == 
+    \A c \in committed :
+    \A s \in Server :
+        (configTerm[s] >= c.term) =>
+        (\A Q \in QuorumsAt(s) : \E n \in Q : InLog(c.entry, n))
 
 \* If an entry e is committed in term T and there exists some node in a config with term
 \* T, one these configs has e on quorum of its config
@@ -565,11 +591,86 @@ CommittedEntryIntersectsAnyQuorumOfNewestConfig ==
 
 \* LogEntryInTermImpliesElectionInTerm == 
 
+\* If a log contains an entry in term T at index I such that
+\* the entries at J < I are in a different term, then there must be
+\* no other logs that contains entries in term T at indices J < I
+UniformLogEntriesInTerm ==
+    \A s,t \in Server :
+    \A i \in DOMAIN log[s] : 
+        (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) => 
+            (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)
+    
+
+\* It cannot be the case that all nodes are not members of their own configs.
+SomeActiveConfig == \E s \in Server : s \in config[s]
+
+NewestConfigIsActive == 
+    \A s \in Server :
+    (\A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))) =>
+        \E n \in config[s] : Electable(n)
+
+\* NewestConfigContainsCommittedEntry == 
+NewestConfigHasQuorumWithCommittedEntry == 
+    \A c \in committed :
+    \A s \in ServersInNewestConfig : 
+        \E Q \in Quorums(config[s]) : 
+        \A n \in Q : InLog(c.entry, n)
 
 
-\* Servers in the newest config.
-ServersInNewestConfig == 
-    {s \in Server : \A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))}
+\* The newest config should have some node that is currently primary or was
+\* the newest primary (after stepping down). This node should be in its own config.
+NewestConfigHasSomeNodeInConfig == 
+    \A s \in ServersInNewestConfig : 
+        (\E n \in config[s] : n \in config[n]
+            \* If this is node is or was primary in newest config,
+            \* it's term should be the same as the term of the newest config.
+            /\ currentTerm[n] = configTerm[s]
+            /\ CV(n) = CV(s))
+
+\* The newest config should have some node that is currently primary or was
+\* the newest primary (after stepping down). This node should have all committed
+\* entries in its log and should be a part of its own config.
+NewestConfigHasSomeNodeInConfigWithCommittedEntry == 
+    \A s \in ServersInNewestConfig : 
+        (\E n \in config[s] : 
+            /\ \A c \in committed : InLog(c.entry, n)
+            /\ n \in config[n]
+            \* If this is node is or was primary in newest config,
+            \* it's term should be the same as the term of the newest config.
+            /\ currentTerm[n] = configTerm[s]
+            /\ CV(n) = CV(s)
+            
+            \* Can't be that another node has an entry in this node's term
+            \* but this primary (or past primary) doesn't have it.
+            /\ \A j \in Server :
+                ~(\E k \in DOMAIN log[j] :
+                    /\ log[j][k] = currentTerm[n]
+                    /\ ~InLog(<<k,log[j][k]>>, n))
+            )
+
+NewestConfigHasLargestTerm == 
+    \A s \in ServersInNewestConfig :
+    \A t \in Server :
+        currentTerm[t] <= configTerm[s]
+
+
+CommittedEntryIntersectsWithNewestConfig ==
+    \A c \in committed :
+    \A s \in ServersInNewestConfig :
+        \A Q \in QuorumsAt(s) : \E n \in Q : InLog(c.entry, n)
+
+LogEntryOnQuorumInTermImpliesFutureLeadersHaveIt == 
+    \A s,t \in Server :
+    \A i \in DOMAIN log[s] :
+        (/\ state[s] = Primary 
+         /\ \E Q \in Quorums(config[s]) : 
+            \A n \in Q : 
+                /\ InLog(<<i,log[s][i]>>, n)
+                /\ currentTerm[n] = currentTerm[s]
+                /\ log[s][i] = currentTerm[s]) =>
+        (~(/\ Electable(t) 
+           /\ currentTerm[t] >= currentTerm[s]
+           /\ ~InLog(<<i,log[s][i]>>, t)))
 
 NewestConfigHasAPrimary ==
     \/ \A s \in Server : configTerm[s] = 0 \* initial state.
@@ -627,12 +728,35 @@ Ind ==
     /\ PrimaryHasEntriesItCreated
     /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
     /\ LogEntryInTermImpliesConfigInTerm
-    
+    /\ UniformLogEntriesInTerm
+
+    \*
+    \* Basic type requirements of 'committed' variable.
+    \*
+    /\ CommittedEntryIndexesAreNonZero
+    /\ CommittedTermMatchesEntry
+
     \* 
     \* Establishing leader completeness invariant.
     \*
     /\ LeaderCompletenessGeneralized
+    /\ ConfigOverlapsWithDirectAncestor
+    /\ CommittedEntryIntersectsWithNewestConfig
     /\ CommittedEntryIntersectsWithEveryActiveConfig
+    /\ LogsLaterThanCommittedMustHaveCommitted
+    /\ NewestConfigHasLargestTerm
+    /\ NewestConfigHasSomeNodeInConfig
+
+
+
+    \* /\ I3
+    \* /\ CommittedEntryInTermIntersectsNewerConfigs
+    \* /\ NewestConfigIsActive
+    \* /\ NewestConfigHasQuorumWithCommittedEntry
+
+    \* /\ NewestConfigHasSomeNodeInConfigWithCommittedEntry b
+
+    \* /\ SomeActiveConfig
 
     \* /\ CommittedEntryIndexesAreNonZero
     \* /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
@@ -651,7 +775,6 @@ Ind ==
     \* /\ CommittedEntriesMustHaveQuorums
 
     \* /\ LogEntryInTermImpliesConfigInTerm
-    \* /\ I3
     \* /\ CommittedEntryIntersectsAnyQuorumOfNewestConfig
 
 
@@ -700,7 +823,8 @@ Alias ==
         \* latestBeforeTerm |-> [s \in Server |-> [ i \in ((DOMAIN log[s]) \{1}) |-> LatestEntryBeforeTerm(s, log[s][i])]]
         nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)],
         committed |-> committed,
-        activeConfig |-> [s \in Server |-> ActiveConfig(configVersion[s], configTerm[s])]
+        activeConfig |-> [s \in Server |-> ActiveConfig(configVersion[s], configTerm[s])],
+        newestConfig |-> {<<config[s],CV(s)>> : s \in ServersInNewestConfig}
         \* configChains |-> [<<s,t>> \in ServerPair |-> ConfigChains(s,t)]
     ]
 
