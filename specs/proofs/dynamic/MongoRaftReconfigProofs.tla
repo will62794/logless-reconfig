@@ -299,17 +299,6 @@ ConfigInTermDisablesAllOlderConfigsWithDifferingMemberSets ==
     ( /\ configTerm[t] < configTerm[s] 
       /\ QuorumsOverlap(config[s], config[t])) => ~ActiveConfig(configVersion[t], configTerm[t])
 
-\* If two configs have the same version but one has a newer term,
-\* then they either have the same member set or the config in the lesser
-\* term is disabled.
-ConfigsWithSameVersionHaveSameMemberSetOrDisable == 
-    \A s,t \in Server : 
-        (/\ configTerm[s] > configTerm[t]
-         /\ configVersion[s] = configVersion[t]) => 
-            \/ (config[s] = config[t])
-            \/ \A Q \in Quorums(config[t]) : \E n \in Q :
-                CSM!NewerConfig(<<configVersion[n], configTerm[n]>>,<<configVersion[t], configTerm[t]>>) 
-
 ConfigSeparationImpliesPreviousCommit ==
     \A s,t \in Server :
         \* If config version and config term differ b/w two configs,
@@ -686,6 +675,17 @@ CommitOfNewConfigPreventsCommitsInOldTerms ==
          /\ state[t] = Primary) =>
             \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] > configTerm[t]
 
+\* If two configs have the same version but different terms, one has a newer term,
+\* then they either have the same member set or the older config is disabled. The 
+\* latter is to address the case where these configs on divergent branches but have the
+\* same version.
+ConfigsWithSameVersionHaveSameMemberSet == 
+    \A s,t \in Server : 
+        (/\ configVersion[s] = configVersion[t]
+         /\ configTerm[s] > configTerm[t]) => 
+            \/ (config[s] = config[t])
+            \/ ConfigDisabled(t)
+
 ViewNoElections == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
 
 CommittedType == 
@@ -757,6 +757,7 @@ Ind ==
     /\ NewestConfigHasLargestTerm
     /\ NewestConfigHasSomeNodeInConfig
     /\ CommitOfNewConfigPreventsCommitsInOldTerms
+    /\ ConfigsWithSameVersionHaveSameMemberSet
 
 
 
