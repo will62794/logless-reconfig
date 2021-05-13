@@ -617,13 +617,13 @@ Ind ==
     \*
     /\ LeaderCompletenessGeneralized
     /\ ConfigOverlapsWithDirectAncestor
+    /\ NewestConfigHasLargestTerm
+    /\ NewestConfigHasSomeNodeInConfig
+    /\ ConfigsWithSameVersionHaveSameMemberSet
+    /\ CommitOfNewConfigPreventsCommitsInOldTerms
     /\ CommittedEntryIntersectsWithNewestConfig
     /\ CommittedEntryIntersectsWithEveryActiveConfig
     /\ LogsLaterThanCommittedMustHaveCommitted
-    /\ NewestConfigHasLargestTerm
-    /\ NewestConfigHasSomeNodeInConfig
-    /\ CommitOfNewConfigPreventsCommitsInOldTerms
-    /\ ConfigsWithSameVersionHaveSameMemberSet
 
 
 
