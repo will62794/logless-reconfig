@@ -285,17 +285,6 @@ ConfigInTermDisablesAllOlderConfigsWithDifferingMemberSets ==
     ( /\ configTerm[t] < configTerm[s] 
       /\ QuorumsOverlap(config[s], config[t])) => ~ActiveConfig(configVersion[t], configTerm[t])
 
-ConfigSeparationImpliesPreviousCommit ==
-    \A s,t \in Server :
-        \* If config version and config term differ b/w two configs,
-        \* they must have been separated by a commit of the newer term in
-        \* the original config.
-        (/\ configTerm[s] > configTerm[t] 
-         /\ configVersion[s] > configVersion[t]
-        \*  /\ ~QuorumsOverlap(config[s], config[t])
-         /\ config[s] # config[t]) =>
-         \E Q \in Quorums(config[t]) : \A n \in Q : configTerm[n] >= configTerm[s]
-
 \* If a config C=(v,t) exists, then there must have been an election
 \* in term T in the original config of this term, and those terms must 
 \* have been propagated on a quorum through configs, so any quorum must
@@ -304,31 +293,6 @@ ConfigInTermImpliesQuorumOfConfigInTerm ==
     \A s \in Server : 
     \A Q \in Quorums(config[s]) :
     \E n \in Q : currentTerm[n] >= configTerm[s]
-
-
-\* If a config C=(v,t) and C'=(v',t) both exist with v' >= v+1, then there must have been a parent
-\* of C' that was committed before C' came into existence.
-ConfigSameTermAncestorMustBeCommitted == 
-    \A s,t \in Server :
-        (/\ configVersion[s] >= configVersion[t] + 1
-         /\ configTerm[s] = configTerm[t]) =>
-         \* If these configs differ by 1 or more reconfig edges, then there must exist
-         \* a chain of configs between them that are all committed and have pairwise
-         \* quorum overlap.
-         (\E chain \in [(configVersion[t]..(configVersion[s]-1)) -> SUBSET Server] :
-            \* Config t starts the chain.
-            /\ chain[configVersion[t]] = config[t]
-            \* Last config in chain overlaps with config s.
-            /\ QuorumsOverlap(chain[configVersion[s]-1], config[s])
-            \* The configs in between satisfy pairwise quorum overlap.
-            /\ \A vx,vy \in DOMAIN chain : 
-                /\ chain[vx] # {}
-                /\ chain[vy] # {}
-                /\ (vx = (vy + 1)) => QuorumsOverlap(chain[vx], chain[vy])
-            /\ \A vx \in DOMAIN chain:
-                \E Q \in Quorums(chain[vx]) : 
-                \A n \in Q : 
-                    CSM!NewerOrEqualConfig(<<configVersion[n], configTerm[n]>>, <<vx, configTerm[s]>>))
 
 \* For configs C=(v,t) and C'=(v+1,t), we know their quorums overlap, by explicit preconditions
 \* of reconfiguration.
