@@ -538,13 +538,12 @@ I3 ==
          /\ state[t] = Primary) => 
             \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
 
-\* If a log entry is committed, then the quorums of every active config must overlap with 
-\* at least some node that contains this log entry.
+\* \* If a log entry is committed, then the quorums of every 
+\* active config must overlap with some node that contains this log entry.
 CommittedEntryIntersectsWithEveryActiveConfig ==
     \A c \in committed :
     \A s \in Server :
-        \* Electable in config implies quorum overlap with committed entry.
-        \A Q \in QuorumsAt(s) : ElectableInQ(s, Q) => \E n \in Q : InLog(c.entry, n)
+        ~ConfigDisabled(s) => (\A Q \in QuorumsAt(s) : \E n \in Q : InLog(c.entry, n))
 
 CommittedEntryInTermIntersectsNewerConfigs == 
     \A c \in committed :
