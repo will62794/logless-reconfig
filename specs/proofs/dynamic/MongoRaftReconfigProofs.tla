@@ -554,6 +554,27 @@ CommittedType ==
     [ entry  : (0..MaxLogLen) \X (0..MaxTerm),
       term   : 0..MaxTerm ]
 
+\*
+\* Parameters for selecting subsets of 'committed' variable type below. For a
+\* set S, calling RandomSetOfSubsets(k, n, S) produces a randomly chosen subset
+\* of SUBSET S. Thus, each element T of the set is a subset of S. The goal is to
+\* output a set of size k (i.e containing k subsets of S), but the output may be 
+\* of size less than k. The average number of elements in each chosen subset T is n. 
+\* For example:
+\*
+\* (tla+) RandomSetOfSubsets(3, 2, {1,2,3,4})
+\* {{3}, {1, 2}, {2, 3, 4}}
+\*
+\* (tla+) RandomSetOfSubsets(4, 2, {1,2,3,4})
+\* {{1}, {1, 3}, {1, 2, 3}, {1, 2, 4}}
+\*
+\* (tla+) RandomSetOfSubsets(5, 2, {1,2,3,4})
+\* {{4}, {1, 4}, {3, 4}, {1, 2, 4}, {1, 2, 3, 4}}
+\*
+
+kNumSubsets == 3
+nAvgSubsetSize == 2
+
 TypeOKRandom == 
     /\ currentTerm \in RandomSubset(NumRandSubsets, [Server -> 0..MaxTerm])
     /\ state \in RandomSubset(NumRandSubsets, [Server -> {Secondary, Primary}])
@@ -562,7 +583,7 @@ TypeOKRandom ==
     /\ configVersion \in RandomSubset(NumRandSubsets, [Server -> 0..MaxConfigVersion])
     /\ configTerm \in RandomSubset(NumRandSubsets, [Server -> 0..MaxTerm])
     \* For checking MongoRaftReconfig with logs.
-    /\ committed \in RandomSetOfSubsets(3, 1, CommittedType)
+    /\ committed \in RandomSetOfSubsets(kNumSubsets, nAvgSubsetSize, CommittedType)
     /\ elections = {}
 
 Ind ==
