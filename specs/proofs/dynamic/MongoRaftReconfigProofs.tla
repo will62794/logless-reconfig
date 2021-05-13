@@ -399,12 +399,12 @@ NewerConfigDisablesOlderNonoverlappingConfigs ==
         (/\ OlderConfig(CV(t), CV(s)) 
          /\ ~QuorumsOverlap(config[t], config[s])) => ConfigDisabled(t)
 
-I2 == 
+\* If t has an older or equal config than s and it is not disabled by a newer
+\* config, then its quorum must overlap with some node in the term of config s.
+NewerConfigDisablesTermsOfOlderNonDisabledConfigs ==
     \A s,t \in Server :
-        \* If t has an older or equal config and it is not disabled via newer config, then its 
-        \* quorum must overlap with some node in the term of config s.
         (/\ OlderConfig(CV(t), CV(s)) \/ (CV(t) = CV(s))
-         /\ ~(\A Q \in Quorums(config[t]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(t)))) => 
+         /\ ~ConfigDisabled(t)) => 
             \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
 
 \* \* If a log entry is committed, then the quorums of every 
@@ -593,7 +593,7 @@ Ind ==
     /\ ConfigVersionAndTermUnique
     /\ PrimaryInTermContainsNewestConfigOfTerm
     /\ NewerConfigDisablesOlderNonoverlappingConfigs
-    /\ I2
+    /\ NewerConfigDisablesTermsOfOlderNonDisabledConfigs
     /\ PrimaryMustBeInOwnConfig
 
     \*
