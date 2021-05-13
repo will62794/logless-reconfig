@@ -676,6 +676,16 @@ NewestConfigHasAPrimary ==
     \/ \A s \in Server : configTerm[s] = 0 \* initial state.
     \/ \E s \in ServersInNewestConfig : state[s] = Primary
 
+
+\* If a config has been created in term T', then this must prevent any commits
+\* in configs in terms < T. Note that only primary nodes can commit writes in a 
+\* config.
+CommitOfNewConfigPreventsCommitsInOldTerms == 
+    \A s,t \in Server : 
+        (/\ configTerm[t] < configTerm[s]
+         /\ state[t] = Primary) =>
+            \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] > configTerm[t]
+
 ViewNoElections == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
 
 CommittedType == 
@@ -746,6 +756,7 @@ Ind ==
     /\ LogsLaterThanCommittedMustHaveCommitted
     /\ NewestConfigHasLargestTerm
     /\ NewestConfigHasSomeNodeInConfig
+    /\ CommitOfNewConfigPreventsCommitsInOldTerms
 
 
 
