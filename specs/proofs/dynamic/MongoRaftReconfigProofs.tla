@@ -551,12 +551,10 @@ Ind ==
     \*
     /\ OnePrimaryPerTerm
     /\ PrimaryConfigTermEqualToCurrentTerm
-    /\ ConfigsNonEmpty
     /\ ConfigVersionAndTermUnique
     /\ PrimaryInTermContainsNewestConfigOfTerm
     /\ NewerConfigDisablesOlderNonoverlappingConfigs
     /\ NewerConfigDisablesTermsOfOlderNonDisabledConfigs
-    /\ PrimaryMustBeInOwnConfig
 
     \*
     \* Establishing log invariants.
