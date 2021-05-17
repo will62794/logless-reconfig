@@ -166,14 +166,9 @@ Init ==
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
     /\ log = [i \in Server |-> <<>>]
-    (*
     /\ \E initConfig \in SUBSET Server : 
-        \*/\ initConfig # {} \* configs should be non-empty.
-        \*/\ config = [i \in Server |-> initConfig]
-        \*idardik
-        /\ \A i \in Server : config[i] = Server
-        *)
-    /\ config = [i \in Server |-> Server]
+        /\ initConfig # {} \* configs should be non-empty.
+        /\ config = [i \in Server |-> initConfig]
     /\ elections = {}
     /\ committed = {}
 
