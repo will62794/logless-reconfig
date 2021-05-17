@@ -618,6 +618,9 @@ IInit ==
     /\ Ind
 
 
+\* Must check that the initial states satisfy the inductive invariant.
+Initiation == (Init => Ind)
+
 \*
 \* DEBUGGING
 \*
