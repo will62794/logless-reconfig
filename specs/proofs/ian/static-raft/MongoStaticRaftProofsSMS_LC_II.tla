@@ -49,8 +49,31 @@ PROOF
         BY <1>2, ServerIsFinite, FS_CardinalityType DEF Quorums
     <1>. QED BY <1>3, FS_AddElement, FS_EmptySet
 
+THEOREM GetEntriesFromLaterTerm ==
+ASSUME TypeOK, LemmaBasic,
+       NEW s \in Server, NEW t \in Server,
+       GetEntries(s, t)
+PROVE LastTerm(log[s]) <= LastTerm(log[t])
+PROOF
+    <1>. CASE Empty(log[s])
+        <2>. QED BY DEF LastTerm, Empty, TypeOK
+    <1>. CASE ~Empty(log[s])
+        <2>. Len(log[s]) > 0
+            BY DEF Empty
+        <2>. DEFINE k == Len(log[s])
+        <2>. k \in DOMAIN log[t]
+            BY DEF GetEntries
+        <2>. LastTerm(log[s]) = log[t][k]
+            BY DEF GetEntries, LastTerm, TypeOK
+        <2>. QED BY DEF LemmaBasic, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+    <1>. QED OBVIOUS
+
 
 (* *AndNext *)
+
+THEOREM CommitTermGreaterThanZero ==
+ASSUME TypeOK, NEW c \in committed
+PROVE c.term > 0
 
 THEOREM CommitIndexGreaterThanZeroAndNext ==
 ASSUME SMS_LC_II, TypeOK, Next
@@ -434,7 +457,223 @@ ASSUME SMS_LC_II, TypeOK, Next
 PROVE LogsEqualToCommittedMustHaveCommittedIfItFits'
 PROOF
     <1>1. (\E s \in Server : ClientRequest(s)) => LogsEqualToCommittedMustHaveCommittedIfItFits'
+        <2>. SUFFICES ASSUME \E s \in Server : ClientRequest(s)
+             PROVE \A s \in Server : \A c \in committed' :
+                        (\E i \in DOMAIN log'[s] : log'[s][i] = c.term) =>
+                            \A d \in committed' :
+                                (d.term <= c.term /\ Len(log'[s]) >= d.entry[1]) => log'[s][d.entry[1]] = d.term
+             BY DEF LogsEqualToCommittedMustHaveCommittedIfItFits
+        <2>. TAKE s \in Server
+        <2>. TAKE c \in committed'
+        <2>. SUFFICES ASSUME \E i \in DOMAIN log'[s] : log'[s][i] = c.term
+             PROVE \A d \in committed' : (d.term <= c.term /\ Len(log'[s]) >= d.entry[1]) => log'[s][d.entry[1]] = d.term
+             OBVIOUS
+        <2>. TAKE d \in committed'
+        <2>1. d \in committed
+            BY DEF ClientRequest
+        <2>. SUFFICES ASSUME d.term <= c.term /\ Len(log'[s]) >= d.entry[1]
+             PROVE log'[s][d.entry[1]] = d.term
+             OBVIOUS
+             
+        <2>. CASE \E t \in Server : ClientRequest(t) /\ t # s
+            <3>. log'[s] = log[s] /\ UNCHANGED committed
+                BY DEF ClientRequest, TypeOK
+            <3>. QED BY DEF SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits
+        <2>. CASE ClientRequest(s)
+            <3>1. state[s] = Primary /\ state'[s] = Primary
+                BY DEF ClientRequest, TypeOK
+            <3>2. d.term <= currentTerm[s]
+                BY DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, CurrentTermAtLeastAsLargeAsLogTermsForPrimary, ClientRequest, TypeOK
+            <3>3. InLog(d.entry, s)
+                BY <2>1, <3>1, <3>2 DEF SMS_LC_II, LeaderCompletenessGeneralized
+            <3>. QED BY <3>3 DEF ClientRequest, TypeOK, InLog, SMS_LC_II, CommittedTermMatchesEntry
+        <2>. QED OBVIOUS
     <1>2. (\E s, t \in Server : GetEntries(s, t)) => LogsEqualToCommittedMustHaveCommittedIfItFits'
+        <2>. SUFFICES ASSUME \E s, t \in Server : GetEntries(s, t)
+             PROVE \A s \in Server : \A c \in committed' :
+                        (\E i \in DOMAIN log'[s] : log'[s][i] = c.term) =>
+                            \A d \in committed' :
+                                (d.term <= c.term /\ Len(log'[s]) >= d.entry[1]) => log'[s][d.entry[1]] = d.term
+             BY DEF LogsEqualToCommittedMustHaveCommittedIfItFits
+        <2>. TAKE s \in Server
+        <2>. TAKE c \in committed'
+        <2>. SUFFICES ASSUME \E i \in DOMAIN log'[s] : log'[s][i] = c.term
+             PROVE \A d \in committed' : (d.term <= c.term /\ Len(log'[s]) >= d.entry[1]) => log'[s][d.entry[1]] = d.term
+             OBVIOUS
+        <2>. TAKE d \in committed'
+        <2>1. d \in committed
+            BY DEF GetEntries
+        <2>. SUFFICES ASSUME d.term <= c.term /\ Len(log'[s]) >= d.entry[1]
+             PROVE log'[s][d.entry[1]] = d.term
+             OBVIOUS
+        
+        <2>. CASE \E t,u \in Server : GetEntries(u, t) /\ u # s
+            <3>. log'[s] = log[s] /\ UNCHANGED committed
+                BY DEF GetEntries, TypeOK
+            <3>. QED BY DEF SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits
+        <2>. CASE \E t \in Server : GetEntries(s, t)
+            \* the only way adding a new entry (via GetEntries) could violate LogsEqualToCommittedMustHaveCommittedIfItFits is if s receives an entry
+            \* that has many commits between before it that aren't in s's log.  However "log[j][Len(log[i])] = log[i][Len(log[i])]" makes sure s receives
+            \* a log that isn't committed much later.
+            <3>. PICK t \in Server : GetEntries(s, t)
+                OBVIOUS
+            <3>1. d.entry[1] <= Len(log[t])
+                BY DEF GetEntries, TypeOK
+            <3>2. d.term <= LastTerm(log[t])
+                <4>. PICK i \in DOMAIN log'[s] : log'[s][i] = c.term
+                    OBVIOUS
+                <4>. c.term <= LastTerm(log[t])
+                    <5>. CASE i = Len(log'[s])
+                        <6>1. Len(log[s])+1 = Len(log'[s])
+                            BY DEF GetEntries, TypeOK
+                        <6>2. i = IF Empty(log[s]) THEN 1 ELSE Len(log[s]) + 1
+                            BY <6>1 DEF TypeOK, Empty
+                        <6>3. log' = [log EXCEPT ![s] = Append(log[s], log[t][i])]
+                            BY <6>2 DEF GetEntries, TypeOK
+                        <6>4. log'[s][i] = log[t][i]
+                            BY <6>3 DEF GetEntries, TypeOK
+                        <6>5. log[t][i] <= LastTerm(log[t])
+                            <7>. i \in DOMAIN log[t]
+                                BY <6>2 DEF GetEntries, TypeOK
+                            <7>. QED BY DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+                        <6>. QED BY <6>4, <6>5
+                    <5>. CASE i < Len(log'[s])
+                        <6>1. log'[s][i] = log[s][i]
+                            BY DEF GetEntries, TypeOK
+                        <6>2. c.term <= LastTerm(log[s])
+                            BY DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK, GetEntries
+                        <6>3. LastTerm(log[s]) <= LastTerm(log[t])
+                            BY GetEntriesFromLaterTerm DEF LastTerm, TypeOK, SMS_LC_II, LemmaSecondariesFollowPrimary
+                        <6>. QED BY <6>2, <6>3 DEF GetEntries, LastTerm, TypeOK
+                    <5>. QED OBVIOUS
+                <4>. QED BY TypeOKAndNext DEF LastTerm, TypeOK
+            
+            <3>. CASE Empty(log[s])
+            <3>. CASE ~Empty(log[s])
+                <4>. CASE d.term <= LastTerm(log[s])
+                    <5>. QED \*BY <2>1, CommitTermGreaterThanZero DEF SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits, LastTerm, GetEntries, TypeOK
+                <4>. CASE d.term > LastTerm(log[s])
+                    <5>1. d.term = LastTerm(log'[s])
+                        <6>1. d.term <= c.term
+                            OBVIOUS
+                        <6>2. c.term <= LastTerm(log'[s])
+                            \*BY TypeOKAndNext DEF LastTerm, TypeOK
+                            <7>. PICK k \in DOMAIN log'[s] : log'[s][k] = c.term
+                                OBVIOUS
+                            <7>1. log'[s][k] = c.term
+                                OBVIOUS
+                            <7>2. c.term \in DOMAIN log'[s]
+                                BY <7>1, TypeOKAndNext DEF TypeOK \*, CommitTermGreaterThanZero DEF TypeOK, SMS_LC_II, CommittedTermMatchesEntry
+                            <7>3. TermsOfEntriesGrowMonotonically'
+                                BY LemmaSecondariesFollowPrimaryAndNext, LemmaBasicAndNext, TermsOfEntriesGrowMonotonicallyAndNext
+                                    DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, TermsOfEntriesGrowMonotonically
+                            <7>. QED BY <7>2, <7>3 DEF TermsOfEntriesGrowMonotonically, LastTerm
+                        <6>3. d.term <= LastTerm(log'[s])
+                            BY <6>1, <6>2, TypeOKAndNext DEF LastTerm, TypeOK
+                        <6>4. d.term > log'[s][Len(log'[s])-1]
+                            BY DEF LastTerm, GetEntries, TypeOK, Empty
+                            
+                        <6>. \E i \in DOMAIN log[t] : i = d.entry[1] /\ log[t][i] = d.term \* Equivalent to InLog(d.entry, t)
+                            <7>. \E i \in DOMAIN log[t] : log[t][i] = t.term \*/\ Len(log[t]) >= d.entry[1]
+                                BY <3>1, <3>2 DEF LastTerm, TypeOK
+                            <7>. QED
+                        
+                            
+                        <6>. CommittedTermMatchesEntry'
+                            BY CommittedTermMatchesEntryAndNext DEF SMS_LC_II, CommittedTermMatchesEntry
+                        <6>5. d.term <= log'[s][Len(log'[s])]
+                            BY <6>3 DEF LastTerm
+                        <6>. TermsOfEntriesGrowMonotonically'
+                            BY LemmaSecondariesFollowPrimaryAndNext, LemmaBasicAndNext, TermsOfEntriesGrowMonotonicallyAndNext
+                                DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, TermsOfEntriesGrowMonotonically
+                                
+                                
+                        <6>. DEFINE k == Len(log'[s])
+                        <6>. k >= 2
+                            BY DEF GetEntries, Empty, TypeOK
+                        <6>6a. k-1 \in DOMAIN log'[s] /\ k \in DOMAIN log'[s]
+                            BY TypeOKAndNext DEF TypeOK, Empty
+                        <6>6b. k-1 <= k
+                            OBVIOUS
+                        <6>6. log'[s][k-1] <= log'[s][k]
+                            BY <6>6a, <6>6b, TypeOKAndNext DEF TermsOfEntriesGrowMonotonically, TypeOK
+                        <6>7. d.term <= log'[s][k]
+                            BY <6>1, <6>2, TypeOKAndNext DEF LastTerm, TypeOK
+                        <6>8. d.term > log'[s][k-1]
+                            BY DEF LastTerm, GetEntries, TypeOK, Empty
+                        <6>9. log'[s][k-1] < d.term /\ d.term <= log'[s][k] /\ log'[s][k-1] <= log'[s][k]
+                            BY <6>6, <6>7, <6>8
+                        \*<6>. \E i \in DOMAIN log'[s] : log'[s][i] = d.term
+                        <6>10. log'[s][k-1] = d.term \/ log'[s][k] = d.term
+                        <6>11. d.term = log'[s][k]
+                            BY <6>9, <6>10, TypeOKAndNext DEF TypeOK
+                            
+                        <6>. QED BY <6>3, <6>4, TypeOKAndNext, CommitTermGreaterThanZero DEF LastTerm, TypeOK, Empty, CommittedTermMatchesEntry, TermsOfEntriesGrowMonotonically
+                    <5>2. d.entry[1] > Len(log[s])
+                        \* because d.term > LastTerm(log[s])
+                    <5>3. d.entry[1] <= Len(log'[s])
+                        OBVIOUS
+                    <5>4. d.entry[1] = Len(log'[s])
+                        BY <5>2, <5>3 \* and some other stuff
+                    <5>. QED BY <5>1, <5>4 DEF LastTerm
+                <4>. QED BY <2>1 DEF LastTerm, TypeOK
+                
+                (*<4>. DEFINE k == Len(log[s])
+                <4>. k > 0
+                    BY DEF Empty, TypeOK
+                <4>. CASE log'[s][k] > c.term
+                <4>. CASE log'[s][k] <= c.term
+                <4>. QED BY <2>1, CommitTermGreaterThanZero, LemmaSecondariesFollowPrimaryAndNext, LemmaBasicAndNext, CommittedTermMatchesEntryAndNext, TypeOKAndNext
+                            DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, CommittedTermMatchesEntry, TypeOK
+                    \*BY <2>1, CommitTermGreaterThanZero, TypeOKAndNext DEF TypeOK*)
+            <3>. QED OBVIOUS
+            
+            
+            (*<3>. CASE LastTerm(log'[s]) = c.term
+            <3>. CASE LastTerm(log'[s]) > c.term
+            <3>. CASE LastTerm(log'[s]) < c.term
+                \* this isn't possible, proof by contradiction
+                <4>1. TermsOfEntriesGrowMonotonically'
+                    BY LemmaSecondariesFollowPrimaryAndNext, LemmaBasicAndNext, LemmaSecondariesFollowPrimaryAndNext
+                        DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic
+                <4>2. LastTerm(log'[s]) >= c.term
+                    BY <4>1, TypeOKAndNext DEF LastTerm, TypeOK, TermsOfEntriesGrowMonotonically
+                <4>. QED BY <4>2, TypeOKAndNext DEF LastTerm, TypeOK
+            <3>. QED BY TypeOKAndNext DEF LastTerm, TypeOK*)
+            
+            (*<3>. CASE d.term = LastTerm(log[t])
+                <4>1a. \E i \in DOMAIN log[t] : log[t][i] = d.term
+                    BY <2>1, CommitTermGreaterThanZero DEF LastTerm
+                <4>1b. d.term <= d.term /\ Len(log[t]) >= d.entry[1]
+                    BY <3>1, <4>1a DEF TypeOK
+                <4>1. log[t][d.entry[1]] = d.term
+                    BY <2>1, <4>1a, <4>1b DEF SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits
+                <4>2. d.entry[1] \in DOMAIN log'[s]
+                    BY <2>1 DEF SMS_LC_II, CommitIndexGreaterThanZero, TypeOK
+                <4>. CASE d.entry[1] = Len(log'[s])
+                    <5>. log[t][d.entry[1]] = d.term
+                        BY <4>1
+                    <5>. Len(log'[s]) = Len(log[s]) + 1
+                        BY DEF GetEntries, TypeOK
+                    <5>. LastTerm(log'[s]) = d.term
+                        BY <4>2 DEF GetEntries, LastTerm, TypeOK
+                    <5>. QED BY <4>2 DEF GetEntries, TypeOK
+                <4>. CASE d.entry[1] < Len(log'[s])
+                <4>. QED BY <4>2 DEF TypeOK \*BY <4>1 DEF GetEntries, TypeOK
+            <3>. CASE d.term < LastTerm(log[t])
+            <3>. QED BY <2>1, <3>2 DEF LastTerm, TypeOK*)
+                
+            (*<3>. CASE d.entry[1] = Len(log[t])
+            <3>. CASE d.entry[1] < Len(log[t])
+            <3>. QED BY <2>1, <3>1 DEF TypeOK*)
+        <2>. QED OBVIOUS
+        
+        (*
+        <2>. CASE d.entry[1] < Len(log'[s])
+            <3>. d.entry[1] \in DOMAIN log[s]
+                BY DEF SMS_LC_II, CommitIndexGreaterThanZero, GetEntries, TypeOK
+            <3>. QED
+        <2>. CASE d.entry[1] = Len(log'[s])*)
     <1>3. (\E s, t \in Server : RollbackEntries(s, t)) => LogsEqualToCommittedMustHaveCommittedIfItFits'
     <1>4. (\E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)) => LogsEqualToCommittedMustHaveCommittedIfItFits'
     <1>5. (\E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => LogsEqualToCommittedMustHaveCommittedIfItFits'

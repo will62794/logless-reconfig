@@ -112,6 +112,7 @@ LemmaSecondariesFollowPrimary ==
 
 SMS_LC_II ==
     /\ LemmaSecondariesFollowPrimary
+    /\ CommitIndexGreaterThanZero
     /\ CommittedTermMatchesEntry
     /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
     /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
