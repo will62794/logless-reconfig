@@ -688,7 +688,128 @@ PROOF
             <3>. QED OBVIOUS
         <2>. QED OBVIOUS
     <1>3. (\E s, t \in Server : RollbackEntries(s, t)) => LogsEqualToCommittedMustHaveCommittedIfItFits'
+        <2>. SUFFICES ASSUME \E s, t \in Server : RollbackEntries(s, t)
+             PROVE \A s \in Server : \A c \in committed' :
+                        (\E i \in DOMAIN log'[s] : log'[s][i] = c.term) =>
+                            \A d \in committed' :
+                                (d.term <= c.term /\ Len(log'[s]) >= d.entry[1]) => log'[s][d.entry[1]] = d.term
+             BY DEF LogsEqualToCommittedMustHaveCommittedIfItFits
+        <2>. TAKE s \in Server
+        <2>. TAKE c \in committed'
+        <2>. SUFFICES ASSUME \E i \in DOMAIN log'[s] : log'[s][i] = c.term
+             PROVE \A d \in committed' : (d.term <= c.term /\ Len(log'[s]) >= d.entry[1]) => log'[s][d.entry[1]] = d.term
+             OBVIOUS
+        <2>. TAKE d \in committed'
+        <2>1. d \in committed
+            BY DEF RollbackEntries
+        <2>. SUFFICES ASSUME d.term <= c.term /\ Len(log'[s]) >= d.entry[1]
+             PROVE log'[s][d.entry[1]] = d.term
+             OBVIOUS
+             
+        <2>. CASE \E t,u \in Server : RollbackEntries(u, t) /\ u # s
+            <3>. QED BY DEF RollbackEntries, SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits
+        <2>. CASE \E t \in Server : RollbackEntries(s, t)
+            <3>. PICK i \in DOMAIN log'[s] : log'[s][i] = c.term
+                OBVIOUS
+            <3>1. log[s][i] = c.term /\ i \in DOMAIN log[s]
+                BY DEF RollbackEntries, TypeOK
+            <3>2. d.term <= c.term
+                OBVIOUS
+            <3>3. Len(log[s]) >= d.entry[1]
+                BY DEF RollbackEntries, TypeOK
+            <3>4. c \in committed /\ d \in committed
+                BY DEF RollbackEntries
+            <3>5. log[s][d.entry[1]] = d.term
+                BY <3>1, <3>2, <3>3, <3>4 DEF SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits
+            <3>. QED BY <3>5 DEF RollbackEntries, SMS_LC_II, CommitIndexGreaterThanZero, TypeOK
+        <2>. QED OBVIOUS
     <1>4. (\E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)) => LogsEqualToCommittedMustHaveCommittedIfItFits'
+        <2>. SUFFICES ASSUME \E p \in Server : \E Q \in QuorumsAt(p) : BecomeLeader(p, Q)
+             PROVE \A s \in Server : \A c \in committed' :
+                        (\E i \in DOMAIN log'[s] : log'[s][i] = c.term) =>
+                            \A d \in committed' :
+                                (d.term <= c.term /\ Len(log'[s]) >= d.entry[1]) => log'[s][d.entry[1]] = d.term
+             BY DEF LogsEqualToCommittedMustHaveCommittedIfItFits
+        <2>. TAKE s \in Server
+        <2>. TAKE c \in committed'
+        <2>. SUFFICES ASSUME \E i \in DOMAIN log'[s] : log'[s][i] = c.term
+             PROVE \A d \in committed' : (d.term <= c.term /\ Len(log'[s]) >= d.entry[1]) => log'[s][d.entry[1]] = d.term
+             OBVIOUS
+        <2>. TAKE d \in committed'
+        <2>1. d \in committed
+            BY DEF BecomeLeader
+        <2>. SUFFICES ASSUME d.term <= c.term /\ Len(log'[s]) >= d.entry[1]
+             PROVE log'[s][d.entry[1]] = d.term
+             OBVIOUS
+             
+        <2>. CASE \E p \in Server : \E Q \in QuorumsAt(p) : BecomeLeader(p, Q) /\ p # s
+            <3>. PICK i \in DOMAIN log'[s] : log'[s][i] = c.term
+                OBVIOUS
+            <3>1. log[s][i] = c.term /\ i \in DOMAIN log[s]
+                BY DEF BecomeLeader, TypeOK
+            <3>. QED BY <3>1 DEF BecomeLeader, SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits, TypeOK
+        <2>. CASE \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
+            <3>. CASE UNCHANGED log
+                <4>. QED BY DEF BecomeLeader, SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits, TypeOK
+            <3>. CASE log'[s] = Append(log[s], currentTerm[s]+1)
+                <4>. DEFINE newTerm == currentTerm[s] + 1
+                <4>1. c.term < newTerm
+                    <5>1. c \in committed
+                        BY DEF BecomeLeader
+                    <5>. PICK t \in Server : c.term <= LastTerm(log[t])
+                        BY <5>1 DEF SMS_LC_II, CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
+                    <5>. PICK u \in Server : LastTerm(log[t]) <= currentTerm[u]
+                        BY DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+                    <5>2. currentTerm[u] < newTerm
+                        BY ElectedLeadersHaveLatestTerm DEF SMS_LC_II, LemmaSecondariesFollowPrimary, TypeOK
+                    <5>. QED BY <5>2 DEF LastTerm, TypeOK
+                <4>. PICK i \in DOMAIN log'[s] : log'[s][i] = c.term
+                    OBVIOUS
+                <4>2. i < Len(log'[s])
+                    <5>1. TermsOfEntriesGrowMonotonically'
+                        BY LemmaSecondariesFollowPrimaryAndNext, LemmaBasicAndNext, TermsOfEntriesGrowMonotonicallyAndNext
+                            DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, TermsOfEntriesGrowMonotonically
+                    <5>. QED BY <4>1, <5>1 DEF TermsOfEntriesGrowMonotonically, TypeOK
+                <4>3. i \in DOMAIN log[s] /\ log[s][i] = c.term
+                    BY <4>2 DEF BecomeLeader, TypeOK
+                <4>4. Len(log[s]) >= d.entry[1]
+                    <5>. SUFFICES ASSUME d.entry[1] > Len(log[s])
+                         PROVE FALSE
+                         BY <2>1 DEF TypeOK
+                    <5>a. d.entry[1] = Len(log'[s])
+                        BY <2>1 DEF BecomeLeader, TypeOK
+                    <5>. PICK cQ \in Quorums(Server) : \A q \in cQ :
+                                \E j \in DOMAIN log[q] : log[q][j] = d.term /\ j = d.entry[1]
+                        BY <2>1 DEF SMS_LC_II, CommittedEntriesMustHaveQuorums
+                    <5>. PICK lQ \in QuorumsAt(s) : BecomeLeader(s, lQ)
+                        OBVIOUS
+                    <5>. PICK t \in Server : t \in cQ /\ t \in lQ
+                        BY AllQuorumsOverlap DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, AllConfigsAreServer, QuorumsAt, Quorums
+                    <5>. PICK j \in DOMAIN log[t] : log[t][j] = d.term /\ j = d.entry[1]
+                        OBVIOUS
+                    <5>. CASE LastTerm(log[s]) > LastTerm(log[t])
+                        <6>1a. d.term < LastTerm(log[s])
+                            BY DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+                        <6>1. \E k \in DOMAIN log[s] : log[s][k] > d.term
+                            BY <6>1a DEF LastTerm, TypeOK
+                        <6>2. d.term <= d.term
+                            BY DEF TypeOK
+                        <6>3. Len(log[s]) >= d.entry[1] /\ log[s][d.entry[1]] = d.term
+                            BY <2>1, <6>1, <6>2 DEF SMS_LC_II, LogsLaterThanCommittedMustHaveCommitted
+                        <6>. QED BY <6>3 DEF TypeOK
+                    <5>. CASE LastTerm(log[s]) = LastTerm(log[t]) /\ Len(log[s]) >= Len(log[t])
+                        \* proof by contradiction...in a proof by contraction.  how meta
+                        <6>. Len(log[t]) > Len(log[s])
+                            BY DEF TypeOK
+                        <6>. QED OBVIOUS
+                    <5>. QED BY DEF BecomeLeader, CanVoteForOplog
+                <4>5. log[s][d.entry[1]] = d.term
+                    BY <4>3, <4>4 DEF BecomeLeader, SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits, TypeOK
+                <4>6. d.entry[1] \in DOMAIN log[s]
+                    BY <2>1, <4>4 DEF SMS_LC_II, CommitIndexGreaterThanZero, TypeOK
+                <4>. QED BY <4>5, <4>6 DEF BecomeLeader, TypeOK
+            <3>. QED BY DEF BecomeLeader, TypeOK
+        <2>. QED OBVIOUS
     <1>5. (\E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => LogsEqualToCommittedMustHaveCommittedIfItFits'
     <1>6. (\E s,t \in Server : UpdateTerms(s, t)) => LogsEqualToCommittedMustHaveCommittedIfItFits'
         <2>. QED BY DEF SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits, UpdateTerms
