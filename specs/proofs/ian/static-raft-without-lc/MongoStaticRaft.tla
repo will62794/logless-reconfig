@@ -90,7 +90,6 @@ ClientRequest(i) ==
 \* Node 'i' gets a new log entry from node 'j'.
 GetEntries(i, j) ==
     /\ state[i] = Secondary
-    \*/\ currentTerm[i] <= currentTerm[j] \* idardik
     \* Node j must have more entries than node i.
     /\ Len(log[j]) > Len(log[i])
        \* Ensure that the entry at the last index of node i's log must match the entry at
@@ -110,7 +109,7 @@ GetEntries(i, j) ==
 
 \*  Node 'i' rolls back against the log of node 'j'.  
 RollbackEntries(i, j) ==
-    /\ state[i] = Secondary \* idardik
+    \*/\ state[i] = Secondary
     /\ CanRollback(i, j)
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
@@ -138,9 +137,7 @@ BecomeLeader(i, voteQuorum) ==
             
 \* Primary 'i' commits its latest log entry.
 CommitEntry(i, commitQuorum) ==
-    LET ind == Len(log[i])
-        missingIndices == {j \in DOMAIN log[i] : ~(\E c \in committed : c.entry[1] = i)}
-    IN
+    LET ind == Len(log[i]) IN
     \* Must have some entries to commit.
     /\ ind > 0
     \* This node is leader.
@@ -151,20 +148,9 @@ CommitEntry(i, commitQuorum) ==
     /\ ImmediatelyCommitted(<<ind,currentTerm[i]>>, commitQuorum)
     \* Don't mark an entry as committed more than once.
     /\ ~\E c \in committed : c.entry = <<ind, currentTerm[i]>>
-
-    (************ Incorrect *************)
-    \*/\ committed' = committed \cup
-    \*        {[ entry  |-> <<ind, currentTerm[i]>>,
-    \*           term  |-> currentTerm[i]]}
-    (************************************)
-
-    (************* Correct **************)
-    \* weird because original Raft doesn't associate "commits" with a term--it associates
-    \* log entries with terms
     /\ committed' = committed \cup
-            {[ entry  |-> <<k, log[i][k]>>,
-               term  |-> log[i][k]] : k \in missingIndices} \* idardik
-    (************************************)
+            {[ entry  |-> <<ind, currentTerm[i]>>,
+               term  |-> currentTerm[i]]}
     /\ UNCHANGED <<currentTerm, state, log, config, elections>>
 
 \* Action that exchanges terms between two nodes and step down the primary if
@@ -184,6 +170,7 @@ Init ==
     /\ \E initConfig \in SUBSET Server : 
         \*/\ initConfig # {} \* configs should be non-empty.
         \*/\ config = [i \in Server |-> initConfig]
+        \*idardik
         /\ \A i \in Server : config[i] = Server
         *)
     /\ config = [i \in Server |-> Server]
@@ -287,11 +274,9 @@ ElectionSafety ==
         (e1.term = e2.term) => (e1.leader = e2.leader)
 
 \* When a node gets elected as primary it contains all entries committed in previous terms.
-\* idardik
 LeaderCompleteness == 
-    \A s \in Server :
-        (state[s] = Primary /\ \A t \in Server : currentTerm[s] >= currentTerm[t]) =>
-            \A c \in committed : (c.term < currentTerm[s] => InLog(c.entry, s))
+    \A s \in Server : (state[s] = Primary) => 
+        \A c \in committed : (c.term < currentTerm[s] => InLog(c.entry, s))
 
 \* If two entries are committed at the same index, they must be the same entry.
 StateMachineSafety == 
@@ -312,14 +297,120 @@ LogMatching ==
 
 --------------------------------------------------------------------------------
 
-\* idardik
-CommitsAreUnique ==
-    \A c,d \in committed :
-        (c.entry[1] = d.entry[1]) => (c = d)
+(* SMS_LC_II Helpers *)
 
-AllPreviousCommitsAreCommitted ==
+Max(S) == CHOOSE m \in S : \A other \in S : m >= other
+
+ExistsPrimary == \E s \in Server : state[s] = Primary
+
+
+(* LemmaBasic Properties *)
+
+AllConfigsAreServer ==
+    \A s \in Server : config[s] = Server
+
+\* A server's current term is always at least as large as the terms in its log.
+\* This is LEMMA 6 from the Raft dissertation.
+CurrentTermAtLeastAsLargeAsLogTermsForPrimary == 
+    \A s \in Server : state[s] = Primary => (\A i \in DOMAIN log[s] : currentTerm[s] >= log[s][i])
+
+\* The terms of entries grow monotonically in each log.
+\* This is LEMMA 7 from the Raft dissertation.
+TermsOfEntriesGrowMonotonically ==
+    \A s \in Server : \A i,j \in DOMAIN log[s] : i <= j => log[s][i] <= log[s][j]
+
+OnePrimaryPerTerm ==
+    \A s \in Server : state[s] = Primary =>
+        \A t \in Server :
+            (state[t] = Primary /\ currentTerm[s] = currentTerm[t]) => s = t
+
+ExistsQuorumInLargestTerm ==
+  \E s \in Server :
+       /\ ExistsPrimary => state[s] = Primary
+       /\ \A u \in Server : currentTerm[s] >= currentTerm[u]
+       /\ \E Q \in QuorumsAt(s) :
+             \A q \in Q : currentTerm[q] = currentTerm[s]
+
+LogsMustBeSmallerThanOrEqualToLargestTerm ==
+    \A s \in Server : \E t \in Server : LastTerm(log[s]) <= currentTerm[t]
+
+
+(* LemmaSecondariesFollowPrimary *)
+
+SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm ==
+    \A s \in Server :
+        (state[s] = Secondary /\ LastTerm(log[s]) = currentTerm[s]) =>
+           \/ \E p \in Server :
+                  /\ state[p] = Primary
+                  /\ currentTerm[p] = currentTerm[s] \* different from exceeds
+                  /\ LastTerm(log[p]) >= LastTerm(log[s])
+                  /\ Len(log[p]) >= Len(log[s])
+           \/ \E p \in Server :
+                  /\ state[p] = Primary
+                  /\ currentTerm[p] > currentTerm[s] \* different from exceeds
+           \/ \A t \in Server : state[t] = Secondary
+
+SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm ==
+    \A s \in Server :
+        (state[s] = Secondary /\ LastTerm(log[s]) > currentTerm[s]) =>
+           \/ \E p \in Server :
+                  /\ state[p] = Primary
+                  /\ currentTerm[p] = LastTerm(log[s]) \* different from matches
+                  /\ LastTerm(log[p]) >= LastTerm(log[s])
+                  /\ Len(log[p]) >= Len(log[s])
+           \/ \E p \in Server :
+                  /\ state[p] = Primary
+                  /\ currentTerm[p] > LastTerm(log[s]) \* different from matches
+           \/ \A t \in Server : state[t] = Secondary
+
+
+(* SMS_LC_II *)
+
+\* The following four are basically TypeOK for commits
+CommitIndexGreaterThanZero ==
+    \A c \in committed : c.entry[1] > 0
+
+CommittedTermMatchesEntry ==
+    \A c \in committed : c.term = c.entry[2]
+
+CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens ==
     \A c \in committed :
-        LET idx == c.entry[1] IN
-          (idx > 1) => \E d \in committed : d.entry[1] = idx-1
+        \E s \in Server : c.entry[1] <= Len(log[s])
+
+CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms ==
+    \A c \in committed :
+        \E s \in Server : c.term <= LastTerm(log[s])
+
+\* If a node is primary, it must contain all committed entries from previous terms in its log.
+LeaderCompletenessGeneralized ==
+    \A s \in Server : 
+        (state[s] = Primary) =>
+            \A c \in committed : (c.term <= currentTerm[s]) => InLog(c.entry, s)
+
+\* when a server's latest log term is EQUAL to a committed entry c's term, ALL commits
+\* with terms before or equal to c's must be in the server's log (if the entry fits)
+LogsEqualToCommittedMustHaveCommittedIfItFits ==
+    \A s \in Server : \A c \in committed :
+        (\E i \in DOMAIN log[s] : log[s][i] = c.term) =>
+            \A d \in committed :
+                (d.term <= c.term /\ Len(log[s]) >= d.entry[1]) =>
+                      log[s][d.entry[1]] = d.term
+
+\* when a server's latest log term EXCEEDS a committed entry c's term, ALL commits
+\* with terms before or equal to c's must be in the server's log
+LogsLaterThanCommittedMustHaveCommitted ==
+    \A s \in Server : \A c \in committed :
+        (\E i \in DOMAIN log[s] : log[s][i] > c.term) =>
+            \A d \in committed :
+                d.term <= c.term => /\ Len(log[s]) >= d.entry[1]
+                                    /\ log[s][d.entry[1]] = d.term
+
+\* Basically the definition of committed--committed entries must appear on a quorum of
+\* servers in a server's config
+CommittedEntriesMustHaveQuorums ==
+    \A c \in committed :
+        \E Q \in Quorums(Server) :
+            \A q \in Q :
+                \E i \in DOMAIN log[q] : log[q][i] = c.term /\ i = c.entry[1]
 
 =============================================================================
