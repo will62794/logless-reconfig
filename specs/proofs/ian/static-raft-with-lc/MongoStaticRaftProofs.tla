@@ -120,6 +120,7 @@ SMS_LC_II ==
     /\ LogsEqualToCommittedMustHaveCommittedIfItFits
     /\ LogsLaterThanCommittedMustHaveCommitted
     /\ CommittedEntriesMustHaveQuorums
+    /\ StateMachineSafety
 
 
 CONSTANT n1

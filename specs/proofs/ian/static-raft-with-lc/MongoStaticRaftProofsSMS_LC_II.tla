@@ -13,6 +13,7 @@ SMS_LC_II ==
     /\ LogsEqualToCommittedMustHaveCommittedIfItFits
     /\ LogsLaterThanCommittedMustHaveCommitted
     /\ CommittedEntriesMustHaveQuorums
+    /\ StateMachineSafety
 
 
 (* Helpers *)
@@ -67,6 +68,41 @@ PROOF
             BY DEF GetEntries, LastTerm, TypeOK
         <2>. QED BY DEF LemmaBasic, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
     <1>. QED OBVIOUS
+
+THEOREM CommittingImpliesLatestTerm ==
+ASSUME TypeOK, LemmaBasic,
+       NEW cp \in Server,
+       NEW cQ \in QuorumsAt(cp)
+PROVE CommitEntry(cp, cQ) => \A s \in Server : currentTerm[cp] >= currentTerm[s]
+PROOF
+    <1>. SUFFICES ASSUME CommitEntry(cp, cQ)
+         PROVE \A t \in Server : currentTerm[cp] >= currentTerm[t]
+         OBVIOUS
+    <1>. PICK lp \in Server :
+                /\ \A u \in Server : currentTerm[lp] >= currentTerm[u]
+                /\ \E lQ \in QuorumsAt(lp) :
+                        \A q \in lQ : currentTerm[q] = currentTerm[lp]
+        BY DEF LemmaBasic, ExistsQuorumInLargestTerm
+    <1>. PICK lQ \in QuorumsAt(lp) : \A q \in lQ : currentTerm[q] = currentTerm[lp]
+        BY DEF LemmaBasic, ExistsQuorumInLargestTerm
+    <1> PICK q \in Server : q \in cQ /\ q \in lQ
+        BY AllQuorumsOverlap DEF QuorumsAt, Quorums, LemmaBasic, AllConfigsAreServer
+    <1>1. currentTerm[q] = currentTerm[cp]
+        BY DEF CommitEntry, ImmediatelyCommitted
+    <1>2. currentTerm[q] = currentTerm[lp]
+        OBVIOUS
+    <1>. QED BY <1>1, <1>2
+
+THEOREM CommitsMustBeSmallerThanOrEqualToLargestTerm ==
+ASSUME TypeOK, SMS_LC_II
+PROVE \A c \in committed : \E s \in Server : c.term <= currentTerm[s]
+PROOF
+    <1>. TAKE c \in committed
+    <1>. PICK s \in Server : c.term <= LastTerm(log[s])
+        BY DEF SMS_LC_II, CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
+    <1>. PICK t \in Server : LastTerm(log[s]) <= currentTerm[t]
+        BY DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+    <1>. QED BY DEF LastTerm, TypeOK
 
 
 (* *AndNext *)
@@ -451,6 +487,24 @@ PROOF
     <1>6. (\E s,t \in Server : UpdateTerms(s, t)) => LeaderCompletenessGeneralized'
         <2>. QED BY PrimaryAndSecondaryAreDifferent DEF UpdateTerms, UpdateTermsExpr, SMS_LC_II, LeaderCompletenessGeneralized, InLog, TypeOK
     <1>. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
+    
+(* Another Helper *)
+\* it may seem a bit weird (read: incorrect) to use an "AndNext" version of one of the properties of SMS_LC_II in the proof, however
+\* we only use results here that have already been proved ABOVE so we do not run into a circular logic issue.  (also note that we only
+\* make use of this theorem BELOW)
+\* in particular, we make use of CommittedEntryTermMustBeSmallerThanOrEqualtoAllTermsAndNext here to prove a result that relies on this later
+THEOREM CommitsMustBeSmallerThanOrEqualToLargestTermAndNext ==
+ASSUME TypeOK, SMS_LC_II, Next
+PROVE \A c \in committed' : \E s \in Server : c.term <= currentTerm'[s]
+PROOF
+    <1>. TAKE c \in committed'
+    <1>. PICK s \in Server : c.term <= LastTerm(log'[s])
+        BY CommittedEntryTermMustBeSmallerThanOrEqualtoAllTermsAndNext DEF SMS_LC_II, CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
+    <1>. PICK t \in Server : LastTerm(log'[s]) <= currentTerm'[t]
+        BY LemmaSecondariesFollowPrimaryAndNext, LemmaBasicAndNext, LogsMustBeSmallerThanOrEqualToLargestTermAndNext
+            DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+    <1>. QED BY TypeOKAndNext DEF LastTerm, TypeOK
+(******************)
 
 THEOREM LogsEqualToCommittedMustHaveCommittedIfItFitsAndNext ==
 ASSUME SMS_LC_II, TypeOK, Next
@@ -810,7 +864,162 @@ PROOF
                 <4>. QED BY <4>5, <4>6 DEF BecomeLeader, TypeOK
             <3>. QED BY DEF BecomeLeader, TypeOK
         <2>. QED OBVIOUS
-    <1>5. (\E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => LogsEqualToCommittedMustHaveCommittedIfItFits'
+    <1>5. (\E s \in Server : \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => LogsEqualToCommittedMustHaveCommittedIfItFits'
+        <2>. SUFFICES ASSUME \E p \in Server : \E Q \in QuorumsAt(p) : CommitEntry(p, Q)
+             PROVE \A s \in Server : \A c \in committed' :
+                        (\E i \in DOMAIN log'[s] : log'[s][i] = c.term) =>
+                            \A d \in committed' :
+                                (d.term <= c.term /\ Len(log'[s]) >= d.entry[1]) => log'[s][d.entry[1]] = d.term
+             BY DEF LogsEqualToCommittedMustHaveCommittedIfItFits
+        <2>. TAKE s \in Server
+        <2>. TAKE c \in committed'
+        <2>. SUFFICES ASSUME \E i \in DOMAIN log'[s] : log'[s][i] = c.term
+             PROVE \A d \in committed' : (d.term <= c.term /\ Len(log'[s]) >= d.entry[1]) => log'[s][d.entry[1]] = d.term
+             OBVIOUS
+        <2>. TAKE d \in committed'
+        <2>. SUFFICES ASSUME d.term <= c.term /\ Len(log'[s]) >= d.entry[1]
+             PROVE log'[s][d.entry[1]] = d.term
+             OBVIOUS
+             
+        <2>. PICK p \in Server : \E Q \in QuorumsAt(p) : CommitEntry(p, Q)
+            OBVIOUS
+        <2>. DEFINE ind == Len(log[p])
+        <2>. CASE d.entry[1] = ind
+            \*<3>. DEFINE mostRecentCommit == [ entry |-> <<ind, currentTerm[p]>>, term |-> currentTerm[p] ]
+            (*<3>1. \A m \in committed : (m.term = currentTerm[p]) => m.entry[1] # ind
+                \* prove by contradiction
+                <4>. TAKE m \in committed
+                <4>. SUFFICES ASSUME m.entry[2] = currentTerm[p] /\ m.entry[1] = ind
+                     PROVE FALSE
+                     BY DEF SMS_LC_II, CommittedTermMatchesEntry
+                <4>1. \E o \in committed : o.entry = <<ind, currentTerm[p]>>
+                    BY DEF TypeOK
+                <4>. QED BY <4>1 DEF CommitEntry*)
+            <3>. CASE d.term = currentTerm[p]
+                (*<4>1. d \notin committed
+                    BY <3>1*)
+                <4>2. log[p][d.entry[1]] = d.term
+                    BY DEF CommitEntry
+                <4>3. \A t \in Server : currentTerm[p] >= currentTerm[t]
+                    BY CommittingImpliesLatestTerm DEF SMS_LC_II, LemmaSecondariesFollowPrimary
+                <4>. CASE state[s] = Primary
+                    <5>1. currentTerm[s] >= c.term
+                        BY DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, CurrentTermAtLeastAsLargeAsLogTermsForPrimary, CommitEntry
+                    <5>2. currentTerm[s] >= d.term
+                        BY <5>1, TypeOKAndNext DEF TypeOK
+                    <5>3. currentTerm[s] >= currentTerm[p]
+                        BY <5>2
+                    <5>4. s = p
+                        BY <5>3, <4>3 DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, OnePrimaryPerTerm, CommitEntry, TypeOK
+                    <5>. QED
+                        BY <5>4, <4>2 DEF CommitEntry
+                <4>. CASE state[s] = Secondary
+                    <5>1. c.term = currentTerm[p]
+                        BY <4>3, CommitsMustBeSmallerThanOrEqualToLargestTermAndNext, TypeOKAndNext DEF CommitEntry, TypeOK
+                    <5>2. LastTerm(log[s]) = currentTerm[p]
+                        <6>. PICK i \in DOMAIN log'[s] : log'[s][i] = c.term
+                            OBVIOUS
+                        <6>1. i \in DOMAIN log[s] /\ log[s][i] = c.term
+                            BY DEF CommitEntry
+                        <6>2. LastTerm(log[s]) >= c.term
+                            BY <6>1 DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, TermsOfEntriesGrowMonotonically, LastTerm
+                        <6>3. LastTerm(log[s]) >= currentTerm[p]
+                            BY <6>2, TypeOKAndNext DEF LastTerm, TypeOK
+                        <6>4. LastTerm(log[s]) <= currentTerm[p]
+                            <7>. PICK lt \in Server : LastTerm(log[s]) <= currentTerm[lt]
+                                BY DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, LogsMustBeSmallerThanOrEqualToLargestTerm
+                            <7>1. currentTerm[lt] <= currentTerm[p]
+                                BY CommittingImpliesLatestTerm DEF SMS_LC_II, LemmaSecondariesFollowPrimary
+                            <7>. QED BY <7>1 DEF LastTerm, TypeOK
+                        <6>. QED BY <6>3, <6>4 DEF LastTerm, TypeOK
+                    <5>3. Len(log[s]) = ind
+                        <6>1. Len(log[s]) >= ind
+                            BY DEF CommitEntry
+                        <6>2. Len(log[s]) <= ind
+                            <7>1. LastTerm(log[s]) >= currentTerm[s]
+                                BY <5>2, CommittingImpliesLatestTerm DEF SMS_LC_II, LemmaSecondariesFollowPrimary
+                            <7>. CASE LastTerm(log[s]) = currentTerm[s]
+                                <8>. CASE \E lp \in Server : state[lp] = Primary /\ currentTerm[lp] = currentTerm[s] /\ Len(log[lp]) >= Len(log[s])
+                                    <9>. PICK lp \in Server : state[lp] = Primary /\ currentTerm[lp] = currentTerm[s] /\ Len(log[lp]) >= Len(log[s])
+                                        OBVIOUS
+                                    <9>1. currentTerm[p] = currentTerm[lp]
+                                        BY <5>2
+                                    <9>2. lp = p
+                                        BY <9>1 DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, OnePrimaryPerTerm, CommitEntry
+                                    <9>. QED BY <9>2
+                                <8>. CASE \E lp \in Server : currentTerm[lp] > currentTerm[s]
+                                    \* impossible, proof by contradiction
+                                    <9>. PICK lp \in Server : currentTerm[lp] > currentTerm[s]
+                                        OBVIOUS
+                                    <9>1. currentTerm[s] = currentTerm[p]
+                                        BY <5>2 DEF LastTerm, TypeOK
+                                    <9>2. currentTerm[lp] <= currentTerm[p]
+                                        BY CommittingImpliesLatestTerm DEF SMS_LC_II, LemmaSecondariesFollowPrimary, TypeOK
+                                    <9>3. currentTerm[lp] <= currentTerm[s]
+                                        BY <9>2, <9>1
+                                    <9>. QED BY <9>3 DEF TypeOK
+                                <8>. QED BY DEF SMS_LC_II, LemmaSecondariesFollowPrimary, SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm, CommitEntry
+                            <7>. CASE LastTerm(log[s]) > currentTerm[s]
+                                <8>. CASE \E lp \in Server : state[lp] = Primary /\ currentTerm[lp] = LastTerm(log[s]) /\ Len(log[lp]) >= Len(log[s])
+                                    <9>. PICK lp \in Server : state[lp] = Primary /\ currentTerm[lp] = LastTerm(log[s]) /\ Len(log[lp]) >= Len(log[s])
+                                        OBVIOUS
+                                    <9>1. currentTerm[p] = currentTerm[lp]
+                                        BY <5>2
+                                    <9>2. lp = p
+                                        BY <9>1 DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, OnePrimaryPerTerm, CommitEntry
+                                    <9>. QED BY <9>2
+                                <8>. CASE \E lp \in Server : currentTerm[lp] > LastTerm(log[s])
+                                    \* impossible, proof by contradiction
+                                    <9>. PICK lp \in Server : currentTerm[lp] > LastTerm(log[s])
+                                        OBVIOUS
+                                    <9>1. LastTerm(log[s]) = currentTerm[p]
+                                        BY <5>2
+                                    <9>2. currentTerm[lp] <= currentTerm[p]
+                                        BY CommittingImpliesLatestTerm DEF SMS_LC_II, LemmaSecondariesFollowPrimary, TypeOK
+                                    <9>3. currentTerm[lp] <= LastTerm(log[s])
+                                        BY <9>2, <9>1
+                                    <9>. QED BY <9>3 DEF LastTerm, TypeOK
+                                <8>. QED BY PrimaryAndSecondaryAreDifferent
+                                    DEF SMS_LC_II, LemmaSecondariesFollowPrimary, SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm, CommitEntry
+                            <7>. QED BY <7>1 DEF LastTerm, TypeOK
+                        <6>. QED BY <6>1, <6>2 DEF TypeOK
+                    <5>. QED BY <5>2, <5>3 DEF LastTerm, CommitEntry
+                <4>. QED BY DEF TypeOK
+            <3>. CASE d.term # currentTerm[p]
+                \* this case is impossible; proof by contradiction
+                <4>1. d \in committed
+                    BY DEF CommitEntry
+                <4>. PICK prevQ \in Quorums(Server) : \A q \in prevQ : \E i \in DOMAIN log[q] : log[q][i] = d.term /\ i = d.entry[1]
+                    BY <4>1 DEF SMS_LC_II, CommittedEntriesMustHaveQuorums
+                <4>. PICK nextQ \in QuorumsAt(p) : CommitEntry(p, nextQ)
+                    OBVIOUS
+                <4>. PICK q \in Server : q \in prevQ /\ q \in nextQ
+                    BY AllQuorumsOverlap DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, AllConfigsAreServer, QuorumsAt, Quorums
+                <4>2. InLog(<<ind,d.term>>, q)
+                    BY <4>1 DEF InLog
+                <4>3. InLog(<<ind, currentTerm[p]>>, q)
+                    BY DEF CommitEntry, ImmediatelyCommitted
+                <4>. QED BY <4>2, <4>3 DEF InLog, TypeOK
+            <3>. QED OBVIOUS
+        <2>. CASE d.entry[1] # ind
+            <3>1. d \in committed
+                BY DEF CommitEntry
+            <3>2. \E i \in DOMAIN log[s] : log[s][i] >= d.term
+                BY DEF CommitEntry
+            <3>3. log[s][d.entry[1]] = d.term
+                <4>. CASE \E i \in DOMAIN log[s] : log[s][i] = d.term
+                    <5>1. d.term <= d.term
+                        BY DEF TypeOK
+                    <5>2. Len(log[s]) >= d.entry[1]
+                        BY DEF CommitEntry, TypeOK
+                    <5>. QED BY <3>1, <5>1, <5>2 DEF SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits
+                <4>. CASE \E i \in DOMAIN log[s] : log[s][i] > d.term
+                    <5>1. d.term <= d.term
+                        BY <3>1 DEF TypeOK
+                    <5>. QED BY <3>1, <5>1 DEF SMS_LC_II, LogsLaterThanCommittedMustHaveCommitted
+                <4>. QED BY <3>1, <3>2 DEF TypeOK
+            <3>. QED BY <3>3 DEF CommitEntry
+        <2>. QED OBVIOUS
     <1>6. (\E s,t \in Server : UpdateTerms(s, t)) => LogsEqualToCommittedMustHaveCommittedIfItFits'
         <2>. QED BY DEF SMS_LC_II, LogsEqualToCommittedMustHaveCommittedIfItFits, UpdateTerms
     <1>. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next

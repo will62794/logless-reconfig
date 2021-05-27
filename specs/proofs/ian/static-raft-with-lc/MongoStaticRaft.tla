@@ -109,7 +109,7 @@ GetEntries(i, j) ==
 
 \*  Node 'i' rolls back against the log of node 'j'.  
 RollbackEntries(i, j) ==
-    \*/\ state[i] = Secondary
+    /\ state[i] = Secondary
     /\ CanRollback(i, j)
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
@@ -285,14 +285,11 @@ StateMachineSafety ==
 
 (* Log Matching *)
 
-EqualUpTo(log1, log2, i) ==
-    \A j \in 1..i : log1[j] = log2[j]
-
 \* This is a core property of Raft, but MongoStaticRaft does not satisfy this
 LogMatching ==
     \A s,t \in Server :
         \A i \in (DOMAIN log[s] \cap DOMAIN log[t]) :
-            log[s][i] = log[t][i] => EqualUpTo(log[s],log[t],i)
+            (log[s][i] = log[t][i]) => \A j \in 1..i : log[s][j] = log[t][j]
 
 
 --------------------------------------------------------------------------------
