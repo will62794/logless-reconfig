@@ -21,7 +21,7 @@ run_5n() {
 rm -f $log3 $log5
 touch $log3 $log5
 
-for i in `seq 1`
+for i in `seq 10`
 do
   echo
   echo "TRIAL $i"

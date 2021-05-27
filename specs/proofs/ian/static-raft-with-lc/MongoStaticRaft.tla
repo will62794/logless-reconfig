@@ -364,8 +364,14 @@ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm ==
 (* SMS_LC_II *)
 
 \* The following four are basically TypeOK for commits
+PrimariesTermGreaterThanZero ==
+    \A s \in Server : state[s] = Primary => currentTerm[s] > 0
+
 CommitIndexGreaterThanZero ==
     \A c \in committed : c.entry[1] > 0
+
+CommitTermGreaterThanZero ==
+    \A c \in committed : c.term > 0
 
 CommittedTermMatchesEntry ==
     \A c \in committed : c.term = c.entry[2]
