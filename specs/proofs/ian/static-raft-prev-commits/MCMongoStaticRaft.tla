@@ -11,7 +11,7 @@ StateConstraint == \A s \in Server :
 
 ServerSymmetry == Permutations(Server)
 
-stateView == <<currentTerm, state, log, config, commitIndex>>
+stateView == <<currentTerm, state, log, config, committed>>
 
 \* For easier error diagnosis
 Alias == 
@@ -21,6 +21,6 @@ Alias ==
         log |-> log,
         config |-> config,
         elections |-> elections,
-        commitIndex |-> commitIndex
+        committed |-> committed
     ]
 ====

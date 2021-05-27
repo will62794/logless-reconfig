@@ -15,16 +15,13 @@ VARIABLE config
 
 \* History variables for stating correctness properties.
 VARIABLE elections
-VARIABLE commitIndex
+VARIABLE committed
 
-vars == <<currentTerm, state, log, elections, commitIndex, config>>
+vars == <<currentTerm, state, log, elections, committed, config>>
 
 \*
 \* Helper operators.
 \*
-
-Max(S) == CHOOSE m \in S : \A e \in S : m >= e
-Min(S) == CHOOSE m \in S : \A e \in S : m <= e
 
 \* Is a sequence empty.
 Empty(s) == Len(s) = 0
@@ -63,10 +60,12 @@ CanVoteForOplog(i, j, term) ==
     /\ logOk
 
 \* Is a log entry 'e'=<<i, t>> immediately committed in term 't' with a quorum 'Q'.
-ImmediatelyCommitted(eind, eterm, Q) == 
+ImmediatelyCommitted(e, Q) == 
+    LET eind == e[1] 
+        eterm == e[2] IN
     \A s \in Q :
         /\ Len(log[s]) >= eind
-        /\ InLog(<<eind,eterm>>, s) \* they have the entry.
+        /\ InLog(e, s) \* they have the entry.
         /\ currentTerm[s] = eterm  \* they are in the same term as the log entry. 
 
 \* Helper operator for actions that propagate the term between two nodes.
@@ -86,12 +85,11 @@ UpdateTermsExpr(i, j) ==
 ClientRequest(i) ==
     /\ state[i] = Primary
     /\ log' = [log EXCEPT ![i] = Append(log[i], currentTerm[i])]
-    /\ UNCHANGED <<currentTerm, state, elections, commitIndex, config>>
+    /\ UNCHANGED <<currentTerm, state, elections, committed, config>>
 
 \* Node 'i' gets a new log entry from node 'j'.
 GetEntries(i, j) ==
     /\ state[i] = Secondary
-    \*/\ currentTerm[i] <= currentTerm[j] \* idardik
     \* Node j must have more entries than node i.
     /\ Len(log[j]) > Len(log[i])
        \* Ensure that the entry at the last index of node i's log must match the entry at
@@ -107,16 +105,15 @@ GetEntries(i, j) ==
               newEntry      == log[j][newEntryIndex]
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
-    /\ commitIndex' = [commitIndex EXCEPT ![i] = Min({commitIndex[j], Len(log[i])})]
-    /\ UNCHANGED <<elections, currentTerm, state, config>>
+    /\ UNCHANGED <<elections, committed, currentTerm, state, config>>
 
 \*  Node 'i' rolls back against the log of node 'j'.  
 RollbackEntries(i, j) ==
-    /\ state[i] = Secondary \* idardik
+    /\ state[i] = Secondary
     /\ CanRollback(i, j)
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
-    /\ UNCHANGED <<elections, commitIndex, currentTerm, state, config>>
+    /\ UNCHANGED <<elections, committed, currentTerm, state, config>>
 
 \* Node 'i' gets elected as a primary.
 BecomeLeader(i, voteQuorum) == 
@@ -136,18 +133,24 @@ BecomeLeader(i, voteQuorum) ==
     \* Allow new leaders to write a no-op on step up if they want to. It is optional, but permissible.
     /\ \/ log' = [log EXCEPT ![i] = Append(log[i], newTerm)]
        \/ UNCHANGED log
-    /\ UNCHANGED <<config, commitIndex>>   
+    /\ UNCHANGED <<config, committed>>   
             
 \* Primary 'i' commits its latest log entry.
 CommitEntry(i, commitQuorum) ==
-    LET allIndices == {k \in DOMAIN log[i] : ImmediatelyCommitted(k, currentTerm[i], commitQuorum)}
-                        \cup {0}
-        maxIdx == Max(allIndices)
-    IN
+    LET ind == Len(log[i]) IN
+    \* Must have some entries to commit.
+    /\ ind > 0
+    \* This node is leader.
     /\ state[i] = Primary
-    /\ maxIdx > commitIndex[i]
-    /\ log[i][maxIdx] = currentTerm[i]
-    /\ commitIndex' = [commitIndex EXCEPT ![i] = maxIdx]
+    \* The entry was written by this leader.
+    /\ log[i][ind] = currentTerm[i]
+    \* all nodes have this log entry and are in the term of the leader.
+    /\ ImmediatelyCommitted(<<ind,currentTerm[i]>>, commitQuorum)
+    \* Don't mark an entry as committed more than once.
+    /\ ~\E c \in committed : c.entry = <<ind, currentTerm[i]>>
+    /\ committed' = committed \cup
+            {[ entry  |-> <<ind, currentTerm[i]>>,
+               term  |-> currentTerm[i]]}
     /\ UNCHANGED <<currentTerm, state, log, config, elections>>
 
 \* Action that exchanges terms between two nodes and step down the primary if
@@ -157,21 +160,17 @@ CommitEntry(i, commitQuorum) ==
 \* strictly necessary for guaranteeing safety.
 UpdateTerms(i, j) == 
     /\ UpdateTermsExpr(i, j)
-    /\ UNCHANGED <<log, config, elections, commitIndex>>
+    /\ UNCHANGED <<log, config, elections, committed>>
 
 Init == 
     /\ currentTerm = [i \in Server |-> 0]
     /\ state       = [i \in Server |-> Secondary]
     /\ log = [i \in Server |-> <<>>]
-    (*
     /\ \E initConfig \in SUBSET Server : 
-        \*/\ initConfig # {} \* configs should be non-empty.
-        \*/\ config = [i \in Server |-> initConfig]
-        /\ \A i \in Server : config[i] = Server
-        *)
-    /\ config = [i \in Server |-> Server]
+        /\ initConfig # {} \* configs should be non-empty.
+        /\ config = [i \in Server |-> initConfig]
     /\ elections = {}
-    /\ commitIndex = [i \in Server |-> 0]
+    /\ committed = {}
 
 Next == 
     \/ \E s \in Server : ClientRequest(s)
@@ -193,56 +192,23 @@ ElectionSafety ==
     \A e1, e2 \in elections : 
         (e1.term = e2.term) => (e1.leader = e2.leader)
 
+LeaderAppendOnly == 
+    [][\A s \in Server : state[s] = Primary => Len(log'[s]) >= Len(log[s])]_vars
+
+\* <<index, term>> pairs uniquely identify log prefixes.
+LogMatching == 
+    \A s,t \in Server : 
+    \A i \in DOMAIN log[s] :
+        (\E j \in DOMAIN log[t] : i = j /\ log[s][i] = log[t][j]) => 
+        (SubSeq(log[s],1,i) = SubSeq(log[t],1,i)) \* prefixes must be the same.
+
 \* When a node gets elected as primary it contains all entries committed in previous terms.
-\* idardik
 LeaderCompleteness == 
-    LET allIndices == {commitIndex[s] : s \in Server}
-        maxIdx == Max(allIndices)
-    IN
-    \A s \in Server :
-        (state[s] = Primary /\ \A t \in Server : currentTerm[s] >= currentTerm[t]) =>
-            /\ Len(log[s]) >= maxIdx
-            /\ \A t \in Server :
-                  \A i \in 1..commitIndex[t] : log[s][i] = log[t][i]
+    \A s \in Server : (state[s] = Primary) => 
+        \A c \in committed : (c.term < currentTerm[s] => InLog(c.entry, s))
 
 \* If two entries are committed at the same index, they must be the same entry.
 StateMachineSafety == 
-    \A s,t \in Server :
-        \A i \in 1..Min({commitIndex[s],commitIndex[t]}) :
-            log[s][i] = log[t][i]
+    \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
 
-\* a second form
-StateMachineSafety2 == 
-    \A s \in Server :
-        \E Q \in QuorumsAt(s) :
-            \A t \in Q :
-                /\ Len(log[t]) >= commitIndex[s]
-                /\ \A i \in 1..commitIndex[s] : log[s][i] = log[t][i]
-
-
-(* Log Matching *)
-
-EqualUpTo(log1, log2, i) ==
-    \A j \in 1..i : log1[j] = log2[j]
-
-\* This is a core property of Raft, but MongoStaticRaft does not satisfy this
-LogMatching ==
-    \A s,t \in Server :
-        \A i \in (DOMAIN log[s] \cap DOMAIN log[t]) :
-            log[s][i] = log[t][i] => EqualUpTo(log[s],log[t],i)
-
-
---------------------------------------------------------------------------------
-
-\* idardik
-(*
-CommitsAreUnique ==
-    \A c,d \in committed :
-        (c.entry[1] = d.entry[1]) => (c = d)
-
-AllPreviousCommitsAreCommitted ==
-    \A c \in committed :
-        LET idx == c.entry[1] IN
-          (idx > 1) => \E d \in committed : d.entry[1] = idx-1
-*)
 =============================================================================
