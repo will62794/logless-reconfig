@@ -1413,12 +1413,94 @@ THEOREM CommittedEntriesMustHaveQuorumsAndNext ==
 ASSUME SMS_LC_II, TypeOK, Next
 PROVE CommittedEntriesMustHaveQuorums'
 PROOF
+    <1>nd. (UNCHANGED committed /\ (\A s \in Server : \A i \in DOMAIN log[s] : Len(log[s]) <= Len(log'[s]) /\ log[s][i] = log'[s][i]))
+            => CommittedEntriesMustHaveQuorums'
+        <2>. SUFFICES ASSUME UNCHANGED committed /\ \A s \in Server : \A i \in DOMAIN log[s] : Len(log[s]) <= Len(log'[s]) /\ log[s][i] = log'[s][i]
+             PROVE \A c \in committed' : \E Q \in Quorums(Server) :
+                        \A q \in Q : \E i \in DOMAIN log'[q] : log'[q][i] = c.term /\ i = c.entry[1]
+             BY DEF CommittedEntriesMustHaveQuorums
+        <2>. TAKE c \in committed'
+        <2>1. \E Q \in Quorums(Server) : \A q \in Q : \E i \in DOMAIN log[q] : log[q][i] = c.term /\ i = c.entry[1]
+            BY DEF SMS_LC_II, CommittedEntriesMustHaveQuorums
+        <2>. PICK Q \in Quorums(Server) : \A q \in Q : \E i \in DOMAIN log[q] : log[q][i] = c.term /\ i = c.entry[1]
+            BY <2>1
+        <2>2. Q \in SUBSET Server
+            BY DEF Quorums
+        <2>3. \A q \in Q : \E i \in DOMAIN log'[q] : log'[q][i] = c.term /\ i = c.entry[1]
+            BY <2>2
+        <2>. QED BY <2>3
     <1>1. (\E s \in Server : ClientRequest(s)) => CommittedEntriesMustHaveQuorums'
+        BY <1>nd DEF ClientRequest
     <1>2. (\E s, t \in Server : GetEntries(s, t)) => CommittedEntriesMustHaveQuorums'
+        BY <1>nd DEF GetEntries
     <1>3. (\E s, t \in Server : RollbackEntries(s, t)) => CommittedEntriesMustHaveQuorums'
+        <2>. SUFFICES ASSUME \E s, t \in Server : RollbackEntries(s, t)
+             PROVE \A c \in committed' : \E Q \in Quorums(Server) :
+                        \A q \in Q : \E i \in DOMAIN log'[q] : log'[q][i] = c.term /\ i = c.entry[1]
+             BY DEF CommittedEntriesMustHaveQuorums
+        <2>. TAKE c \in committed'
+        <2>1. c \in committed
+            BY DEF RollbackEntries
+            
+        <2>. PICK s \in Server : \E t \in Server : RollbackEntries(s, t)
+            OBVIOUS
+        <2>. PICK t \in Server : RollbackEntries(s, t)
+            OBVIOUS
+        <2>2. c.term # LastTerm(log[s]) \/ c.entry[1] # Len(log[s])
+            <3>. SUFFICES ASSUME c.term = LastTerm(log[s]) /\ c.entry[1] = Len(log[s])
+                 PROVE FALSE
+                 OBVIOUS
+            <3>1. c.term < LastTerm(log[t])
+                BY DEF RollbackEntries, CanRollback
+            <3>2. Len(log[t]) >= c.entry[1] /\ log[t][c.entry[1]] = c.term
+                <4>1. \E i \in DOMAIN log[t] : log[t][i] > c.term
+                    BY <2>1, <3>1 DEF SMS_LC_II, LogsLaterThanCommittedMustHaveCommitted, LastTerm, TypeOK
+                <4>2. t \in Server /\ c \in committed /\ c.term <= c.term
+                    BY <2>1 DEF TypeOK
+                <4>. QED BY <4>1, <4>2 DEF SMS_LC_II, LogsLaterThanCommittedMustHaveCommitted
+            <3>. CASE Len(log[s]) > Len(log[t])
+                BY <3>1, <3>2 DEF TypeOK
+            <3>. CASE Len(log[s]) <= Len(log[t]) /\ LastTerm(log[s]) # LogTerm(t, Len(log[s]))
+                BY <3>2 DEF LastTerm, LogTerm, GetTerm, TypeOK
+            <3>. QED BY DEF RollbackEntries, CanRollback
+        <2>3. \E Q \in Quorums(Server) : \A q \in Q : \E i \in DOMAIN log[q] : log[q][i] = c.term /\ i = c.entry[1]
+            BY <2>1 DEF SMS_LC_II, CommittedEntriesMustHaveQuorums
+        <2>. QED BY <2>2, <2>3 DEF RollbackEntries, LastTerm
     <1>4. (\E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)) => CommittedEntriesMustHaveQuorums'
+        <2>. SUFFICES ASSUME \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
+             PROVE CommittedEntriesMustHaveQuorums'
+             OBVIOUS
+        <2>. PICK s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
+            OBVIOUS
+        <2>. DEFINE newTerm == currentTerm[s] + 1
+        <2>. CASE log' = [log EXCEPT ![s] = Append(log[s], newTerm)]
+            BY <1>nd DEF BecomeLeader, TypeOK
+        <2>. CASE UNCHANGED log
+            BY <1>nd DEF BecomeLeader
+        <2>. QED BY DEF BecomeLeader
     <1>5. (\E s \in Server : \E Q \in QuorumsAt(s) : CommitEntry(s, Q)) => CommittedEntriesMustHaveQuorums'
+        <2>. SUFFICES ASSUME \E s \in Server : \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
+             PROVE \A c \in committed' : \E Q \in Quorums(Server) :
+                        \A q \in Q : \E i \in DOMAIN log'[q] : log'[q][i] = c.term /\ i = c.entry[1]
+             BY DEF CommittedEntriesMustHaveQuorums
+        <2>. TAKE c \in committed'
+        <2>. PICK p \in Server : \E Q \in QuorumsAt(p) : CommitEntry(p, Q)
+            OBVIOUS
+        <2>. CASE c \in committed
+            <3>1. \E Q \in Quorums(Server) :  \A q \in Q : \E i \in DOMAIN log[q] : log[q][i] = c.term /\ i = c.entry[1]
+                BY DEF SMS_LC_II, CommittedEntriesMustHaveQuorums
+            <3>. QED BY <3>1 DEF CommitEntry
+        <2>. CASE c \notin committed
+            <3>. PICK Q \in QuorumsAt(p) : CommitEntry(p, Q)
+                OBVIOUS
+            <3>1. \A q \in Q : InLog(c.entry, q)
+                BY DEF CommitEntry, ImmediatelyCommitted
+            <3>2. Q \in Quorums(Server)
+                BY DEF QuorumsAt, SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, AllConfigsAreServer
+            <3>. QED BY <3>1, <3>2 DEF InLog, SMS_LC_II, CommittedTermMatchesEntry, CommitEntry
+        <2>. QED OBVIOUS
     <1>6. (\E s,t \in Server : UpdateTerms(s, t)) => CommittedEntriesMustHaveQuorums'
+        BY <1>nd DEF UpdateTerms
     <1>. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6 DEF Next
 
 -----------------------------------------------------------------------------------
