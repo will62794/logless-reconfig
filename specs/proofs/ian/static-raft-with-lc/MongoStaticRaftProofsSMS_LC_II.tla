@@ -1551,5 +1551,61 @@ PROVE /\ Init => (TypeOK /\ SMS_LC_II)
       /\ (TypeOK /\ SMS_LC_II /\ Next) => (TypeOK /\ SMS_LC_II)'
 PROOF BY InitImpliesTypeOK, InitImpliesSMS_LC_II, TypeOKAndNext, SMS_LC_IIAndNext
 
+-----------------------------------------------------------------------------------
+
+\* the lengths I go to prove the obvious...
+THEOREM NatPairNotEqual ==
+ASSUME NEW p1 \in (Nat \times Nat),
+       NEW p2 \in (Nat \times Nat)
+PROVE p1 # p2 => (p1[1] # p2[1] \/ p1[2] # p2[2])
+PROOF
+    <1>. SUFFICES ASSUME p1 # p2
+         PROVE p1[1] # p2[1] \/ p1[2] # p2[2]
+         OBVIOUS
+    <1>. PICK p1First \in Nat : \E p1Second \in Nat : p1 = <<p1First,p1Second>>
+        OBVIOUS
+    <1>. PICK p1Second \in Nat : p1 = <<p1First,p1Second>>
+        OBVIOUS
+    <1>. PICK p2First \in Nat : \E p2Second \in Nat : p2 = <<p2First,p2Second>>
+        OBVIOUS
+    <1>. PICK p2Second \in Nat : p2 = <<p2First,p2Second>>
+        OBVIOUS
+    <1>1. p1First # p2First \/ p1Second # p2Second
+        OBVIOUS
+    <1>2. <<p1First,p1Second>> \in Seq(Nat) /\ <<p2First,p2Second>> \in Seq(Nat)
+        OBVIOUS
+    <1>3. \E p1Seq \in Seq(Nat) : p1Seq = <<p1First,p1Second>>
+        BY <1>2
+    <1>4. \E p2Seq \in Seq(Nat) : p2Seq = <<p2First,p2Second>>
+        BY <1>2
+    <1>. QED BY <1>1, <1>3, <1>4
+
+THEOREM SMS_LC_II_ImpliesSMS ==
+ASSUME SMS_LC_II, TypeOK
+PROVE StateMachineSafety
+PROOF
+    <1>. SUFFICES ASSUME \E c1,c2 \in committed : c1.entry[1] = c2.entry[1] /\ c1 # c2
+         PROVE FALSE
+         BY DEF StateMachineSafety
+    <1>. PICK c1 \in committed : \E c2 \in committed : c1.entry[1] = c2.entry[1] /\ c1 # c2
+        OBVIOUS
+    <1>. PICK c2 \in committed : c1.entry[1] = c2.entry[1] /\ c1 # c2
+        OBVIOUS
+    <1>1. c1.term # c2.term
+        <2>1. c1.entry \in (Nat \times Nat) /\ c2.entry \in (Nat \times Nat)
+            BY DEF TypeOK
+        <2>2. c1.term # c2.term \/ c1.entry # c2.entry
+            BY DEF TypeOK
+        <2>. QED BY <2>1, <2>2, NatPairNotEqual DEF SMS_LC_II, CommittedTermMatchesEntry
+    <1>. PICK Q1 \in Quorums(Server) : \A q \in Q1 : \E i \in DOMAIN log[q] : log[q][i] = c1.term /\ i = c1.entry[1]
+        BY DEF SMS_LC_II, CommittedEntriesMustHaveQuorums
+    <1>. PICK Q2 \in Quorums(Server) : \A q \in Q2 : \E i \in DOMAIN log[q] : log[q][i] = c2.term /\ i = c2.entry[1]
+        BY DEF SMS_LC_II, CommittedEntriesMustHaveQuorums
+    <1>2. \E q \in Server : q \in Q1 /\ q \in Q2
+        <2>1. (\E s \in Server : Q1 \in QuorumsAt(s)) /\ (\E s \in Server : Q2 \in QuorumsAt(s))
+            BY ServerIsNonempty DEF SMS_LC_II, LemmaSecondariesFollowPrimary, LemmaBasic, AllConfigsAreServer, Quorums, QuorumsAt
+        <2>. QED BY <2>1, AllQuorumsOverlap DEF SMS_LC_II, LemmaSecondariesFollowPrimary, QuorumsAt, Quorums
+    <1>. QED BY <1>1, <1>2
+
 =============================================================================
 
