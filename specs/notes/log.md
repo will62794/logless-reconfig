@@ -1,4 +1,4 @@
-# 2021-01-25
+## 2021-01-25
 
 Working on defining the refinement mapping between MongoLoglessDynamicRaft and MongoSafeWeakRaft. Noticed a quirk of how `IsNewerConfig` is defined, which allows configs to be >= i.e.
 ```tla
@@ -47,7 +47,7 @@ T3 == \A s \in Server : \A c \in committed :
         (state[s]=Primary /\ c.term < currentTerm[s]) => MWR!InLog(c.entry, s)
 ```
 
-# 2021-01-29
+## 2021-01-29
 
 ### Soundness of our Specification Abstractions
 
@@ -88,6 +88,25 @@ The BecomeLeader action is modeled as a single atomic action, rather than a roun
     |------| E2
 ```
 What happens if two elections overlap?
+
+## 2021-05-31
+
+Stavros' summary of today's discussion and current progress:
+
+1. we have two protocols, which i will call MongoStaticRaftWithOutLogMatching (MSR) and MongoStaticRaftWithLogMatching (MSRLM)
+2. we have a property which i will call Ian's Inductive Invariant (I3)
+3. Ian has proven that I3 is indeed an inductive invariant for MSR
+4. Ian will also prove that I3 is an inductive invariant for MSRLM
+5. we have two safety properties, which I will call StateMachineSafety (SMS), and LogMatchingSafety (LMS)
+6. Ian believes that I3 implies SMS and is in the process of proving that
+7. Ian believes that I3 does not imply LMS
+8. we have another protocol called MongoRaftReconfig (MRR) 
+9. we have another property, which i will call Will's Inductive Invariant (W2)
+10. we believe that W2 is an inductive invariant for MRR but this remains to be shown
+11. we also believe that W2 implies SMS but this also remains to be seen
+12. it seems that W2 implies LMS because LMS is one of the conjuncts of W2 
+
+Ian will now prioritize 4 and 6, and then start with 10, 11, 12.
 
 
 
