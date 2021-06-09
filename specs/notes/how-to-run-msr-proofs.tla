@@ -11,6 +11,11 @@ Here are the details:
 2. Download TLAPS
   It looks like TLAPS has an installer: https://tla.msr-inria.inria.fr/tlaps/content/Download/Binaries.html
 
+  Sometimes this isn't enough to get TLAPS working, especially on Windows.  Here are two additional items you should try:
+  1. Go to: File > Preferences > TLAPS.  Under "Location of tlapm" you can add the executable, for example: C:\cygwin\usr\local\bin\tlapm.exe
+  2. On Windows: try adding the full path to /bin, /usr/bin, and /usr/local/bin to the PATH environment variable.  You can do this by going to "System Properties" and clicking on "Environment Variables" then, under "User variables for *your name*" select "Path" and click "Edit".  You can add the three paths here.  For more info: https://github.com/tlaplus/tlapm/issues/36#issuecomment-825695489
+      For example, you could add: C:\cygwin\bin, C:\cygwin\usr\bin, and C:\cygwin\usr\local\bin
+
 3. Create a new project in the Toolbox for MSR
   a. Clone logless-reconfig to your local machine if you haven't already.  You can use git clone for this repo: https://github.com/will62794/logless-reconfig
   b. Create a new spec (project).  In the Toolbox, click: File > Open Spec > Add New Spec...
