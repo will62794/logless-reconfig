@@ -100,8 +100,6 @@ UpdateTerms(i, j) ==
 BecomeLeader(i, voteQuorum) == 
     \* Primaries make decisions based on their current configuration.
     LET newTerm == currentTerm[i] + 1 IN
-    /\ i \in config[i] \* only become a leader if you are a part of your config.
-    /\ i \in voteQuorum \* The new leader should vote for itself.
     /\ \A v \in voteQuorum : CanVoteForConfig(v, i, newTerm)
     \* Update the terms of each voter.
     /\ currentTerm' = [s \in Server |-> IF s \in voteQuorum THEN newTerm ELSE currentTerm[s]]
