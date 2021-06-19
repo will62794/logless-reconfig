@@ -64,4 +64,10 @@ CommittedConfigSafety ==
         (state[s]=Primary /\ currentTerm[s] > c.configTerm) => 
         NewerOrEqualConfig(<<configVersion[s], configTerm[s]>>, <<c.configVersion, c.configTerm>>)
 
+OnePrimaryPerTerm == 
+    \A s,t \in Server :
+        (/\ state[s] = Primary 
+         /\ state[t] = Primary
+         /\ currentTerm[s] = currentTerm[t]) => (s = t)
+
 ====
