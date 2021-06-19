@@ -1,0 +1,53 @@
+\documentclass[12pt]{article}
+\usepackage{anysize}
+\marginsize{1.2cm}{1.4cm}{.4cm}{1cm}
+
+\usepackage[normalem]{ulem}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage[shortlabels]{enumitem}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{graphicx}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily,
+  mathescape
+}
+
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+\noindent Proving correctness of MongoRaftReconfig
+
+\section{Intro}
+This note describes our progress on proving that MongoRaftReconfig satisfies State Machine Safety (SMS) (as well as other properties such as Leader Completeness Safety (LCS) and Log Matching Safety (LMS)).  Section 2 talks about our work on proving MongoStaticRaft (the base protocol that resembles Raft) and Section 3 talks about our work on proving MongoRaftReconfig.  
+
+\section{MongoStaticRaft}
+
+\subsection{Intro}
+We have finished proving that MongoStaticRaft satisfies SMS and LCS, and we will talk about the details in this section.  I will use the abbreviation MSR to refer to MongoStaticRaft with Log Matching (i.e. MSR = MSRLM); I will explicitly mention ``MSR without LMS" if needed.  
+
+\subsection{MSR Protocol}
+This is discussed in Will's paper.  An additional detail is that MSR is similar to Raft, but not identical.  Here are two interesting details of note:
+\begin{enumerate}
+	\item MSR can only commit log entries at the end of its log
+	\item Raft considers any log entries earlier than a commit to be committed.  We believe that MSR logically abides by this rule, however the \textit{committed} state variable does not keep track of commits that are prior to a log entry that is explicitly committed by a primary.  The \textit{committed} state variable is a ghost variable and hence this does not imply an issue in MSR, however it means that we may be able to improve our safety-property-checking by fixing the ``holes" in our ghost variable.  
+\end{enumerate}
+
+\subsection{MSR Safety}
+The inductive invariant we use is called SMS\_LC\_II (State Machine Safety, Leader Completeness Inductive Invariant).  We have proved that SMS\_LC\_II 1) implies the initial state of MSR, 2) is inductive invariant on the transition relation for MSR, and 3) implies State Machine Safety.  Interestingly, SMS\_LC\_II does \textit{not} imply Log Matching, and does not require the protocol to satisfy Log Matching to hold.  We have proved SMS\_LC\_II for MSR both with and without Log Matching.  
+
+\subsection{SMS\_LC\_II Proof Details}
+\subsubsection{Self Referential Proofs}
+There are a few places where the proofs rely on an ``AndNext" property, i.e. the proof references itself or a previous lemma.  I will enumerate the places where I do this and breifly describe why it's safe to do so.  While [I believe] I've included the self referential proof steps correctly, the proof would be in better form if I cleaned these up.  More coming soon.  
+
+\subsection{MongoRaftReconfig}
+This is a work in progress, the current status is:
+\begin{enumerate}
+	\item Will has created an inductive invariant candidate
+	\item Ian is working on proving that the candidate is correct in TLAPS, not much progress has been made so far.  
+	\item Will has proved Peterson's algorithm works without any ``manual" proof steps.  Ian will try to see if this can be done for MongoRaftReconfig as well.  
+\end{enumerate}
+
+\end{document}
