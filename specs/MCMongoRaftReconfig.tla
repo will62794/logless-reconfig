@@ -24,10 +24,6 @@ MLDR == INSTANCE MongoLoglessDynamicRaft
 
 RefinesMLDR == MLDR!Spec
 
-\* If we are not checking a property that depends on the 'elections' history 
-\* variable, we can project it out.
-viewNoElections == <<currentTerm,state,log,configVersion,configTerm,config,committed>>
-
 \*
 \* For easier debugging.
 \*
@@ -47,7 +43,6 @@ Alias ==
         \* state |-> state,
         \* log |-> log,
         \* config |-> config,
-        \* elections |-> elections,
         committed |-> committed,
         \* config |-> config,
         \* reconfigs |-> ReconfigPairsAll,
