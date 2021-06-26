@@ -1,6 +1,6 @@
 ----------------------------- MODULE MRRIndProof -----------------------------
 
-EXTENDS MongoRaftReconfig, SequenceTheorems, FunctionTheorems, FiniteSetTheorems
+EXTENDS MongoRaftReconfig, SequenceTheorems, FunctionTheorems, FiniteSetTheorems, TLAPS
 
 (* Log Matching *)
 
@@ -37,7 +37,7 @@ AllConfigsAreServer ==
 
 \* A server's current term is always at least as large as the terms in its log.
 \* This is LEMMA 6 from the Raft dissertation.
-CurrentTermAtLeastAsLargeAsLogTermsForPrimary == 
+CurrentTermAtLeastAsLargeAsLogTermsForPrimary ==
     \A s \in Server : state[s] = Primary => (\A i \in DOMAIN log[s] : currentTerm[s] >= log[s][i])
 
 \* The terms of entries grow monotonically in each log.
@@ -127,7 +127,7 @@ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms ==
 
 \* If a node is primary, it must contain all committed entries from previous terms in its log.
 LeaderCompletenessGeneralized ==
-    \A s \in Server : 
+    \A s \in Server :
         (state[s] = Primary) =>
         (\A c \in committed : c.term <= currentTerm[s] => InLog(c.entry, s))
 
@@ -147,40 +147,40 @@ ElectableInQ(i, Q) == ENABLED JointBecomeLeader(i, Q)
 
 
 \* \*TODO: Generalize ExistsQuorumInLargestTerm to avoid reliance on quorum definition.
-ElectionDisablesLesserOrEqualTerms == 
-    \A i,j \in Server : 
+ElectionDisablesLesserOrEqualTerms ==
+    \A i,j \in Server :
         \* TODO: Generalize notion of "electable in term" rather than
         \* hard-coding (currentTerm + 1)
         ((state[i] = Primary) /\ (currentTerm[j] + 1) <= currentTerm[i]) => ~Electable(j)
 
 \* If a log entry exists in term T and there is a primary in term T, then this
 \* log entry should be present in that primary's log.
-PrimaryHasEntriesItCreated == 
+PrimaryHasEntriesItCreated ==
     \A i,j \in Server :
-    (state[i] = Primary) => 
+    (state[i] = Primary) =>
     \* Can't be that another node has an entry in this primary's term
     \* but the primary doesn't have it.
         ~(\E k \in DOMAIN log[j] :
             /\ log[j][k] = currentTerm[i]
             /\ ~InLog(<<k,log[j][k]>>, i))
-    
+
 \*
 \* Reconfiguration stuff.
 \*
 
 \* Can someone get elected in config c.
 ActiveConfig(v,t) ==
-    \E i \in Server : 
-        /\ configVersion[i] = v 
+    \E i \in Server :
+        /\ configVersion[i] = v
         /\ configTerm[i] = t
         /\ Electable(i)
 
 QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
 
-PrimaryConfigTermEqualToCurrentTerm == 
+PrimaryConfigTermEqualToCurrentTerm ==
     \A s \in Server : (state[s] = Primary) => (configTerm[s] = currentTerm[s])
 
-ConfigsNonEmpty == 
+ConfigsNonEmpty ==
     \A s \in Server : config[s] # {}
 
 \* (version, term) pair uniquely identifies a configuration.
@@ -190,28 +190,28 @@ ConfigVersionAndTermUnique ==
         config[i] = config[j]
 
 ActiveConfigsInSameTermOverlap ==
-    \A i,j \in Server : 
-        (\*/\ configTerm[i] = configTerm[j] 
+    \A i,j \in Server :
+        (\*/\ configTerm[i] = configTerm[j]
          /\ ActiveConfig(configVersion[i], configTerm[i])
-         /\ ActiveConfig(configVersion[j], configTerm[j])) => 
+         /\ ActiveConfig(configVersion[j], configTerm[j])) =>
          QuorumsOverlap(config[i], config[j])
 
 \* If a config exists in term T, there must be some node with a current term
 \* of that config or newer.
-ConfigInTermImpliesSomeNodeInThatTerm == 
+ConfigInTermImpliesSomeNodeInThatTerm ==
     \A s \in Server : \E t \in config[s] : currentTerm[t] >= configTerm[s]
 
-ConfigInTermDisablesAllOlderConfigsWithDifferingMemberSets == 
+ConfigInTermDisablesAllOlderConfigsWithDifferingMemberSets ==
     \A s,t \in Server :
-    ( /\ configTerm[t] < configTerm[s] 
+    ( /\ configTerm[t] < configTerm[s]
       /\ QuorumsOverlap(config[s], config[t])) => ~ActiveConfig(configVersion[t], configTerm[t])
 
 \* If a config C=(v,t) exists, then there must have been an election
-\* in term T in the original config of this term, and those terms must 
+\* in term T in the original config of this term, and those terms must
 \* have been propagated on a quorum through configs, so any quorum must
 \* overlap with some node in this term.
 ConfigInTermImpliesQuorumOfConfigInTerm ==
-    \A s \in Server : 
+    \A s \in Server :
     \A Q \in Quorums(config[s]) :
     \E n \in Q : currentTerm[n] >= configTerm[s]
 
@@ -226,16 +226,16 @@ ConfigOverlapsWithDirectAncestor ==
 \* member set.
 ElectionReconfigDoesntChangeMemberSet ==
     \A s,t \in Server :
-        (/\ configVersion[s] = configVersion[t] 
+        (/\ configVersion[s] = configVersion[t]
          /\ configTerm[s] = (configTerm[t] + 1)) => config[s] = config[t]
 
 
 \* If there is a primary in some term, it should be the only one who can create configs
 \* in that term, so it should have the newest config in that term.
-PrimaryInTermContainsNewestConfigOfTerm == 
-    \A i,j \in Server : 
+PrimaryInTermContainsNewestConfigOfTerm ==
+    \A i,j \in Server :
     (state[i] = Primary /\ configTerm[j] = currentTerm[i]) =>
-    (configVersion[j] <= configVersion[i]) 
+    (configVersion[j] <= configVersion[i])
 
 \* If a config C=(v,t) exists and there is another config C=(v',t') with t' < t, and the
 \* quorums of C and C' don't overlap, then there must be some committed config in t that overlaps
@@ -244,16 +244,16 @@ ConfigInTermNewerThanNonoverlappingImpliesCommittmentInTerm ==
     \A s,t \in Server :
         \* (configTerm[s] > configTerm[t] /\ ~QuorumsOverlap(config[s], config[t])) =>
         (configTerm[s] > configTerm[t] /\ config[s] # config[t]) =>
-        \A Q \in Quorums(config[t]) : \E n \in Q : 
+        \A Q \in Quorums(config[t]) : \E n \in Q :
             \/ configTerm[n] > configTerm[t]
             \/ configVersion[n] > configVersion[t]
 
-ConfigInTermPreventsOlderConfigs == 
+ConfigInTermPreventsOlderConfigs ==
     \A s,t \in Server :
         /\ (/\ configTerm[t] < configTerm[s]
-            /\ ~QuorumsOverlap(config[s], config[t])) => 
-            (\A Q \in Quorums(config[t]) : 
-             \E n \in Q : 
+            /\ ~QuorumsOverlap(config[s], config[t])) =>
+            (\A Q \in Quorums(config[t]) :
+             \E n \in Q :
                 \/ CSM!NewerConfig(<<configVersion[n], configTerm[n]>>,
                                 <<configVersion[t],configTerm[t]>>))
 
@@ -264,7 +264,7 @@ CommittedEntryIndexesAreNonZero == \A c \in committed : c.entry[1] # 0
 CV(i) == <<configVersion[i], configTerm[i]>>
 
 \* Is node i disabled due to a quorum of its config having moved to a newer config.
-ConfigDisabled(i) == 
+ConfigDisabled(i) ==
     \A Q \in Quorums(config[i]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(i))
 
 \* Does server s have the newest config.
@@ -273,13 +273,13 @@ NewestConfig(s) == \A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))
 \* Servers in the newest config.
 ServersInNewestConfig == {s \in Server : NewestConfig(s)}
 
-OlderConfig(ci, cj) == ~CSM!NewerOrEqualConfig(ci, cj) 
+OlderConfig(ci, cj) == ~CSM!NewerOrEqualConfig(ci, cj)
 
 \* If config t has an older config than s, and their configs don't overlap, then
 \* config t must be disabled based on config ordering.
-NewerConfigDisablesOlderNonoverlappingConfigs == 
+NewerConfigDisablesOlderNonoverlappingConfigs ==
     \A s,t \in Server :
-        (/\ OlderConfig(CV(t), CV(s)) 
+        (/\ OlderConfig(CV(t), CV(s))
          /\ ~QuorumsOverlap(config[t], config[s])) => ConfigDisabled(t)
 
 \* If t has an older or equal config than s and it is not disabled by a newer
@@ -287,31 +287,31 @@ NewerConfigDisablesOlderNonoverlappingConfigs ==
 NewerConfigDisablesTermsOfOlderNonDisabledConfigs ==
     \A s,t \in Server :
         (/\ OlderConfig(CV(t), CV(s)) \/ (CV(t) = CV(s))
-         /\ ~ConfigDisabled(t)) => 
+         /\ ~ConfigDisabled(t)) =>
             \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
 
-\* \* If a log entry is committed, then the quorums of every 
+\* \* If a log entry is committed, then the quorums of every
 \* active config must overlap with some node that contains this log entry.
 CommittedEntryIntersectsWithEveryActiveConfig ==
     \A c \in committed :
     \A s \in Server :
         ~ConfigDisabled(s) => (\A Q \in QuorumsAt(s) : \E n \in Q : InLog(c.entry, n))
 
-CommittedEntryInTermIntersectsNewerConfigs == 
+CommittedEntryInTermIntersectsNewerConfigs ==
     \A c \in committed :
     \A s \in Server :
         (configTerm[s] >= c.term) =>
         (\A Q \in QuorumsAt(s) : \E n \in Q : InLog(c.entry, n))
 
-PrimaryMustBeInOwnConfig == 
+PrimaryMustBeInOwnConfig ==
     \A s \in Server : (state[s] = Primary) => s \in config[s]
 
-\* If a log entry in term T exists, there must have been an election in 
+\* If a log entry in term T exists, there must have been an election in
 \* term T to create it, implying the existence of a config in term T or newer.
-LogEntryInTermImpliesConfigInTerm == 
-    \A s \in Server : 
+LogEntryInTermImpliesConfigInTerm ==
+    \A s \in Server :
     \A i \in DOMAIN log[s] :
-    \E t \in Server : 
+    \E t \in Server :
         configTerm[t] >= log[s][i]
 
 CommittedEntryIntersectsAnyQuorumOfNewestConfig ==
@@ -320,38 +320,38 @@ CommittedEntryIntersectsAnyQuorumOfNewestConfig ==
     (\A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))) =>
         \A Q \in QuorumsAt(s) : \E n \in Q : InLog(c.entry, n)
 
-\* LogEntryInTermImpliesElectionInTerm == 
+\* LogEntryInTermImpliesElectionInTerm ==
 
 \* If a log contains an entry in term T at index I such that
 \* the entries at J < I are in a different term, then there must be
 \* no other logs that contains entries in term T at indices J < I
 UniformLogEntriesInTerm ==
     \A s,t \in Server :
-    \A i \in DOMAIN log[s] : 
-        (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) => 
+    \A i \in DOMAIN log[s] :
+        (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) =>
             (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)
-    
+
 
 \* It cannot be the case that all nodes are not members of their own configs.
 SomeActiveConfig == \E s \in Server : s \in config[s]
 
-NewestConfigIsActive == 
+NewestConfigIsActive ==
     \A s \in Server :
     (\A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))) =>
         \E n \in config[s] : Electable(n)
 
-\* NewestConfigContainsCommittedEntry == 
-NewestConfigHasQuorumWithCommittedEntry == 
+\* NewestConfigContainsCommittedEntry ==
+NewestConfigHasQuorumWithCommittedEntry ==
     \A c \in committed :
-    \A s \in ServersInNewestConfig : 
-        \E Q \in Quorums(config[s]) : 
+    \A s \in ServersInNewestConfig :
+        \E Q \in Quorums(config[s]) :
         \A n \in Q : InLog(c.entry, n)
 
 
 \* The newest config should have some node that is currently primary or was
 \* the newest primary (after stepping down). This node should be in its own config.
-NewestConfigHasSomeNodeInConfig == 
-    \A s \in ServersInNewestConfig : 
+NewestConfigHasSomeNodeInConfig ==
+    \A s \in ServersInNewestConfig :
         (\E n \in config[s] : n \in config[n]
             \* If this is node is or was primary in newest config,
             \* it's term should be the same as the term of the newest config.
@@ -361,16 +361,16 @@ NewestConfigHasSomeNodeInConfig ==
 \* The newest config should have some node that is currently primary or was
 \* the newest primary (after stepping down). This node should have all committed
 \* entries in its log and should be a part of its own config.
-NewestConfigHasSomeNodeInConfigWithCommittedEntry == 
-    \A s \in ServersInNewestConfig : 
-        (\E n \in config[s] : 
+NewestConfigHasSomeNodeInConfigWithCommittedEntry ==
+    \A s \in ServersInNewestConfig :
+        (\E n \in config[s] :
             /\ \A c \in committed : InLog(c.entry, n)
             /\ n \in config[n]
             \* If this is node is or was primary in newest config,
             \* it's term should be the same as the term of the newest config.
             /\ currentTerm[n] = configTerm[s]
             /\ CV(n) = CV(s)
-            
+
             \* Can't be that another node has an entry in this node's term
             \* but this primary (or past primary) doesn't have it.
             /\ \A j \in Server :
@@ -379,7 +379,7 @@ NewestConfigHasSomeNodeInConfigWithCommittedEntry ==
                     /\ ~InLog(<<k,log[j][k]>>, n))
             )
 
-NewestConfigHasLargestTerm == 
+NewestConfigHasLargestTerm ==
     \A s \in ServersInNewestConfig :
     \A t \in Server :
         currentTerm[t] <= configTerm[s]
@@ -390,16 +390,16 @@ CommittedEntryIntersectsWithNewestConfig ==
     \A s \in ServersInNewestConfig :
         \A Q \in QuorumsAt(s) : \E n \in Q : InLog(c.entry, n)
 
-LogEntryOnQuorumInTermImpliesFutureLeadersHaveIt == 
+LogEntryOnQuorumInTermImpliesFutureLeadersHaveIt ==
     \A s,t \in Server :
     \A i \in DOMAIN log[s] :
-        (/\ state[s] = Primary 
-         /\ \E Q \in Quorums(config[s]) : 
-            \A n \in Q : 
+        (/\ state[s] = Primary
+         /\ \E Q \in Quorums(config[s]) :
+            \A n \in Q :
                 /\ InLog(<<i,log[s][i]>>, n)
                 /\ currentTerm[n] = currentTerm[s]
                 /\ log[s][i] = currentTerm[s]) =>
-        (~(/\ Electable(t) 
+        (~(/\ Electable(t)
            /\ currentTerm[t] >= currentTerm[s]
            /\ ~InLog(<<i,log[s][i]>>, t)))
 
@@ -409,22 +409,22 @@ NewestConfigHasAPrimary ==
 
 
 \* If a config has been created in term T', then this must prevent any commits
-\* in configs in terms < T. Note that only primary nodes can commit writes in a 
+\* in configs in terms < T. Note that only primary nodes can commit writes in a
 \* config.
-CommitOfNewConfigPreventsCommitsInOldTerms == 
-    \A s,t \in Server : 
+CommitOfNewConfigPreventsCommitsInOldTerms ==
+    \A s,t \in Server :
         (/\ configTerm[t] < configTerm[s]
          /\ state[t] = Primary) =>
             \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] > configTerm[t]
 
 \* If two configs have the same version but different terms, one has a newer term,
-\* then they either have the same member set or the older config is disabled. The 
+\* then they either have the same member set or the older config is disabled. The
 \* latter is to address the case where these configs on divergent branches but have the
 \* same version.
-ConfigsWithSameVersionHaveSameMemberSet == 
-    \A s,t \in Server : 
+ConfigsWithSameVersionHaveSameMemberSet ==
+    \A s,t \in Server :
         (/\ configVersion[s] = configVersion[t]
-         /\ configTerm[s] > configTerm[t]) => 
+         /\ configTerm[s] > configTerm[t]) =>
             \/ (config[s] = config[t])
             \/ ConfigDisabled(t)
 
@@ -468,7 +468,7 @@ Ind ==
     /\ ConfigsWithSameVersionHaveSameMemberSet
     /\ CommitOfNewConfigPreventsCommitsInOldTerms
 
-    \* 
+    \*
     \* Establishing leader completeness invariant.
     \*
     /\ LeaderCompletenessGeneralized
@@ -477,7 +477,7 @@ Ind ==
     /\ LogsLaterThanCommittedMustHaveCommitted
 
 
-TypeOK == 
+TypeOK ==
     /\ currentTerm \in [Server -> Nat]
     /\ state \in [Server -> {Secondary, Primary}]
     /\ log \in [Server -> Seq(Nat)]
@@ -602,7 +602,7 @@ PROOF
         <2>1. IsFiniteSet(cfg3) BY ServerIsFinite, FS_Subset
         <2>2. \E Q3 \in Quorums(cfg3) : TRUE BY <2>1, QuorumsExistForNonEmptySets
         <2>. QED BY <2>2 DEF QuorumsOverlap
-    <1>1. 
+    <1>1.
     <1>. QED*)
 
 LEMMA IsNewerOrEqualConfigTransitivity ==
@@ -681,6 +681,130 @@ PROOF
     <1>. CASE s \notin Q
     <1>. QED OBVIOUS
 
+
+\* a few useful hepers
+    (*<1>. SUFFICES ASSUME ServersInNewestConfig = {}
+         PROVE FALSE OBVIOUS
+    <1>. SUFFICES ASSUME TRUE
+         PROVE \A s \in Server : \E t \in Server : ~CSM!NewerOrEqualConfig(CV(s), CV(t))
+         BY DEF ServersInNewestConfig, NewestConfig*)
+
+LEMMA ExistsMaxInNatSet ==
+ASSUME NEW S \in SUBSET Nat,
+       IsFiniteSet(S), S # {}
+PROVE \E m \in S : \A x \in S : m >= x
+
+LEMMA CVsFinite ==
+ASSUME TypeOK
+PROVE LET Op(x) == x \*configVersion[x]
+          T == {Op(x) : x \in Server}
+      IN  IsFiniteSet(T)
+PROOF BY ServerIsFinite, FS_Image \*DEF TypeOK
+
+LEMMA ExistsServerWithMaxConfigVersion ==
+ASSUME TypeOK
+PROVE \E s \in Server : \A t \in Server : configVersion[s] >= configVersion[t]
+PROOF
+    <1>. DEFINE allConfigVersions == {configVersion[s] : s \in Server}
+    <1>. DEFINE configVersionOp(s) == configVersion[s]
+    <1>. DEFINE allConfigVersionsAlt == {configVersionOp(s) : s \in Server}
+    <1>1c. IsFiniteSet(allConfigVersions) BY ServerIsFinite, FS_SameCardinalityBij , FS_Bijection, FS_Image DEF TypeOK
+    <1>1b. IsFiniteSet(allConfigVersions) \*BY ServerIsFinite, FS_Image DEF TypeOK
+        <2>1. allConfigVersions \in SUBSET Nat BY DEF TypeOK
+        <2>. DEFINE P(s) == configVersion[s]
+        <2>2. Cardinality({P(s) : s \in Server}) <= Cardinality(Server) BY ServerIsFinite, FS_Image \*, \*AllProversT(100) \*BY ServerIsFinite, FS_Image DEF TypeOK
+        <2>. QED \*BY <2>1, ServerIsFinite, FS_Image, FS_Subset
+    \*<1>a. allConfigVersions \in SUBSET Nat BY DEF TypeOK
+    <1>. DEFINE maxSet == {x \in allConfigVersions : \A y \in allConfigVersions : x >= y}
+    <1>. DEFINE maxCV == CHOOSE x \in maxSet : TRUE \*Max(allConfigVersions)
+    <1>1. allConfigVersions # {} BY ServerIsNonempty
+    <1>b. \A x \in allConfigVersions : x \in Nat BY DEF TypeOK
+    \*<1>c. \E x \in allConfigVersions : x \in Nat BY DEF TypeOK
+    <1>d. maxCV \in allConfigVersions BY <1>1
+    <1>e. maxCV \in Nat BY <1>b, <1>d \*DEF Max
+    <1>mse. maxSet # {} BY <1>1, <1>1b, <1>b, ExistsMaxInNatSet DEF TypeOK \*BY <1>1 DEF TypeOK
+    <1>z. maxCV \in maxSet BY <1>mse
+    <1>h. \A y \in allConfigVersions : maxCV >= y BY <1>z
+
+    <1>. PICK s \in Server : configVersion[s] = maxCV BY <1>1
+    <1>2. \A t \in Server : configVersion[s] >= configVersion[t] BY <1>h
+    <1>. QED BY <1>2
+
+(*
+LEMMA ExistsServerWithMaxConfigVersion ==
+ASSUME TypeOK
+PROVE \E s \in Server : \A t \in Server : configVersion[s] >= configVersion[t]
+PROOF
+    <1>. DEFINE allConfigVersions == {configVersion[s] : s \in Server}
+    \*<1>a. allConfigVersions \in SUBSET Nat BY DEF TypeOK
+    <1>. DEFINE maxCV == CHOOSE x \in allConfigVersions : \A y \in allConfigVersions : x >= y \*Max(allConfigVersions)
+    <1>1. allConfigVersions # {} BY ServerIsNonempty
+    <1>b. \A x \in allConfigVersions : x \in Nat BY DEF TypeOK
+    \*<1>c. \E x \in allConfigVersions : x \in Nat BY DEF TypeOK
+    <1>d. maxCV \in allConfigVersions BY <1>1
+    <1>e. maxCV \in Nat BY <1>b, <1>d \*DEF Max
+    <1>f. \A y \in allConfigVersions : maxCV >= y \/ maxCV < y BY <1>b, <1>d, <1>e \*<1>1, <1>b, <1>d, <1>e \*, ChosenProperty
+    <1>g. ~(\E y \in allConfigVersions : maxCV < y)
+        <2>. SUFFICES ASSUME \E y \in allConfigVersions : maxCV < y
+             PROVE FALSE OBVIOUS
+        <2>. PICK m \in allConfigVersions : maxCV < m OBVIOUS
+        <2>1. maxCV \in {x \in allConfigVersions : \A y \in allConfigVersions : x >= y} OBVIOUS
+        <2>. QED
+    <1>h. \A y \in allConfigVersions : maxCV >= y BY <1>f, <1>g
+
+    <1>. PICK s \in Server : configVersion[s] = maxCV BY <1>1
+    <1>2. \A t \in Server : configVersion[s] >= configVersion[t] BY <1>f
+    <1>. QED BY <1>2
+*)
+
+LEMMA NewerConfigEquivalence ==
+ASSUME NEW s \in Server,
+       NEW t \in Server
+PROVE CSM!IsNewerConfig(s, t) <=> CSM!NewerConfig(CV(s), CV(t))
+BY DEF CSM!IsNewerConfig, CSM!NewerConfig, CV
+
+LEMMA NewerOrEqualConfigEquivalence ==
+ASSUME NEW s \in Server,
+       NEW t \in Server
+PROVE CSM!IsNewerOrEqualConfig(s, t) <=> CSM!NewerOrEqualConfig(CV(s), CV(t))
+BY DEF CSM!IsNewerConfig, CSM!NewerConfig, CSM!IsNewerOrEqualConfig, CSM!NewerOrEqualConfig, CV
+
+LEMMA NewerIsNotSymmetric ==
+ASSUME TypeOK,
+       NEW s \in Server,
+       NEW t \in Server
+PROVE CSM!IsNewerConfig(s, t) <=> ~CSM!IsNewerOrEqualConfig(t, s)
+BY DEF CSM!IsNewerConfig, CSM!IsNewerOrEqualConfig, TypeOK
+
+LEMMA ServersInNewestConfigNotEmpty ==
+ASSUME TypeOK
+PROVE ServersInNewestConfig # {}
+PROOF
+    <1>. SUFFICES ASSUME \A s \in Server : \E t \in Server : ~CSM!NewerOrEqualConfig(CV(s), CV(t))
+         PROVE FALSE
+         BY DEF ServersInNewestConfig, NewestConfig
+    <1>1. \A s \in Server : \E t \in Server : CSM!IsNewerConfig(t, s) BY NewerOrEqualConfigEquivalence, NewerIsNotSymmetric
+    \*<1>. PICK s \in Server : TRUE BY ServerIsNonempty
+    \*<1>. PICK t \in Server : ~CSM!NewerOrEqualConfig(CV(s), CV(t)) OBVIOUS
+
+    <1>. DEFINE NewerConfigsOf(s) == {t \in Server : CSM!IsNewerConfig(t, s)}
+    <1>2. \A s \in Server : NewerConfigsOf(s) # {} BY <1>1
+    <1>. DEFINE necs == UNION {NewerConfigsOf(s) : s \in Server}
+    \*<1>3. \A s \in Server : \A t \in NewerConfigsOf(s) : t \in necs OBVIOUS
+    <1>3. necs # {} BY <1>2, ServerIsNonempty
+    <1>a. \A s \in necs : \E t \in Server : CSM!IsNewerConfig(s, t) OBVIOUS
+
+    <1>. TRUE
+    <1>. QED
+
+(*LEMMA ConfigsAreNonempty ==
+ASSUME NEW s \in Server
+PROVE config[s] # {}
+
+COROLLARY ConfigQuorumsAreNonempty ==
+ASSUME NEW s \in Server
+PROVE QuorumsAt(s) # {}*)
+
 LEMMA ElectedLeadersHaveLatestTerm ==
 ASSUME TypeOK, Ind,
        NEW p \in Server,
@@ -689,13 +813,61 @@ ASSUME TypeOK, Ind,
        CSM!BecomeLeader(p, Q)
 PROVE \A s \in Server : currentTerm[p] >= currentTerm[s]
 PROOF
-    <1>1. \A s \in Q : currentTerm[p] >= currentTerm[s] /\ CSM!IsNewerOrEqualConfig(p, s)
+    <1>. PICK nc \in ServersInNewestConfig : TRUE BY ServersInNewestConfigNotEmpty
+    <1>1. OlderConfig(CV(p), CV(nc)) \/ (CV(p) = CV(nc))
+        <2>1. CSM!NewerOrEqualConfig(CV(nc), CV(p)) BY DEF ServersInNewestConfig, NewestConfig
+        <2>2. CSM!NewerConfig(CV(nc), CV(p)) \/ CV(nc) = CV(p) BY <2>1 DEF CSM!NewerOrEqualConfig
+        <2>3. CSM!NewerConfig(CV(nc), CV(p)) => OlderConfig(CV(p), CV(nc)) BY DEF CSM!NewerConfig, OlderConfig, CSM!NewerOrEqualConfig, CV, TypeOK, ServersInNewestConfig
+        <2>. QED BY <2>2, <2>3
+    <1>. CASE ConfigDisabled(p)
+        \* contradiction, can't become leader
+        <2>. PICK s \in Q : CSM!NewerConfig(CV(s), CV(p)) BY DEF ConfigDisabled, QuorumsAt
+        <2>1. CSM!IsNewerOrEqualConfig(p, s) BY DEF CSM!BecomeLeader, CSM!CanVoteForConfig
+        <2>2. CSM!IsNewerConfig(s, p) BY NewerConfigEquivalence, QuorumsAreServerSubsets
+        <2>. QED BY <2>1, <2>2, NewerIsNotSymmetric, QuorumsAreServerSubsets
+    <1>. CASE ~ConfigDisabled(p)
+        <2>. PICK s \in Q : currentTerm[s] >= configTerm[nc]
+            BY <1>1 DEF Ind, NewerConfigDisablesTermsOfOlderNonDisabledConfigs, ServersInNewestConfig, QuorumsAt
+        <2>1. \A t \in Server : currentTerm[s] >= currentTerm[t]
+            <3>1. \A t \in Server : configTerm[nc] >= currentTerm[t] BY DEF Ind, NewestConfigHasLargestTerm
+            <3>. QED BY <3>1 DEF TypeOK, ServersInNewestConfig, QuorumsAt, Quorums
+        <2>2. \A t \in Q : currentTerm[p] >= currentTerm[t] BY DEF OSM!BecomeLeader, OSM!CanVoteForOplog, QuorumsAt, Quorums, TypeOK
+        <2>. QED BY <2>1, <2>2 DEF QuorumsAt, Quorums, TypeOK
+    <1>. QED OBVIOUS
+
+    (*
+        <2>. PICK lQ \in Quorums(config[p]) : \E s \in lQ : currentTerm[s] >= configTerm[nc]
+            <3>1. \A lQ \in Quorums(config[p]) : \E s \in lQ : currentTerm[s] >= configTerm[nc]
+                BY <1>1 DEF Ind, NewerConfigDisablesTermsOfOlderNonDisabledConfigs, ServersInNewestConfig
+            <3>2. Quorums(config[p]) # {} BY ConfigsQuorumsAreNonempty DEF QuorumsAt
+            <3>. QED BY <3>1, <3>2
+        <2>. PICK s \in lQ : currentTerm[s] >= configTerm[nc] OBVIOUS
+        <2>1. \A t \in Server : currentTerm[s] >= currentTerm[t]
+            <3>1. \A t \in Server : configTerm[nc] >= currentTerm[t] BY DEF Ind, NewestConfigHasLargestTerm
+            <3>. QED BY <3>1 DEF TypeOK, ServersInNewestConfig, Quorums
+        <2>2. s \in Q \*BY StaticQuorumsOverlap DEF QuorumsAt
+        <2>3. \A t \in Q : currentTerm[p] >= currentTerm[t] BY DEF OSM!BecomeLeader, OSM!CanVoteForOplog, QuorumsAt, Quorums, TypeOK
+        <2>. QED BY <2>1, <2>2, <2>3 DEF QuorumsAt, Quorums, TypeOK*)
+
+        (*<2>a. \A t \in Server : configTerm[s] >= currentTerm[t]
+            <3>1. \A t \in Server : configTerm[nc] >= currentTerm[t] BY DEF Ind, NewestConfigHasLargestTerm
+            <3>2. currentTerm[s] >= configTerm
+            <3>. QED
+            \*BY DEF Ind, NewestConfigHasLargestTerm, TypeOK, ServersInNewestConfig
+        <2>2. \A t \in Server : configTerm[nc] >= currentTerm[t] BY DEF ServersInNewestConfig
+        <2>3. currentTerm[p] >= currentTerm[s] BY DEF OSM!BecomeLeader
+        <2>4. \A t \in Server :
+                    currentTerm[p] >= currentTerm[s] /\ currentTerm[s] >= configTerm[nc] /\ configTerm[nc] >= currentTerm[t] \*/\ configTerm[s] >= currentTerm[t]
+            BY <2>2, <2>3 \*<2>1, <2>2, <2>3
+        <2>. QED BY <2>4 DEF TypeOK*)
+
+    (*<1>1. \A s \in Q : currentTerm[p] >= currentTerm[s] /\ CSM!IsNewerOrEqualConfig(p, s)
         BY QuorumsAreServerSubsets DEF CSM!BecomeLeader, CSM!CanVoteForConfig, TypeOK
     \*<1>a. \A v \in Q : (OSM!LastTerm(log[p]) > OSM!LastTerm(log[v]) \/ OSM!LastTerm(log[p]) = OSM!LastTerm(log[v]))
     \*    BY DEF OSM!BecomeLeader, OSM!CanVoteForOplog \*, LastTerm, TypeOK, Ind, TermsOfEntriesGrowMonotonically\
     <1>2. \A s \in Q : OSM!LastTerm(log[p]) >= OSM!LastTerm(log[s])
         BY QuorumsAreServerSubsets DEF OSM!BecomeLeader, OSM!CanVoteForOplog, OSM!LastTerm, TypeOK
-    <1>. QED
+    <1>. QED*)
 
 --------------------------------------------------------------------------------
 
@@ -737,12 +909,12 @@ PROOF
     <1>3. currentTerm[s] = currentTerm[t] - 1 BY <1>tnq, <1>2 DEF OSM!BecomeLeader, TypeOK
     <1>4. configTerm[t] > currentTerm[s] BY <1>2, <1>3 DEF TypeOK
     <1>5. configTerm[t] > configTerm[s] BY <1>2, <1>4 DEF TypeOK
-    
-    
+
+
     <1>a. ServersInNewestConfig \in SUBSET Server
     <1>b. s \notin ServersInNewestConfig BY <1>4, <1>a DEF Ind, NewestConfigHasLargestTerm, TypeOK \*, ServersInNewestConfig, NewestConfig, CV, CSM!NewerOrEqualConfig
     <1>. QED
-    
+
     (*
     <1>5. OlderConfig(CV(s), CV(t)) \* may not be the case
     <1>. CASE ConfigDisabled(s)
@@ -752,6 +924,23 @@ PROOF
         <2>2. currentTerm[s] >= configTerm[t] BY <2>1 DEF Quorums, TypeOK
         <2>. QED BY <2>2, <1>4 DEF TypeOK
     <1>. QED OBVIOUS*)
+
+
+LEMMA BecomeLeaderQuorumsInLargestTerm ==
+ASSUME TypeOK, Ind,
+       NEW p \in Server,
+       NEW Q \in QuorumsAt(p),
+       OSM!BecomeLeader(p, Q),
+       CSM!BecomeLeader(p, Q)
+PROVE \A s \in Q : \A t \in Server : t \notin Q => currentTerm'[s] > currentTerm'[t]
+PROOF
+    <1>. TAKE s \in Q
+    <1>. TAKE t \in Server
+    <1>. SUFFICES ASSUME t \notin Q
+         PROVE currentTerm'[s] > currentTerm'[t] OBVIOUS
+    <1>1. currentTerm[p] >= currentTerm[t] BY ElectedLeadersHaveLatestTerm
+    <1>2. currentTerm'[p] > currentTerm[t] BY <1>1 DEF OSM!BecomeLeader, TypeOK
+    <1>. QED BY <1>2 DEF OSM!BecomeLeader, TypeOK, QuorumsAt, Quorums
 
 LEMMA OnePrimaryPerTermAndNext ==
 ASSUME TypeOK, Ind, Next
@@ -776,7 +965,51 @@ PROOF
     <1>3. CASE JointNext
         <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
             <3>. SUFFICES ASSUME TRUE
-                 PROVE  \A s \in Server : state'[s] = Primary => \A t \in Server : 
+                 PROVE \A s \in Server : state'[s] = Primary =>
+                            \A t \in Server : (state'[t] = Primary /\ currentTerm'[s] = currentTerm'[t]) => s = t
+                 BY DEF OnePrimaryPerTerm
+            <3>. TAKE s \in Server
+            <3>. CASE \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
+                <4>. PICK Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q) OBVIOUS
+                <4>1. \A t \in Server : currentTerm'[s] > currentTerm'[t] \/ state'[t] # Primary \/ t = s
+                    <5>1. \A t \in Server : currentTerm[s] >= currentTerm[t] BY ElectedLeadersHaveLatestTerm DEF QuorumsAt
+                    <5>2. \A t \in Server : t \notin Q => currentTerm'[s] > currentTerm'[t] BY <5>1 DEF OSM!BecomeLeader, TypeOK
+                    <5>3. \A t \in Q : t # s => state'[t] # Primary BY PrimaryAndSecondaryAreDifferent DEF OSM!BecomeLeader, TypeOK, QuorumsAt, Quorums
+                    <5>. QED BY <5>2, <5>3 DEF QuorumsAt, Quorums
+                <4>2. \A t \in Server : (state'[t] = Primary /\ currentTerm'[s] = currentTerm'[t]) => s = t BY <4>1, TypeOKAndNext DEF TypeOK
+                <4>3. state'[s] = Primary BY DEF OSM!BecomeLeader
+                <4>. QED BY <4>2, <4>3 DEF OnePrimaryPerTerm
+            <3>. CASE ~(\E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q))
+                <4>. PICK p \in Server : p # s /\ \E Q \in Quorums(config[p]) : OSM!BecomeLeader(p, Q) /\ CSM!BecomeLeader(p, Q) BY <2>1
+                <4>. PICK Q \in Quorums(config[p]) : OSM!BecomeLeader(p, Q) /\ CSM!BecomeLeader(p, Q) OBVIOUS
+                <4>. CASE s \in Q BY PrimaryAndSecondaryAreDifferent DEF OSM!BecomeLeader \* s won't be primary
+                <4>. CASE s \notin Q
+                    <5>. SUFFICES ASSUME state'[s] = Primary
+                         PROVE \A t \in Server : (state'[t] = Primary /\ currentTerm'[s] = currentTerm'[t]) => s = t OBVIOUS
+                    <5>. TAKE t \in Server
+                    <5>. CASE t \in Q
+                        <6>1. currentTerm'[s] < currentTerm'[t] BY BecomeLeaderQuorumsInLargestTerm DEF QuorumsAt
+                        <6>. QED BY <6>1, TypeOKAndNext DEF TypeOK
+                    <5>. CASE t \notin Q BY DEF OSM!BecomeLeader, Ind, OnePrimaryPerTerm
+                    <5>. QED OBVIOUS
+                <4>. QED OBVIOUS
+            <3>. QED OBVIOUS
+
+            (*<3>. PICK s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q) BY <2>1
+            <3>. PICK Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q) OBVIOUS
+            <3>1. \A t \in Server : currentTerm'[s] > currentTerm'[t] \/ state'[t] # Primary \/ t = s
+                <4>1. \A t \in Server : currentTerm[s] >= currentTerm[t] BY ElectedLeadersHaveLatestTerm DEF QuorumsAt
+                <4>2. \A t \in Server : t \notin Q => currentTerm'[s] > currentTerm'[t] BY <4>1 DEF OSM!BecomeLeader, TypeOK
+                <4>3. \A t \in Q : t # s => state'[t] # Primary BY PrimaryAndSecondaryAreDifferent DEF OSM!BecomeLeader, TypeOK, QuorumsAt, Quorums
+                <4>. QED BY <4>2, <4>3 DEF QuorumsAt, Quorums
+            \*<3>2. \A t \in Server : (state'[t] = Primary) => currentTerm'[s] > currentTerm'[t] \/ s = t BY <3>1 DEF TypeOK
+            \*<3>3. \A t \in Server : (currentTerm'[s] = currentTerm'[t]) => state'[t] # Primary \/ t = s BY <3>1, TypeOKAndNext DEF TypeOK
+            <3>2. \A t \in Server : (state'[t] = Primary /\ currentTerm'[s] = currentTerm'[t]) => s = t BY <3>1, TypeOKAndNext DEF TypeOK
+            <3>3. state'[s] = Primary BY DEF OSM!BecomeLeader
+            <3>. QED BY <3>2, <3>3 DEF OnePrimaryPerTerm *)
+
+            (*<3>. SUFFICES ASSUME TRUE
+                 PROVE  \A s \in Server : state'[s] = Primary => \A t \in Server :
                             (state'[t] = Primary /\ currentTerm'[s] = currentTerm'[t]) => s = t
                  BY DEF OnePrimaryPerTerm
             <3>. TAKE s \in Server
@@ -805,7 +1038,7 @@ PROOF
                 <4>2. state[s] = Primary /\ state[t] = Primary
                     BY DEF OSM!BecomeLeader, TypeOK
                 <4>. QED BY <4>1, <4>2 DEF Ind, OnePrimaryPerTerm
-            <3>. QED BY <3>1
+            <3>. QED BY <3>1*)
         <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
             \*BY <1>2, <2>2 DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, CSM!UpdateTerms, CSM!UpdateTermsExpr, Ind, OnePrimaryPerTerm, TypeOK
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
@@ -939,3 +1172,4 @@ PROVE /\ Init => Ind
 PROOF BY InitImpliesTypeOK, InitImpliesInd, TypeOKAndNext, IndAndNext
 
 =============================================================================
+
