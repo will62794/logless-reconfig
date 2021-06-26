@@ -585,26 +585,6 @@ ASSUME TypeOK,
 PROVE QuorumsOverlap(cfg, cfg)
 PROOF BY StaticQuorumsOverlap DEF QuorumsOverlap
 
-\* this is false
-(*LEMMA QuorumOverlapTransitivity ==
-ASSUME NEW cfg1 \in SUBSET Server,
-       NEW cfg2 \in SUBSET Server,
-       NEW cfg3 \in SUBSET Server, cfg3 # {},
-       QuorumsOverlap(cfg1, cfg3),
-       QuorumsOverlap(cfg2, cfg3)
-PROVE QuorumsOverlap(cfg1, cfg2)
-PROOF
-    <1>. SUFFICES ASSUME \E Q1 \in Quorums(cfg1) : \E Q2 \in Quorums(cfg2) : Q1 \cap Q2 = {}
-         PROVE FALSE BY DEF QuorumsOverlap
-    <1>. PICK Q1 \in Quorums(cfg1) : \E Q2 \in Quorums(cfg2) : Q1 \cap Q2 = {} OBVIOUS
-    <1>. PICK Q2 \in Quorums(cfg2) : Q1 \cap Q2 = {} OBVIOUS
-    <1>. PICK Q3 \in Quorums(cfg3) : Q1 \cap Q3 # {} /\ Q2 \cap Q3 # {}
-        <2>1. IsFiniteSet(cfg3) BY ServerIsFinite, FS_Subset
-        <2>2. \E Q3 \in Quorums(cfg3) : TRUE BY <2>1, QuorumsExistForNonEmptySets
-        <2>. QED BY <2>2 DEF QuorumsOverlap
-    <1>1.
-    <1>. QED*)
-
 LEMMA IsNewerOrEqualConfigTransitivity ==
 ASSUME TypeOK,
        NEW s \in Server,
@@ -625,69 +605,6 @@ ASSUME TypeOK,
        \/ CSM!IsNewerOrEqualConfig(s, t) /\ CSM!IsNewerConfig(t, u)
 PROVE CSM!IsNewerConfig(s, u)
 PROOF BY DEF CSM!IsNewerOrEqualConfig, CSM!IsNewerConfig, TypeOK
-
-\* this is false
-(*LEMMA ElectedLeadersHaveLatestConfig ==
-ASSUME TypeOK, Ind,
-       NEW p \in Server,
-       NEW Q \in QuorumsAt(p),
-       OSM!BecomeLeader(p, Q),
-       CSM!BecomeLeader(p, Q)
-PROVE \A s \in Server : CSM!IsNewerOrEqualConfig(p, s)
-    <1>pne. \A s \in Q : CSM!IsNewerOrEqualConfig(p, s)
-        BY QuorumsAreServerSubsets DEF CSM!BecomeLeader, CSM!CanVoteForConfig, TypeOK
-    <1>. SUFFICES ASSUME \E s \in Server : CSM!IsNewerConfig(s, p)
-         PROVE FALSE BY DEF CSM!IsNewerOrEqualConfig, CSM!IsNewerConfig, TypeOK
-    <1>. PICK s \in Server : CSM!IsNewerConfig(s, p) OBVIOUS
-    <1>1. OlderConfig(CV(p), CV(s))
-        BY DEF OlderConfig, CV, CSM!IsNewerOrEqualConfig, CSM!IsNewerConfig, CSM!NewerOrEqualConfig, CSM!NewerConfig, TypeOK
-    <1>2. ConfigDisabled(p)
-        <2>1. \A t \in Q : CSM!IsNewerConfig(s, t)
-            BY <1>pne, IsNewerConfigTransitivity, QuorumsAreServerSubsets
-        <2>. CASE QuorumsOverlap(config[p], config[s])
-            <3>. SUFFICES ASSUME TRUE
-                 PROVE \A Q2 \in Quorums(config[p]) : \E n \in Q2 : CSM!NewerConfig(CV(n), CV(p))
-                 BY DEF ConfigDisabled
-            <3>. TAKE Q2 \in Quorums(config[p])
-            <3>a. \E q \in Q2 : q \in Q
-                <4>1. config[p] \in SUBSET Server
-                    BY DEF TypeOK
-                <4>. QED BY <4>1, StaticQuorumsOverlap DEF QuorumsAt
-            (*<3>a. QuorumsOverlap(config[p], config[p])
-                BY ConfigQuorumsOverlap DEF TypeOK*)
-            <3>. PICK Qs \in Quorums(config[s]) : TRUE \*BY DEF Quorums, QuorumsOverlap
-            <3>1. Q \cap Qs # {} BY DEF QuorumsOverlap, QuorumsAt
-            <3>. PICK n \in Q2 : n \in Qs BY <3>1, <3>a
-            <3>2. TRUE
-            <3>. QED
-        <2>. CASE ~QuorumsOverlap(config[p], config[s])
-            BY <1>1 DEF Ind, NewerConfigDisablesOlderNonoverlappingConfigs
-        <2>. QED OBVIOUS
-    <1>. QED*)
-
-LEMMA ElectedLeadersHaveLatestTermInConfig ==
-ASSUME TypeOK, Ind,
-       NEW p \in Server,
-       NEW Q \in QuorumsAt(p),
-       p \in config[p],
-       p \in Q,
-       \A v \in Q : CSM!CanVoteForConfig(v, p, currentTerm[p]+1)
-PROVE \A s \in config[p] : currentTerm[p] >= currentTerm[s]
-PROOF
-    <1>1. \A s \in Q : currentTerm[p] >= currentTerm[s] /\ CSM!IsNewerOrEqualConfig(p, s)
-        BY QuorumsAreServerSubsets DEF CSM!CanVoteForConfig, TypeOK
-    <1>. TAKE s \in config[p]
-    <1>. CASE s \in Q BY <1>1
-    <1>. CASE s \notin Q
-    <1>. QED OBVIOUS
-
-
-\* a few useful hepers
-    (*<1>. SUFFICES ASSUME ServersInNewestConfig = {}
-         PROVE FALSE OBVIOUS
-    <1>. SUFFICES ASSUME TRUE
-         PROVE \A s \in Server : \E t \in Server : ~CSM!NewerOrEqualConfig(CV(s), CV(t))
-         BY DEF ServersInNewestConfig, NewestConfig*)
 
 LEMMA ExistsMaxInNatSet ==
 ASSUME NEW S \in SUBSET Nat,
@@ -730,33 +647,6 @@ PROOF
     <1>2. \A t \in Server : configVersion[s] >= configVersion[t] BY <1>h
     <1>. QED BY <1>2
 
-(*
-LEMMA ExistsServerWithMaxConfigVersion ==
-ASSUME TypeOK
-PROVE \E s \in Server : \A t \in Server : configVersion[s] >= configVersion[t]
-PROOF
-    <1>. DEFINE allConfigVersions == {configVersion[s] : s \in Server}
-    \*<1>a. allConfigVersions \in SUBSET Nat BY DEF TypeOK
-    <1>. DEFINE maxCV == CHOOSE x \in allConfigVersions : \A y \in allConfigVersions : x >= y \*Max(allConfigVersions)
-    <1>1. allConfigVersions # {} BY ServerIsNonempty
-    <1>b. \A x \in allConfigVersions : x \in Nat BY DEF TypeOK
-    \*<1>c. \E x \in allConfigVersions : x \in Nat BY DEF TypeOK
-    <1>d. maxCV \in allConfigVersions BY <1>1
-    <1>e. maxCV \in Nat BY <1>b, <1>d \*DEF Max
-    <1>f. \A y \in allConfigVersions : maxCV >= y \/ maxCV < y BY <1>b, <1>d, <1>e \*<1>1, <1>b, <1>d, <1>e \*, ChosenProperty
-    <1>g. ~(\E y \in allConfigVersions : maxCV < y)
-        <2>. SUFFICES ASSUME \E y \in allConfigVersions : maxCV < y
-             PROVE FALSE OBVIOUS
-        <2>. PICK m \in allConfigVersions : maxCV < m OBVIOUS
-        <2>1. maxCV \in {x \in allConfigVersions : \A y \in allConfigVersions : x >= y} OBVIOUS
-        <2>. QED
-    <1>h. \A y \in allConfigVersions : maxCV >= y BY <1>f, <1>g
-
-    <1>. PICK s \in Server : configVersion[s] = maxCV BY <1>1
-    <1>2. \A t \in Server : configVersion[s] >= configVersion[t] BY <1>f
-    <1>. QED BY <1>2
-*)
-
 LEMMA NewerConfigEquivalence ==
 ASSUME NEW s \in Server,
        NEW t \in Server
@@ -797,14 +687,6 @@ PROOF
     <1>. TRUE
     <1>. QED
 
-(*LEMMA ConfigsAreNonempty ==
-ASSUME NEW s \in Server
-PROVE config[s] # {}
-
-COROLLARY ConfigQuorumsAreNonempty ==
-ASSUME NEW s \in Server
-PROVE QuorumsAt(s) # {}*)
-
 LEMMA ElectedLeadersHaveLatestTerm ==
 ASSUME TypeOK, Ind,
        NEW p \in Server,
@@ -835,39 +717,21 @@ PROOF
         <2>. QED BY <2>1, <2>2 DEF QuorumsAt, Quorums, TypeOK
     <1>. QED OBVIOUS
 
-    (*
-        <2>. PICK lQ \in Quorums(config[p]) : \E s \in lQ : currentTerm[s] >= configTerm[nc]
-            <3>1. \A lQ \in Quorums(config[p]) : \E s \in lQ : currentTerm[s] >= configTerm[nc]
-                BY <1>1 DEF Ind, NewerConfigDisablesTermsOfOlderNonDisabledConfigs, ServersInNewestConfig
-            <3>2. Quorums(config[p]) # {} BY ConfigsQuorumsAreNonempty DEF QuorumsAt
-            <3>. QED BY <3>1, <3>2
-        <2>. PICK s \in lQ : currentTerm[s] >= configTerm[nc] OBVIOUS
-        <2>1. \A t \in Server : currentTerm[s] >= currentTerm[t]
-            <3>1. \A t \in Server : configTerm[nc] >= currentTerm[t] BY DEF Ind, NewestConfigHasLargestTerm
-            <3>. QED BY <3>1 DEF TypeOK, ServersInNewestConfig, Quorums
-        <2>2. s \in Q \*BY StaticQuorumsOverlap DEF QuorumsAt
-        <2>3. \A t \in Q : currentTerm[p] >= currentTerm[t] BY DEF OSM!BecomeLeader, OSM!CanVoteForOplog, QuorumsAt, Quorums, TypeOK
-        <2>. QED BY <2>1, <2>2, <2>3 DEF QuorumsAt, Quorums, TypeOK*)
-
-        (*<2>a. \A t \in Server : configTerm[s] >= currentTerm[t]
-            <3>1. \A t \in Server : configTerm[nc] >= currentTerm[t] BY DEF Ind, NewestConfigHasLargestTerm
-            <3>2. currentTerm[s] >= configTerm
-            <3>. QED
-            \*BY DEF Ind, NewestConfigHasLargestTerm, TypeOK, ServersInNewestConfig
-        <2>2. \A t \in Server : configTerm[nc] >= currentTerm[t] BY DEF ServersInNewestConfig
-        <2>3. currentTerm[p] >= currentTerm[s] BY DEF OSM!BecomeLeader
-        <2>4. \A t \in Server :
-                    currentTerm[p] >= currentTerm[s] /\ currentTerm[s] >= configTerm[nc] /\ configTerm[nc] >= currentTerm[t] \*/\ configTerm[s] >= currentTerm[t]
-            BY <2>2, <2>3 \*<2>1, <2>2, <2>3
-        <2>. QED BY <2>4 DEF TypeOK*)
-
-    (*<1>1. \A s \in Q : currentTerm[p] >= currentTerm[s] /\ CSM!IsNewerOrEqualConfig(p, s)
-        BY QuorumsAreServerSubsets DEF CSM!BecomeLeader, CSM!CanVoteForConfig, TypeOK
-    \*<1>a. \A v \in Q : (OSM!LastTerm(log[p]) > OSM!LastTerm(log[v]) \/ OSM!LastTerm(log[p]) = OSM!LastTerm(log[v]))
-    \*    BY DEF OSM!BecomeLeader, OSM!CanVoteForOplog \*, LastTerm, TypeOK, Ind, TermsOfEntriesGrowMonotonically\
-    <1>2. \A s \in Q : OSM!LastTerm(log[p]) >= OSM!LastTerm(log[s])
-        BY QuorumsAreServerSubsets DEF OSM!BecomeLeader, OSM!CanVoteForOplog, OSM!LastTerm, TypeOK
-    <1>. QED*)
+LEMMA BecomeLeaderQuorumsInLargestTerm ==
+ASSUME TypeOK, Ind,
+       NEW p \in Server,
+       NEW Q \in QuorumsAt(p),
+       OSM!BecomeLeader(p, Q),
+       CSM!BecomeLeader(p, Q)
+PROVE \A s \in Q : \A t \in Server : t \notin Q => currentTerm'[s] > currentTerm'[t]
+PROOF
+    <1>. TAKE s \in Q
+    <1>. TAKE t \in Server
+    <1>. SUFFICES ASSUME t \notin Q
+         PROVE currentTerm'[s] > currentTerm'[t] OBVIOUS
+    <1>1. currentTerm[p] >= currentTerm[t] BY ElectedLeadersHaveLatestTerm
+    <1>2. currentTerm'[p] > currentTerm[t] BY <1>1 DEF OSM!BecomeLeader, TypeOK
+    <1>. QED BY <1>2 DEF OSM!BecomeLeader, TypeOK, QuorumsAt, Quorums
 
 --------------------------------------------------------------------------------
 
@@ -891,56 +755,6 @@ PROOF
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 *)
-
-LEMMA OnePrimaryPerTermAndNext_BecomeLeader ==
-ASSUME TypeOK, Ind,
-       NEW s \in Server, state'[s] = Primary,
-       NEW t \in Server, state'[t] = Primary,
-       currentTerm'[s] = currentTerm'[t],
-       NEW Q \in Quorums(config[s]),
-       OSM!BecomeLeader(s, Q), CSM!BecomeLeader(s, Q)
-PROVE s = t
-PROOF
-    <1>. SUFFICES ASSUME s # t
-         PROVE FALSE OBVIOUS
-    <1>tnq. t \notin Q BY PrimaryAndSecondaryAreDifferent DEF OSM!BecomeLeader
-    <1>1. state[t] = Primary BY <1>tnq DEF OSM!BecomeLeader
-    <1>2. configTerm[t] = currentTerm[t] BY <1>1 DEF Ind, PrimaryConfigTermEqualToCurrentTerm
-    <1>3. currentTerm[s] = currentTerm[t] - 1 BY <1>tnq, <1>2 DEF OSM!BecomeLeader, TypeOK
-    <1>4. configTerm[t] > currentTerm[s] BY <1>2, <1>3 DEF TypeOK
-    <1>5. configTerm[t] > configTerm[s] BY <1>2, <1>4 DEF TypeOK
-
-
-    <1>a. ServersInNewestConfig \in SUBSET Server
-    <1>b. s \notin ServersInNewestConfig BY <1>4, <1>a DEF Ind, NewestConfigHasLargestTerm, TypeOK \*, ServersInNewestConfig, NewestConfig, CV, CSM!NewerOrEqualConfig
-    <1>. QED
-
-    (*
-    <1>5. OlderConfig(CV(s), CV(t)) \* may not be the case
-    <1>. CASE ConfigDisabled(s)
-    <1>. CASE ~ConfigDisabled(s)
-        <2>. PICK n \in Q : currentTerm[n] >= configTerm[t] BY <1>5 DEF Ind, NewerConfigDisablesTermsOfOlderNonDisabledConfigs
-        <2>1. currentTerm[s] >= currentTerm[n] BY DEF CSM!BecomeLeader, CSM!CanVoteForConfig, Quorums, TypeOK
-        <2>2. currentTerm[s] >= configTerm[t] BY <2>1 DEF Quorums, TypeOK
-        <2>. QED BY <2>2, <1>4 DEF TypeOK
-    <1>. QED OBVIOUS*)
-
-
-LEMMA BecomeLeaderQuorumsInLargestTerm ==
-ASSUME TypeOK, Ind,
-       NEW p \in Server,
-       NEW Q \in QuorumsAt(p),
-       OSM!BecomeLeader(p, Q),
-       CSM!BecomeLeader(p, Q)
-PROVE \A s \in Q : \A t \in Server : t \notin Q => currentTerm'[s] > currentTerm'[t]
-PROOF
-    <1>. TAKE s \in Q
-    <1>. TAKE t \in Server
-    <1>. SUFFICES ASSUME t \notin Q
-         PROVE currentTerm'[s] > currentTerm'[t] OBVIOUS
-    <1>1. currentTerm[p] >= currentTerm[t] BY ElectedLeadersHaveLatestTerm
-    <1>2. currentTerm'[p] > currentTerm[t] BY <1>1 DEF OSM!BecomeLeader, TypeOK
-    <1>. QED BY <1>2 DEF OSM!BecomeLeader, TypeOK, QuorumsAt, Quorums
 
 LEMMA OnePrimaryPerTermAndNext ==
 ASSUME TypeOK, Ind, Next
@@ -994,53 +808,26 @@ PROOF
                     <5>. QED OBVIOUS
                 <4>. QED OBVIOUS
             <3>. QED OBVIOUS
-
-            (*<3>. PICK s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q) BY <2>1
-            <3>. PICK Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q) OBVIOUS
-            <3>1. \A t \in Server : currentTerm'[s] > currentTerm'[t] \/ state'[t] # Primary \/ t = s
-                <4>1. \A t \in Server : currentTerm[s] >= currentTerm[t] BY ElectedLeadersHaveLatestTerm DEF QuorumsAt
-                <4>2. \A t \in Server : t \notin Q => currentTerm'[s] > currentTerm'[t] BY <4>1 DEF OSM!BecomeLeader, TypeOK
-                <4>3. \A t \in Q : t # s => state'[t] # Primary BY PrimaryAndSecondaryAreDifferent DEF OSM!BecomeLeader, TypeOK, QuorumsAt, Quorums
-                <4>. QED BY <4>2, <4>3 DEF QuorumsAt, Quorums
-            \*<3>2. \A t \in Server : (state'[t] = Primary) => currentTerm'[s] > currentTerm'[t] \/ s = t BY <3>1 DEF TypeOK
-            \*<3>3. \A t \in Server : (currentTerm'[s] = currentTerm'[t]) => state'[t] # Primary \/ t = s BY <3>1, TypeOKAndNext DEF TypeOK
-            <3>2. \A t \in Server : (state'[t] = Primary /\ currentTerm'[s] = currentTerm'[t]) => s = t BY <3>1, TypeOKAndNext DEF TypeOK
-            <3>3. state'[s] = Primary BY DEF OSM!BecomeLeader
-            <3>. QED BY <3>2, <3>3 DEF OnePrimaryPerTerm *)
-
-            (*<3>. SUFFICES ASSUME TRUE
-                 PROVE  \A s \in Server : state'[s] = Primary => \A t \in Server :
-                            (state'[t] = Primary /\ currentTerm'[s] = currentTerm'[t]) => s = t
+        <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
+            <3>. SUFFICES ASSUME TRUE
+                 PROVE  \A s \in Server : state'[s] = Primary =>
+                            \A t \in Server : (state'[t] = Primary /\ currentTerm'[s] = currentTerm'[t]) => s = t
                  BY DEF OnePrimaryPerTerm
             <3>. TAKE s \in Server
             <3>. SUFFICES ASSUME state'[s] = Primary
                  PROVE \A t \in Server : (state'[t] = Primary /\ currentTerm'[s] = currentTerm'[t]) => s = t OBVIOUS
             <3>. TAKE t \in Server
-            <3>. SUFFICES ASSUME state'[t] = Primary, currentTerm'[s] = currentTerm'[t]
-                 PROVE s = t OBVIOUS
-            <3>. CASE \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
-                BY <2>1, OnePrimaryPerTermAndNext_BecomeLeader
-            <3>. CASE \E Q \in Quorums(config[t]) : OSM!BecomeLeader(t, Q) /\ CSM!BecomeLeader(t, Q)
-                BY <2>1, OnePrimaryPerTermAndNext_BecomeLeader
-            <3>1. \/ (\E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q))
-                  \/ (\E Q \in Quorums(config[t]) : OSM!BecomeLeader(t, Q) /\ CSM!BecomeLeader(t, Q))
-                  \/ s = t
-                <4>. SUFFICES ASSUME \E u \in Server : \E Q \in Quorums(config[u]) :
-                                        OSM!BecomeLeader(u, Q) /\ CSM!BecomeLeader(u, Q) /\ u # s /\ u # t /\ s # t
-                     PROVE FALSE BY <2>1
-                <4>. PICK u \in Server : \E Q \in Quorums(config[u]) :
-                                        OSM!BecomeLeader(u, Q) /\ CSM!BecomeLeader(u, Q) /\ u # s /\ u # t /\ s # t OBVIOUS
-                <4>. PICK Q \in Quorums(config[u]) : OSM!BecomeLeader(u, Q) /\ CSM!BecomeLeader(u, Q) /\ u # s /\ u # t /\ s # t OBVIOUS
-                <4>1. currentTerm[s] = currentTerm[t]
-                    <5>1. s \notin Q /\ t \notin Q
-                        BY PrimaryAndSecondaryAreDifferent DEF OSM!BecomeLeader
-                    <5>. QED BY <5>1 DEF OSM!BecomeLeader
-                <4>2. state[s] = Primary /\ state[t] = Primary
-                    BY DEF OSM!BecomeLeader, TypeOK
-                <4>. QED BY <4>1, <4>2 DEF Ind, OnePrimaryPerTerm
-            <3>. QED BY <3>1*)
-        <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
-            \*BY <1>2, <2>2 DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, CSM!UpdateTerms, CSM!UpdateTermsExpr, Ind, OnePrimaryPerTerm, TypeOK
+            <3>. CASE \E u \in Server : OSM!UpdateTerms(u,t) /\ CSM!UpdateTerms(u,t)
+                BY PrimaryAndSecondaryAreDifferent DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, TypeOK
+            <3>. CASE ~(\E u \in Server : OSM!UpdateTerms(u,t) /\ CSM!UpdateTerms(u,t))
+                <4>1. currentTerm'[s] = currentTerm[s] /\ state[s] = Primary
+                    <5>1. ~(\E u \in Server : OSM!UpdateTerms(u,s) /\ CSM!UpdateTerms(u,s))
+                        BY PrimaryAndSecondaryAreDifferent DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, CSM!UpdateTerms, CSM!UpdateTermsExpr, TypeOK
+                    <5>. QED BY <1>2, <2>2, <5>1 DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, CSM!UpdateTerms, CSM!UpdateTermsExpr, TypeOK
+                <4>2. currentTerm'[t] = currentTerm[t] /\ state'[t] = state[t]
+                    BY <1>2, <2>2 DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, CSM!UpdateTerms, CSM!UpdateTermsExpr, TypeOK
+                <4>. QED BY <4>1, <4>2 DEF Ind, OnePrimaryPerTerm, TypeOK
+            <3>. QED OBVIOUS
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
