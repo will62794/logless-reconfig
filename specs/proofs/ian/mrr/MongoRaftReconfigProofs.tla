@@ -111,9 +111,9 @@ ConfigVersionAndTermUnique ==
         config[i] = config[j]
 
 PrimaryInTermContainsNewestConfigOfTerm == 
-    \A i,j \in Server : 
-    (state[i] = Primary /\ configTerm[j] = currentTerm[i]) =>
-    (configVersion[j] <= configVersion[i]) 
+    \A p,s \in Server : 
+        (state[p] = Primary /\ configTerm[s] = configTerm[p]) =>
+            (configVersion[p] >= configVersion[s]) 
 
 \* If config t has an older config than s, and their configs don't overlap, then
 \* config t must be disabled based on config ordering.
