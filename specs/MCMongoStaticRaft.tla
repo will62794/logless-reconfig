@@ -20,7 +20,6 @@ Alias ==
         state |-> state,
         log |-> log,
         config |-> config,
-        elections |-> elections,
         committed |-> committed
     ]
 ====
