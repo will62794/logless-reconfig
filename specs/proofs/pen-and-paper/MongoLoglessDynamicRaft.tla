@@ -196,6 +196,14 @@ ConfigHistoryUniqueParents ==
 \* Sanity trace checking.
 PrimaryExists == ~\E s,t \in Server : state[s] = Primary /\ state[t] = Primary /\ s#t
 
-
+NotTwoReconfigEdgesLeavingSameConfig ==
+    ~\E ei,ej \in configHistory :
+        \* Leaving the same node.
+        /\ ei[1] = ej[1]
+        \* Going to different nodes.
+        /\ ei[2] # ej[2]
+        \* Both reconfig edges.
+        /\ ei[1].t = ei[2].t
+        /\ ej[1].t = ej[2].t
 
 =============================================================================
