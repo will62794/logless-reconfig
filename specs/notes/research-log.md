@@ -168,3 +168,18 @@ A couple of comments by Stavros (feel free to remove from here if you don't want
 2. for finite-state systems checking inductiveness can in principle be reduced to SAT (Boolean, not SMT) solving
 3. decidable is great, but some decidable problems are still hard to compute in practice. without having looked at Ivy, it would be interesting to find out what it can do, even for its decidable fragment.
 
+## 2021-08-06
+
+In standard Raft, when an election in term T occurs, it serves to prevent two things:
+
+1. Future elections in terms <= T.
+2. Future commitment of writes in terms < T.
+
+The first is ensured since any election must query the term of a quorum of nodes to garner votes. The second is ensured since any primary in term U that tries to commit a write must get it replicated to a quorum of nodes that are *all currently in term U*. So, if we move a quorum of nodes to a term newer than U, this primary can never commit writes in its own term again.
+
+In the logless reconfig protocol, before allowing primaries to execute reconfigurations, there are two kinds of preconditions that must be satisfied. 
+
+1. First, the current config of the primary must be replicated to a quorum of servers in that config. This serves to "disable" any older configs that overlap with it. This is ensured since part of the election precondition is that a candidate's config is newer than a voter's config. If we move a quorum of nodes in a config to that config, then it prevents any older configs that overlap with it from holding successful elections.
+2. Second, older configs must be prevented from future commits. This can be done by moving a quorum of nodes in the config to the term of the current config (i.e. the primary).
+
+Question: Even in standard Raft, does the quorum of nodes that replicate a write necessarily need to be the same as the quorum of nodes that record the term of that write? For example, if one quorum replicates a log entry (10,2), and a different quorum moves to current term 2, can the write of (10,2) safely be considered committed? Not clear on the answer.
