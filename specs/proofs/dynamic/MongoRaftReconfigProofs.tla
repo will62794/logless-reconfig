@@ -352,9 +352,7 @@ NewestConfig(s) == \A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))
 \* Servers in the newest config.
 ServersInNewestConfig == {s \in Server : NewestConfig(s)}
 
-MaxConfig == 
-    LET serverId == CHOOSE s \in Server : \A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t)) IN
-    CV(serverId)
+MaxConfigId == CHOOSE s \in Server : \A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))
 
 OlderConfig(ci, cj) == ~CSM!NewerOrEqualConfig(ci, cj) 
 
@@ -376,9 +374,9 @@ NewerConfigDisablesTermsOfOlderNonDisabledConfigs ==
 \* Alternate form stated in terms of the maximum (i.e.) newest config in the system.
 NewerConfigDisablesTermsOfOlderNonDisabledConfigs_Alt ==
     \A t \in Server : 
-        ( /\ OlderConfig(CV(t), MaxConfig) \/ (CV(t) = MaxConfig) 
+        ( /\ OlderConfig(CV(t), CV(MaxConfigId)) \/ (CV(t) = CV(MaxConfigId)) 
           /\ ~ConfigDisabled(t) ) =>
-            \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= MaxConfig[2]
+            \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[MaxConfigId]
 
 
 \* \* If a log entry is committed, then the quorums of every 
