@@ -352,6 +352,10 @@ NewestConfig(s) == \A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))
 \* Servers in the newest config.
 ServersInNewestConfig == {s \in Server : NewestConfig(s)}
 
+MaxConfig == 
+    LET serverId == CHOOSE s \in Server : \A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t)) IN
+    CV(serverId)
+
 OlderConfig(ci, cj) == ~CSM!NewerOrEqualConfig(ci, cj) 
 
 \* If config t has an older config than s, and their configs don't overlap, then
@@ -368,6 +372,14 @@ NewerConfigDisablesTermsOfOlderNonDisabledConfigs ==
         (/\ OlderConfig(CV(t), CV(s)) \/ (CV(t) = CV(s))
          /\ ~ConfigDisabled(t)) => 
             \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
+
+\* Alternate form stated in terms of the maximum (i.e.) newest config in the system.
+NewerConfigDisablesTermsOfOlderNonDisabledConfigs_Alt ==
+    \A t \in Server : 
+        ( /\ OlderConfig(CV(t), MaxConfig) \/ (CV(t) = MaxConfig) 
+          /\ ~ConfigDisabled(t) ) =>
+            \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= MaxConfig[2]
+
 
 \* \* If a log entry is committed, then the quorums of every 
 \* active config must overlap with some node that contains this log entry.
