@@ -144,6 +144,32 @@ Next ==
     \/ CSMNext /\ UNCHANGED osmVars
     \/ JointNext
 
+ReconfigAction == 
+    /\ \E s \in Server, newConfig \in SUBSET Server : 
+        \* Before reconfiguration, ensure that previously committed ops are safe.
+        /\ OplogCommitment(s)
+        /\ CSM!Reconfig(s, newConfig)
+    /\ UNCHANGED osmVars
+
+SendConfigAction == 
+    /\ \E s,t \in Server : CSM!SendConfig(s, t)
+    /\ UNCHANGED osmVars
+    
+BecomeLeaderAction ==
+    \/ \E i \in Server : \E Q \in Quorums(config[i]) : 
+        /\ OSM!BecomeLeader(i, Q)
+        /\ CSM!BecomeLeader(i, Q)
+
+UpdateTermsAction == \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
+
+\* Gives more informative error traces, with action names.
+NextVerbose == 
+    \/ OSMNext /\ UNCHANGED csmVars
+    \/ ReconfigAction
+    \/ SendConfigAction
+    \/ BecomeLeaderAction
+    \/ UpdateTermsAction
+
 Spec == Init /\ [][Next]_vars
 
 \*
