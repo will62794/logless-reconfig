@@ -555,6 +555,46 @@ TypeOKRandom ==
     /\ committed \in RandomSetOfSubsets(kNumSubsets, nAvgSubsetSize, CommittedType)
     /\ elections = {}
 
+ConfigsGrowMonotonically == [][\A s \in Server : CSM!NewerOrEqualConfig(CV(s)', CV(s))]_vars
+CurrentTermsGTEConfigTerms == \A s \in Server : currentTerm[s] >= configTerm[s]
+
+\* If a server is currently primary in term T in config (v,T), then all older configs
+\* in term T that do not overlap with (v,T) must be disabled.
+I1 == 
+    \A s,t \in Server :
+        (\*/\ state[s] = Primary 
+         /\ OlderConfig(CV(t), CV(s))
+        \*  /\ configTerm[t] = configTerm[s]
+        \*  /\ configVersion[t] < configVersion[s]
+         /\ ~QuorumsOverlap(config[t], config[s]) 
+         /\ config[t] # {} 
+         /\ config[s] # {}) => ConfigDisabled(t)
+
+\* If a server is currently primary in term T in config (v, T), then all configs
+\* in the same term that overlap with it must intersect with some node in term >= T.
+
+\* All non disabled configs in a given term must overlap with some node in term >= T (?)
+I1a == 
+    \A s \in Server :
+        ~ConfigDisabled(s) => 
+        \A Q \in Quorums(config[s]) : \E n \in Q : currentTerm[n] >= configTerm[s]
+
+\* For any config in term T, all of its quorums should overlap with some node in term >= T.
+I1b ==
+    \A s \in Server : 
+    \A Q \in Quorums(config[s]) : \E n \in Q : currentTerm[n] >= configTerm[s]
+
+
+\* If a node is currently primary in term T, then all configs in lesser terms should
+\* be either (a) disabled or (b) prevented from becoming committed.
+I2 == 
+    \A s,t \in Server :
+        (\*/\ state[s] = Primary
+         /\ configTerm[t] < configTerm[s]) =>
+          \/ ConfigDisabled(t)
+          \/ \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] > configTerm[t]
+
+
 Ind ==
     \*
     \* Establishing election safety under reconfiguration.
@@ -563,42 +603,56 @@ Ind ==
     /\ PrimaryConfigTermEqualToCurrentTerm
     /\ ConfigVersionAndTermUnique
     /\ PrimaryInTermContainsNewestConfigOfTerm
-    /\ NewerConfigDisablesOlderNonoverlappingConfigs
-    /\ NewerConfigDisablesTermsOfOlderNonDisabledConfigs
 
-    \*
-    \* Establishing log invariants.
-    \*
-    /\ LogMatching
-    /\ TermsOfEntriesGrowMonotonically
-    /\ PrimaryHasEntriesItCreated
-    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
-    /\ LogEntryInTermImpliesConfigInTerm
-    /\ UniformLogEntriesInTerm
+    \* /\ ConfigsNonEmpty
+    
+    \* /\ I1
+    \* /\ I1a
+    \* /\ I1b
+    \* /\ I2
+    \* /\ I3
 
-    \*
-    \* Basic type requirements of 'committed' variable.
-    \*
-    /\ CommittedEntryIndexesAreNonZero
-    /\ CommittedTermMatchesEntry
+    /\ ActiveConfigsOverlap
+    /\ ActiveConfigsSafeAtTerms
+    
+    \* /\ NewerConfigDisablesOlderNonoverlappingConfigs
+    \* /\ NewerConfigDisablesTermsOfOlderNonDisabledConfigs
 
-    \*
-    \* Establishing additional config related invariants that
-    \* help with leader completeness.
-    \*
-    /\ ConfigOverlapsWithDirectAncestor
-    /\ NewestConfigHasLargestTerm
-    /\ NewestConfigHasSomeNodeInConfig
-    /\ ConfigsWithSameVersionHaveSameMemberSet
-    /\ CommitOfNewConfigPreventsCommitsInOldTerms
+    \* /\ NewerConfigDisablesTermsOfOlderNonDisabledConfigsB
 
-    \* 
-    \* Establishing leader completeness invariant.
-    \*
-    /\ LeaderCompletenessGeneralized
-    /\ CommittedEntryIntersectsWithNewestConfig
-    /\ CommittedEntryIntersectsWithEveryActiveConfig
-    /\ LogsLaterThanCommittedMustHaveCommitted
+    \* \*
+    \* \* Establishing log invariants.
+    \* \*
+    \* /\ LogMatching
+    \* /\ TermsOfEntriesGrowMonotonically
+    \* /\ PrimaryHasEntriesItCreated
+    \* /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    \* /\ LogEntryInTermImpliesConfigInTerm
+    \* /\ UniformLogEntriesInTerm
+
+    \* \*
+    \* \* Basic type requirements of 'committed' variable.
+    \* \*
+    \* /\ CommittedEntryIndexesAreNonZero
+    \* /\ CommittedTermMatchesEntry
+
+    \* \*
+    \* \* Establishing additional config related invariants that
+    \* \* help with leader completeness.
+    \* \*
+    \* /\ ConfigOverlapsWithDirectAncestor
+    \* /\ NewestConfigHasLargestTerm
+    \* /\ NewestConfigHasSomeNodeInConfig
+    \* /\ ConfigsWithSameVersionHaveSameMemberSet
+    \* /\ CommitOfNewConfigPreventsCommitsInOldTerms
+
+    \* \* 
+    \* \* Establishing leader completeness invariant.
+    \* \*
+    \* /\ LeaderCompletenessGeneralized
+    \* /\ CommittedEntryIntersectsWithNewestConfig
+    \* /\ CommittedEntryIntersectsWithEveryActiveConfig
+    \* /\ LogsLaterThanCommittedMustHaveCommitted
 
 
 
