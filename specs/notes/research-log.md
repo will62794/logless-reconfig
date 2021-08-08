@@ -183,3 +183,25 @@ In the logless reconfig protocol, before allowing primaries to execute reconfigu
 2. Second, older configs must be prevented from future commits. This can be done by moving a quorum of nodes in the config to the term of the current config (i.e. the primary).
 
 Question: Even in standard Raft, does the quorum of nodes that replicate a write necessarily need to be the same as the quorum of nodes that record the term of that write? For example, if one quorum replicates a log entry (10,2), and a different quorum moves to current term 2, can the write of (10,2) safely be considered committed? Not clear on the answer.
+
+## 2021-08-08
+
+Alternate inductive invariant that uses the following two conjuncts
+
+```tla
+ActiveConfigSet == {s \in Server : ~ConfigDisabled(s)}
+
+ActiveConfigsOverlap == 
+    \A s,t \in ActiveConfigSet : QuorumsOverlap(config[s], config[t])
+
+ActiveConfigsSafeAtTerms == 
+    \A s \in Server : 
+    \A t \in ActiveConfigSet :
+        \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
+```
+instead of 
+```tla
+/\ NewerConfigDisablesOlderNonoverlappingConfigs
+/\ NewerConfigDisablesTermsOfOlderNonDisabledConfigs
+```
+appears to be valid using TLC to check inductiveness even with four nodes. Will have to run further to make sure.
