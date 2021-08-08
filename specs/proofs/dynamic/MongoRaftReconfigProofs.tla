@@ -626,14 +626,8 @@ Ind ==
     /\ PrimaryConfigTermEqualToCurrentTerm
     /\ ConfigVersionAndTermUnique
     /\ PrimaryInTermContainsNewestConfigOfTerm
-
-    \* (original)
     /\ NewerConfigDisablesOlderNonoverlappingConfigs
     /\ NewerConfigDisablesTermsOfOlderNonDisabledConfigs
-
-    \* (alternate)
-    \* /\ ActiveConfigsOverlap
-    \* /\ ActiveConfigsSafeAtTerms
 
     \*
     \* Establishing log invariants.
@@ -650,8 +644,6 @@ Ind ==
     \*
     /\ CommittedEntryIndexesAreNonZero
     /\ CommittedTermMatchesEntry
-
-    \* (original)
 
     \*
     \* Establishing additional config related invariants that
@@ -671,17 +663,40 @@ Ind ==
     /\ CommittedEntryIntersectsWithEveryActiveConfig
     /\ LogsLaterThanCommittedMustHaveCommitted
 
+\* Alternate, smaller inductive invariant.
+IndAlt == 
+    \*
+    \* Establishing election safety under reconfiguration.
+    \*
+    /\ OnePrimaryPerTerm
+    /\ PrimaryConfigTermEqualToCurrentTerm
+    /\ ConfigVersionAndTermUnique
+    /\ PrimaryInTermContainsNewestConfigOfTerm
+    \* (alternate)
+    /\ ActiveConfigsOverlap
+    /\ ActiveConfigsSafeAtTerms
+
+    \*
+    \* Establishing log invariants.
+    \*
+    /\ LogMatching
+    /\ TermsOfEntriesGrowMonotonically
+    /\ PrimaryHasEntriesItCreated
+    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    /\ LogEntryInTermImpliesConfigInTerm
+    /\ UniformLogEntriesInTerm
+
+    \*
+    \* Basic type requirements of 'committed' variable.
+    \*
+    /\ CommittedEntryIndexesAreNonZero
+    /\ CommittedTermMatchesEntry
 
     \* (alternate)
-
-    \* /\ LeaderCompletenessGeneralized
-    \* /\ LogsLaterThanCommittedMustHaveCommitted
-    \* /\ ActiveConfigsOverlapWithCommittedEntry
-    \* /\ NewerConfigsDisablePrimaryCommitsInOlderTerms
-
-
-
-
+    /\ LeaderCompletenessGeneralized
+    /\ LogsLaterThanCommittedMustHaveCommitted
+    /\ ActiveConfigsOverlapWithCommittedEntry
+    /\ NewerConfigsDisablePrimaryCommitsInOlderTerms    
 
 
 \* SMS_LC_II
@@ -707,6 +722,9 @@ IInit ==
     /\ TypeOKRandom
     /\ Ind
 
+IInitAlt == 
+    /\ TypeOKRandom
+    /\ IndAlt
 
 \* Must check that the initial states satisfy the inductive invariant.
 Initiation == (Init => Ind)
