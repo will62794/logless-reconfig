@@ -162,9 +162,30 @@ BecomeLeaderAction ==
 
 UpdateTermsAction == \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
 
+ClientRequestAction == 
+    /\ \E s \in Server : OSM!ClientRequest(s)
+    /\ UNCHANGED csmVars
+
+GetEntriesAction == 
+    /\ \E s, t \in Server : OSM!GetEntries(s, t)
+    /\ UNCHANGED csmVars
+
+RollbackEntries == 
+    /\ \E s, t \in Server : OSM!RollbackEntries(s, t)
+    /\ UNCHANGED csmVars
+
+CommitEntryAction == 
+    /\ \E s \in Server :  \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+    /\ UNCHANGED csmVars
+
 \* Gives more informative error traces, with action names.
 NextVerbose == 
-    \/ OSMNext /\ UNCHANGED csmVars
+    \* OSM
+    \/ ClientRequestAction
+    \/ GetEntriesAction
+    \/ RollbackEntries
+    \/ CommitEntryAction
+    \* CSM
     \/ ReconfigAction
     \/ SendConfigAction
     \/ BecomeLeaderAction
