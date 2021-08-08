@@ -608,6 +608,22 @@ ActiveConfigsSafeAtTerms ==
     \A t \in ActiveConfigSet :
         \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
 
+CommitsEnabled(i) == 
+    /\ state[i] = Primary
+    /\ \E Q \in Quorums(config[i]) : \A n \in Q : currentTerm[n] <= currentTerm[i]
+
+CommitActiveConfigSet == {s \in Server : CommitsEnabled(s) }
+
+ActiveConfigsOverlapWithCommittedEntry == 
+    \A c \in committed :
+    \A s \in ActiveConfigSet :
+        \A Q \in Quorums(config[s]) : \E n \in Q : InLog(c.entry, n)   
+
+NewerConfigsDisablePrimaryCommitsInOlderTerms ==
+    \A s,t \in Server : 
+    (state[t] = Primary /\ currentTerm[t] < configTerm[s]) =>
+        \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] > currentTerm[t]
+
 Ind ==
     \*
     \* Establishing election safety under reconfiguration.
@@ -641,6 +657,8 @@ Ind ==
     /\ CommittedEntryIndexesAreNonZero
     /\ CommittedTermMatchesEntry
 
+    \* (original)
+
     \*
     \* Establishing additional config related invariants that
     \* help with leader completeness.
@@ -658,6 +676,15 @@ Ind ==
     /\ CommittedEntryIntersectsWithNewestConfig
     /\ CommittedEntryIntersectsWithEveryActiveConfig
     /\ LogsLaterThanCommittedMustHaveCommitted
+
+
+    \* (alternate)
+
+    \* /\ LeaderCompletenessGeneralized
+    \* /\ LogsLaterThanCommittedMustHaveCommitted
+    \* /\ ActiveConfigsOverlapWithCommittedEntry
+    \* /\ NewerConfigsDisablePrimaryCommitsInOlderTerms
+
 
 
 
@@ -717,7 +744,8 @@ Alias ==
         \* latestBeforeTerm |-> [s \in Server |-> [ i \in ((DOMAIN log[s]) \{1}) |-> LatestEntryBeforeTerm(s, log[s][i])]]
         nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)],
         committed |-> committed,
-        activeConfig |-> [s \in Server |-> ActiveConfig(configVersion[s], configTerm[s])],
+        activeConfigs |-> ActiveConfigSet,
+        \* activeConfig |-> [s \in Server |-> ActiveConfig(configVersion[s], configTerm[s])],
         newestConfig |-> {<<config[s],CV(s)>> : s \in ServersInNewestConfig}
         \* configChains |-> [<<s,t>> \in ServerPair |-> ConfigChains(s,t)]
     ]
