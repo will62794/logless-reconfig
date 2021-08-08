@@ -595,6 +595,19 @@ I2 ==
           \/ \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] > configTerm[t]
 
 
+ActiveConfigSet == {s \in Server : ~ConfigDisabled(s)}
+
+\* The quorums of all active configs overlap with each other. 
+ActiveConfigsOverlap == 
+    \A s,t \in ActiveConfigSet : QuorumsOverlap(config[s], config[t])
+
+\* Every active config overlaps with some node in a term >=T for all elections
+\* that occurred in term T (and exist in some config that is still around).
+ActiveConfigsSafeAtTerms == 
+    \A s \in Server : 
+    \A t \in ActiveConfigSet :
+        \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
+
 Ind ==
     \*
     \* Establishing election safety under reconfiguration.
@@ -604,55 +617,47 @@ Ind ==
     /\ ConfigVersionAndTermUnique
     /\ PrimaryInTermContainsNewestConfigOfTerm
 
-    \* /\ ConfigsNonEmpty
-    
-    \* /\ I1
-    \* /\ I1a
-    \* /\ I1b
-    \* /\ I2
-    \* /\ I3
+    \* (original)
+    /\ NewerConfigDisablesOlderNonoverlappingConfigs
+    /\ NewerConfigDisablesTermsOfOlderNonDisabledConfigs
 
-    /\ ActiveConfigsOverlap
-    /\ ActiveConfigsSafeAtTerms
-    
-    \* /\ NewerConfigDisablesOlderNonoverlappingConfigs
-    \* /\ NewerConfigDisablesTermsOfOlderNonDisabledConfigs
+    \* (alternate)
+    \* /\ ActiveConfigsOverlap
+    \* /\ ActiveConfigsSafeAtTerms
 
-    \* /\ NewerConfigDisablesTermsOfOlderNonDisabledConfigsB
+    \*
+    \* Establishing log invariants.
+    \*
+    /\ LogMatching
+    /\ TermsOfEntriesGrowMonotonically
+    /\ PrimaryHasEntriesItCreated
+    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    /\ LogEntryInTermImpliesConfigInTerm
+    /\ UniformLogEntriesInTerm
 
-    \* \*
-    \* \* Establishing log invariants.
-    \* \*
-    \* /\ LogMatching
-    \* /\ TermsOfEntriesGrowMonotonically
-    \* /\ PrimaryHasEntriesItCreated
-    \* /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
-    \* /\ LogEntryInTermImpliesConfigInTerm
-    \* /\ UniformLogEntriesInTerm
+    \*
+    \* Basic type requirements of 'committed' variable.
+    \*
+    /\ CommittedEntryIndexesAreNonZero
+    /\ CommittedTermMatchesEntry
 
-    \* \*
-    \* \* Basic type requirements of 'committed' variable.
-    \* \*
-    \* /\ CommittedEntryIndexesAreNonZero
-    \* /\ CommittedTermMatchesEntry
+    \*
+    \* Establishing additional config related invariants that
+    \* help with leader completeness.
+    \*
+    /\ ConfigOverlapsWithDirectAncestor
+    /\ NewestConfigHasLargestTerm
+    /\ NewestConfigHasSomeNodeInConfig
+    /\ ConfigsWithSameVersionHaveSameMemberSet
+    /\ CommitOfNewConfigPreventsCommitsInOldTerms
 
-    \* \*
-    \* \* Establishing additional config related invariants that
-    \* \* help with leader completeness.
-    \* \*
-    \* /\ ConfigOverlapsWithDirectAncestor
-    \* /\ NewestConfigHasLargestTerm
-    \* /\ NewestConfigHasSomeNodeInConfig
-    \* /\ ConfigsWithSameVersionHaveSameMemberSet
-    \* /\ CommitOfNewConfigPreventsCommitsInOldTerms
-
-    \* \* 
-    \* \* Establishing leader completeness invariant.
-    \* \*
-    \* /\ LeaderCompletenessGeneralized
-    \* /\ CommittedEntryIntersectsWithNewestConfig
-    \* /\ CommittedEntryIntersectsWithEveryActiveConfig
-    \* /\ LogsLaterThanCommittedMustHaveCommitted
+    \* 
+    \* Establishing leader completeness invariant.
+    \*
+    /\ LeaderCompletenessGeneralized
+    /\ CommittedEntryIntersectsWithNewestConfig
+    /\ CommittedEntryIntersectsWithEveryActiveConfig
+    /\ LogsLaterThanCommittedMustHaveCommitted
 
 
 
