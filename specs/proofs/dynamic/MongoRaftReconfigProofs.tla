@@ -608,12 +608,6 @@ ActiveConfigsSafeAtTerms ==
     \A t \in ActiveConfigSet :
         \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
 
-CommitsEnabled(i) == 
-    /\ state[i] = Primary
-    /\ \E Q \in Quorums(config[i]) : \A n \in Q : currentTerm[n] <= currentTerm[i]
-
-CommitActiveConfigSet == {s \in Server : CommitsEnabled(s) }
-
 ActiveConfigsOverlapWithCommittedEntry == 
     \A c \in committed :
     \A s \in ActiveConfigSet :
