@@ -4,7 +4,7 @@
 \* in MongoDB replication.
 \*
 
-EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
+EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC, Json
 
 CONSTANTS Server
 CONSTANTS Secondary, Primary, Nil
@@ -19,6 +19,9 @@ VARIABLE config
 VARIABLE configHistory
 
 vars == <<currentTerm, state, configVersion, configTerm, config, configHistory>>
+
+\* Whether to check for config cycles during model checking via assert statements.
+CONSTANT CheckConfigCycles
 
 \*
 \* Helper operators.
@@ -84,6 +87,32 @@ ConfigIsCommitted(s) ==
             \* Node must be in the same term as the primary (and the config).
             /\ currentTerm[t] = currentTerm[s]
 
+ConfigIsCommittedAlt(i) ==
+    \* Goal 1: Disable older configs that overlap with you.
+
+    \* Reconfig precondition must be such that, if it becomes true for the current config,
+    \* it must be false for all older configs.
+
+    \* The current config is present on some quorum of nodes in that config.
+    \* This DISABLES any older configs that overlap with it
+    \* /\ \E Q \in Quorums(config[i]) : \A t \in Q : 
+    \*     /\ configVersion[t] = configVersion[i]
+    \*     /\ configTerm[t] = configTerm[i]
+        \* /\ currentTerm[t] = currentTerm[i]
+
+    \* As written, this specification allows config propagation and term updates to 
+    \* occur separately, so in addition to checking that the config has propagated to
+    \* a quorum, we must also check an appropriate term condition. Specifically,
+    \* we must define this in such a way that prevents older configs from satisfying this
+    \* condition. 
+
+    \* The terms from previous configs must have propagated to a quorum of this config.
+    \* This DISABLES older configs that overlap with the config.
+    /\ \E Q \in Quorums(config[i]) : \A t \in Q : 
+        /\ currentTerm[t] = currentTerm[i]    
+    
+    /\ TRUE
+
 \* Set of all config nodes in the config history graph.
 configHistoryNodes == UNION {{c[1], c[2]} : c \in configHistory}
 
@@ -123,12 +152,13 @@ BecomeLeader(i, voteQuorum) ==
            newCfg == [m |-> config[i], v |-> configVersion'[i], t |-> configTerm'[i]] IN
            /\ configHistory' = configHistory \cup {<< oldCfg, newCfg>>}
            \* Efficiently check for a cycle here i.e. are you adding an edge to a config that already exists?
-           /\ Assert(newCfg \notin configHistoryNodes, "cycle in config history detected")
+           /\ Assert(~CheckConfigCycles \/ newCfg \notin configHistoryNodes, "cycle in config history detected")
     
 \* A reconfig occurs on node i. The node must currently be a leader.
 Reconfig(i, newConfig) ==
     /\ state[i] = Primary
-    /\ ConfigIsCommitted(i)
+    \* /\ ConfigIsCommitted(i)
+    /\ ConfigIsCommittedAlt(i)
     /\ QuorumsOverlap(config[i], newConfig)
     /\ i \in newConfig
     /\ configTerm' = [configTerm EXCEPT ![i] = currentTerm[i]]
@@ -139,7 +169,7 @@ Reconfig(i, newConfig) ==
             newCfg == [m |-> newConfig, v |-> configVersion'[i], t |-> configTerm'[i]] IN
             /\ configHistory' = configHistory \cup {<< oldCfg, newCfg>>}
             \* Efficiently check for a cycle here i.e. are you adding an edge to a config that already exists?
-            /\ Assert(newCfg \notin configHistoryNodes, "cycle in config history detected")
+            /\ Assert(~CheckConfigCycles \/ newCfg \notin configHistoryNodes, "cycle in config history detected")
 
 \* Node i sends its current config to node j.
 SendConfig(i, j) ==
@@ -188,6 +218,12 @@ ServerSymmetry == Permutations(Server)
 \* Checking Proof Lemmas
 \*
 
+OnePrimaryPerTerm == 
+    \A s,t \in Server :
+        (/\ state[s] = Primary 
+         /\ state[t] = Primary
+         /\ currentTerm[s] = currentTerm[t]) => (s = t)
+
 ConfigHistoryUniqueParents == 
     /\ ~\E ei,ej \in configHistory : 
         /\ ei[1] # ej[1]
@@ -205,5 +241,46 @@ NotTwoReconfigEdgesLeavingSameConfig ==
         \* Both reconfig edges.
         /\ ei[1].t = ei[2].t
         /\ ej[1].t = ej[2].t
+
+\*
+\* DEBUGGING
+\*
+
+StateStr(st) == 
+    IF st = Primary THEN "P" ELSE "S"
+
+ServerStr(s) == 
+    IF s = Nil THEN "----------------------------" ELSE
+    "t" \o ToString(currentTerm[s]) \o " " \o StateStr(state[s]) \o " " \o
+    ToString(config[s]) \o " (" \o ToString(configVersion[s]) \o "," \o ToString(configTerm[s]) \o ")"
+
+\* TikZ drawings.
+
+stateRecord == [
+    currentTerm |-> currentTerm,
+    state |-> state,
+    config |-> config,
+    configVersion |-> configVersion,
+    configTerm |-> configTerm
+]
+
+ServerPair == Server \X Server
+Alias == 
+    [
+        \* currentTerm |-> currentTerm,
+        \* state |-> state,
+        \* log |-> log,
+        \* config |-> config,
+        \* elections |-> elections,
+        \* config |-> config,
+        \* reconfigs |-> ReconfigPairsAll,
+        \* electionLogIndexes |-> [s \in Server |-> ElectionLogIndex(s)]
+        \* latestBeforeTerm |-> [s \in Server |-> [ i \in ((DOMAIN log[s]) \{1}) |-> LatestEntryBeforeTerm(s, log[s][i])]]
+        nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)],
+        jsonstr |-> ToJson(stateRecord)
+        \* activeConfig |-> [s \in Server |-> ActiveConfig(configVersion[s], configTerm[s])],
+        \* newestConfig |-> {<<config[s],CV(s)>> : s \in ServersInNewestConfig}
+        \* configChains |-> [<<s,t>> \in ServerPair |-> ConfigChains(s,t)]
+    ]
 
 =============================================================================
