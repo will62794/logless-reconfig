@@ -48,8 +48,9 @@ def make_tikz_state(si,state):
         if "log" in state:
             log = state["log"][ni]
         configAndLog = "\underset{%s}{%s}" % (log, latex_set_str(state["config"][ni]))
-        args = (textcolor,nistr,configAndLog,state["currentTerm"][ni],state["configVersion"][ni],state["configTerm"][ni])
-        valstr = "\\textcolor{%s}{%s\\underset{%s}{T_%s,(%s,%s)}}" % args
+        stateStr = state["state"][ni][0]
+        args = (textcolor,nistr,configAndLog,stateStr,state["currentTerm"][ni],state["configVersion"][ni],state["configTerm"][ni])
+        valstr = "\\textcolor{%s}{%s\\underset{%s}{%s^%s_{(%s,%s)}}}" % args
         out_str += (nstr % (ind, valstr))
     out_str += "\\end{tikzpicture}\n"
     return out_str
@@ -64,5 +65,5 @@ tikz = make_tikz_states(states)
 
 for t in tikz:
     print t,
-    print "$\\rightarrow$"
+    # print "$\\rightarrow$"
     print "\\vline"
