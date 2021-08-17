@@ -87,12 +87,26 @@ ConfigIsCommitted(s) ==
             \* Node must be in the same term as the primary (and the config).
             /\ currentTerm[t] = currentTerm[s]
 
+
+\* The current config of server 'i' is present on some quorum of nodes in that
+\* config. This DISABLES any older configs that overlap with it.
+ConfigQuorumCheck(i) == 
+    \E Q \in Quorums(config[i]) : \A t \in Q : 
+        /\ configVersion[t] = configVersion[i]
+        /\ configTerm[t] = configTerm[i]
+
+\* The current term of server 'i' is present on a quorum of servers in that
+\* config. This protects the config and any that overlap with it from future
+\* elections or commits in that term.
+TermQuorumCheck(i) == \E Q \in Quorums(config[i]) : \A t \in Q : currentTerm[t] = currentTerm[i]      
+
 ConfigIsCommittedAlt(i) ==
+
+    /\ ConfigQuorumCheck(i)
+    /\ TermQuorumCheck(i)
+    /\ TRUE
+
     \* Goal 1: Disable older configs that overlap with you.
-
-    \* Reconfig precondition must be such that, if it becomes true for the current config,
-    \* it must be false for all older configs.
-
     \* The current config is present on some quorum of nodes in that config.
     \* This DISABLES any older configs that overlap with it
     \* /\ \E Q \in Quorums(config[i]) : \A t \in Q : 
@@ -108,10 +122,9 @@ ConfigIsCommittedAlt(i) ==
 
     \* The terms from previous configs must have propagated to a quorum of this config.
     \* This DISABLES older configs that overlap with the config.
-    /\ \E Q \in Quorums(config[i]) : \A t \in Q : 
-        /\ currentTerm[t] = currentTerm[i]    
+    \* /\ \E Q \in Quorums(config[i]) : \A t \in Q : 
+        \* /\ currentTerm[t] = currentTerm[i]    
     
-    /\ TRUE
 
 \* Set of all config nodes in the config history graph.
 configHistoryNodes == UNION {{c[1], c[2]} : c \in configHistory}
