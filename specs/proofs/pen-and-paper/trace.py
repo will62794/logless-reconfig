@@ -44,7 +44,11 @@ def make_tikz_state(si,state):
         textcolor = "black"
         if state["state"][ni] == "Primary":
             textcolor = "blue"
-        args = (textcolor,nistr,latex_set_str(state["config"][ni]),state["currentTerm"][ni],state["configVersion"][ni],state["configTerm"][ni])
+        log = ""
+        if "log" in state:
+            log = state["log"][ni]
+        configAndLog = "\underset{%s}{%s}" % (log, latex_set_str(state["config"][ni]))
+        args = (textcolor,nistr,configAndLog,state["currentTerm"][ni],state["configVersion"][ni],state["configTerm"][ni])
         valstr = "\\textcolor{%s}{%s\\underset{%s}{T_%s,(%s,%s)}}" % args
         out_str += (nstr % (ind, valstr))
     out_str += "\\end{tikzpicture}\n"
