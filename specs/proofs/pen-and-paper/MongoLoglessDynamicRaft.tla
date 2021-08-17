@@ -101,29 +101,9 @@ ConfigQuorumCheck(i) ==
 TermQuorumCheck(i) == \E Q \in Quorums(config[i]) : \A t \in Q : currentTerm[t] = currentTerm[i]      
 
 ConfigIsCommittedAlt(i) ==
-
     /\ ConfigQuorumCheck(i)
     /\ TermQuorumCheck(i)
     /\ TRUE
-
-    \* Goal 1: Disable older configs that overlap with you.
-    \* The current config is present on some quorum of nodes in that config.
-    \* This DISABLES any older configs that overlap with it
-    \* /\ \E Q \in Quorums(config[i]) : \A t \in Q : 
-    \*     /\ configVersion[t] = configVersion[i]
-    \*     /\ configTerm[t] = configTerm[i]
-        \* /\ currentTerm[t] = currentTerm[i]
-
-    \* As written, this specification allows config propagation and term updates to 
-    \* occur separately, so in addition to checking that the config has propagated to
-    \* a quorum, we must also check an appropriate term condition. Specifically,
-    \* we must define this in such a way that prevents older configs from satisfying this
-    \* condition. 
-
-    \* The terms from previous configs must have propagated to a quorum of this config.
-    \* This DISABLES older configs that overlap with the config.
-    \* /\ \E Q \in Quorums(config[i]) : \A t \in Q : 
-        \* /\ currentTerm[t] = currentTerm[i]    
     
 
 \* Set of all config nodes in the config history graph.
