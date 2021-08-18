@@ -10,3 +10,6 @@ $tlc -config cex-models/MongoLoglessDynamicRaft-elecsafety-no-term-check.cfg Mon
 # Leader completeness counterexamples.
 $tlc -config cex-models/MongoRaftReconfig-leadercompl-no-log-prop.cfg MongoRaftReconfig.tla | python trace.py > cex-tikz/leadercompl-no-log-prop.tex
 $tlc -config cex-models/MongoRaftReconfig-leadercompl-no-term-check.cfg MongoRaftReconfig.tla | python trace.py > cex-tikz/leadercompl-no-term-check.tex
+
+# Copy over generated counterexamples to paper repo.
+./cp-cexs.sh

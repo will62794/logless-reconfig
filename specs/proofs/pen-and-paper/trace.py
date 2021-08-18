@@ -43,7 +43,7 @@ def make_tikz_state(si,state):
             nistr = ""
         textcolor = "black"
         if state["state"][ni] == "Primary":
-            textcolor = "blue"
+            textcolor = "black"
         log = ""
         if "log" in state:
             log = state["log"][ni]
@@ -52,9 +52,9 @@ def make_tikz_state(si,state):
         stateSymbol = ""
         if stateStr == "P":
             # Add symbol for primary server.
-            stateSymbol = "\\symqueen"
-        args = (textcolor,nistr,configAndLog,stateStr,state["currentTerm"][ni],state["configVersion"][ni],state["configTerm"][ni],stateSymbol)
-        valstr = "\\textcolor{%s}{%s\\underset{%s}{%s^%s_{(%s,%s) %s} }}" % args
+            stateSymbol = "\\textcolor{blue}{\\symqueen}"
+        args = (textcolor,nistr,configAndLog,stateStr,state["currentTerm"][ni],stateSymbol, state["configVersion"][ni],state["configTerm"][ni])
+        valstr = "\\textcolor{%s}{%s\\underset{%s}{%s^{%s \, %s}_{(%s,%s)} }}" % args
         out_str += (nstr % (ind, valstr))
     out_str += "\\end{tikzpicture}"
     return out_str
