@@ -21,3 +21,4 @@ tla2tools.jar
 **/*.tlaps/
 **/*.toolbox/
 **/*.synctex.gz
+cex-tikz/

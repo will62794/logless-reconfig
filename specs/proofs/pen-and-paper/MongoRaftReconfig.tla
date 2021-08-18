@@ -126,7 +126,7 @@ OplogCommitment(s) ==
 CSMNext == 
     \/ \E s \in Server, newConfig \in SUBSET Server : 
         \* Before reconfiguration, ensure that previously committed ops are safe.
-        \* /\ OplogCommitment(s)
+        /\ OplogCommitment(s)
         /\ CSM!Reconfig(s, newConfig)
     \/ \E s,t \in Server : CSM!SendConfig(s, t)
 
