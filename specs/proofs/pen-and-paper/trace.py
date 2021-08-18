@@ -75,11 +75,17 @@ def make_server_latex(state, ni):
     nistr = ""
     out_str = ""
     textcolor = "black"
+    if "committed" in state:
+        committed = state["committed"]
+        committed_entries = [c["entry"] for c in committed]
+        # print committed_entries
     if state["state"][ni] == "Primary":
         textcolor = "black"
     log = ""
+    # logstr = ""
     if "log" in state:
         log = state["log"][ni]
+        # logstr = ",".join([l for l in log])
     configAndLog = "\underset{%s}{%s}" % (log, latex_set_str(state["config"][ni]))
     stateStr = state["state"][ni][0]
     stateSymbol = ""
