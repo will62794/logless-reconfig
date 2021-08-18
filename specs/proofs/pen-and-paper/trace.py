@@ -94,33 +94,33 @@ def make_server_latex(state, ni):
     return "$" + valstr + "$"
     # return out_str
 
-def make_tikz_state(si,state):
-    out_str = "\\begin{tikzpicture}\n"
-    out_str += "\\footnotesize\n"
-    servers = state.values()[0].keys()
+# def make_tikz_state(si,state):
+#     out_str = "\\begin{tikzpicture}\n"
+#     out_str += "\\footnotesize\n"
+#     servers = state.values()[0].keys()
 
-    for ind,ni in enumerate(reversed(servers)):
-        nstr = "\\filldraw[black] (0,%d) node[anchor=west] {$%s$};\n"
-        nistr = subscriptize(ni) + " : "
-        if si > 0:
-            nistr = ""
-        textcolor = "black"
-        if state["state"][ni] == "Primary":
-            textcolor = "black"
-        log = ""
-        if "log" in state:
-            log = state["log"][ni]
-        configAndLog = "\underset{%s}{%s}" % (log, latex_set_str(state["config"][ni]))
-        stateStr = state["state"][ni][0]
-        stateSymbol = ""
-        if stateStr == "P":
-            # Add symbol for primary server.
-            stateSymbol = "\\textcolor{blue}{\\symqueen}"
-        args = (textcolor,nistr,configAndLog,stateStr,state["currentTerm"][ni],stateSymbol, state["configVersion"][ni],state["configTerm"][ni])
-        valstr = "\\textcolor{%s}{%s\\underset{%s}{%s^{%s \, %s}_{(%s,%s)} }}" % args
-        out_str += (nstr % (ind, valstr))
-    out_str += "\\end{tikzpicture}"
-    return out_str
+#     for ind,ni in enumerate(reversed(servers)):
+#         nstr = "\\filldraw[black] (0,%d) node[anchor=west] {$%s$};\n"
+#         nistr = subscriptize(ni) + " : "
+#         if si > 0:
+#             nistr = ""
+#         textcolor = "black"
+#         if state["state"][ni] == "Primary":
+#             textcolor = "black"
+#         log = ""
+#         if "log" in state:
+#             log = state["log"][ni]
+#         configAndLog = "\underset{%s}{%s}" % (log, latex_set_str(state["config"][ni]))
+#         stateStr = state["state"][ni][0]
+#         stateSymbol = ""
+#         if stateStr == "P":
+#             # Add symbol for primary server.
+#             stateSymbol = "\\textcolor{blue}{\\symqueen}"
+#         args = (textcolor,nistr,configAndLog,stateStr,state["currentTerm"][ni],stateSymbol, state["configVersion"][ni],state["configTerm"][ni])
+#         valstr = "\\textcolor{%s}{%s\\underset{%s}{%s^{%s \, %s}_{(%s,%s)} }}" % args
+#         out_str += (nstr % (ind, valstr))
+#     out_str += "\\end{tikzpicture}"
+#     return out_str
 
 def make_tikz_states(states):
     trace_rows = []
