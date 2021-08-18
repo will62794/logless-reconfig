@@ -49,10 +49,14 @@ def make_tikz_state(si,state):
             log = state["log"][ni]
         configAndLog = "\underset{%s}{%s}" % (log, latex_set_str(state["config"][ni]))
         stateStr = state["state"][ni][0]
-        args = (textcolor,nistr,configAndLog,stateStr,state["currentTerm"][ni],state["configVersion"][ni],state["configTerm"][ni])
-        valstr = "\\textcolor{%s}{%s\\underset{%s}{%s^%s_{(%s,%s)}}}" % args
+        stateSymbol = ""
+        if stateStr == "P":
+            # Add symbol for primary server.
+            stateSymbol = "\\symqueen"
+        args = (textcolor,nistr,configAndLog,stateStr,state["currentTerm"][ni],state["configVersion"][ni],state["configTerm"][ni],stateSymbol)
+        valstr = "\\textcolor{%s}{%s\\underset{%s}{%s^%s_{(%s,%s) %s} }}" % args
         out_str += (nstr % (ind, valstr))
-    out_str += "\\end{tikzpicture}\n"
+    out_str += "\\end{tikzpicture}"
     return out_str
 
 def make_tikz_states(states):
@@ -64,6 +68,6 @@ states = parse_tlc_lines()
 tikz = make_tikz_states(states)
 
 for t in tikz:
-    print t,
+    print t
     # print "$\\rightarrow$"
     print "\\vline"
