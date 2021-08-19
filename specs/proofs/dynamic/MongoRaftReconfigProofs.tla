@@ -177,6 +177,9 @@ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm ==
 CommittedTermMatchesEntry ==
     \A c \in committed : c.term = c.entry[2]
 
+CommittedTermLessThanOrEqualToEntry ==
+    \A c \in committed : c.term <= c.entry[2]
+
 \* when a server's latest log term EXCEEDS a committed entry c's term, ALL commits
 \* with terms before or equal to c's must be in the server's log
 LogsLaterThanCommittedMustHaveCommitted_Old ==
