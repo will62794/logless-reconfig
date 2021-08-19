@@ -685,7 +685,7 @@ IndAlt ==
     /\ PrimaryConfigTermEqualToCurrentTerm
     /\ ConfigVersionAndTermUnique
     /\ PrimaryInTermContainsNewestConfigOfTerm
-    \* (alternate)
+    \* alternate
     /\ ActiveConfigsOverlap
     /\ ActiveConfigsSafeAtTerms
 
@@ -697,10 +697,14 @@ IndAlt ==
     /\ LogEntryInTermImpliesConfigInTerm
 
     \*
-    \* Additional log invariants.
+    \* Additional local log invariants.
     \*
     /\ PrimaryTermAtLeastAsLargeAsLogTerms
     /\ TermsOfEntriesGrowMonotonically
+
+    \*
+    \* Additional global log invariant.
+    \*    
     /\ UniformLogEntriesInTerm
 
     \*
@@ -709,7 +713,7 @@ IndAlt ==
     /\ CommittedEntryIndexesAreNonZero
     /\ CommittedTermMatchesEntry
 
-    \* (alternate)
+    \* alternate
     /\ LeaderCompletenessGeneralized
     /\ LogsLaterThanCommittedMustHaveCommitted
     /\ ActiveConfigsOverlapWithCommittedEntry
