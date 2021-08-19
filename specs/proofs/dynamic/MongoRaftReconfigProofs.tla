@@ -116,7 +116,7 @@ AllConfigsAreServer ==
 
 \* A server's current term is always at least as large as the terms in its log.
 \* This is LEMMA 6 from the Raft dissertation.
-CurrentTermAtLeastAsLargeAsLogTermsForPrimary == 
+PrimaryTermAtLeastAsLargeAsLogTerms == 
     \A s \in Server : 
         (state[s] = Primary) => 
         (\A i \in DOMAIN log[s] : currentTerm[s] >= log[s][i])
@@ -648,7 +648,7 @@ Ind ==
     /\ LogMatching
     /\ TermsOfEntriesGrowMonotonically
     /\ PrimaryHasEntriesItCreated
-    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    /\ PrimaryTermAtLeastAsLargeAsLogTerms
     /\ LogEntryInTermImpliesConfigInTerm
     /\ UniformLogEntriesInTerm
 
@@ -699,7 +699,7 @@ IndAlt ==
     \*
     \* Additional log invariants.
     \*
-    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    /\ PrimaryTermAtLeastAsLargeAsLogTerms
     /\ TermsOfEntriesGrowMonotonically
     /\ UniformLogEntriesInTerm
 
@@ -771,7 +771,7 @@ Alias ==
 \* SMS_LC_II
 \* 
 \* /\ CommittedEntryIndexesAreNonZero
-\* /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+\* /\ PrimaryTermAtLeastAsLargeAsLogTerms
 \* /\ TermsOfEntriesGrowMonotonically
 \* /\ ExistsQuorumInLargestTerm
 \* /\ LogsMustBeSmallerThanOrEqualToLargestTerm
