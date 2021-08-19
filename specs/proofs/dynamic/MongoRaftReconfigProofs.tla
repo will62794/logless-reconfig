@@ -177,12 +177,20 @@ CommittedTermMatchesEntry ==
 
 \* when a server's latest log term EXCEEDS a committed entry c's term, ALL commits
 \* with terms before or equal to c's must be in the server's log
-LogsLaterThanCommittedMustHaveCommitted ==
+LogsLaterThanCommittedMustHaveCommitted_Old ==
     \A s \in Server : \A c \in committed :
         (\E i \in DOMAIN log[s] : log[s][i] > c.term) =>
             \A d \in committed :
                 d.term <= c.term => /\ Len(log[s]) >= d.entry[1]
                                     /\ log[s][d.entry[1]] = d.term
+
+\* If a log contains an entry in term T, then it must also contain all entries
+\* committed in terms < T.
+LogsLaterThanCommittedMustHaveCommitted == 
+    \A s \in Server :
+    \A c \in committed :
+    \A i \in DOMAIN log[s] :
+        (c.term < log[s][i]) => InLog(c.entry, s)
 
 \* when a server's latest log term is EQUAL to a committed entry c's term, ALL commits
 \* with terms before or equal to c's must be in the server's log (if the entry fits)
@@ -677,14 +685,13 @@ IndAlt ==
     /\ ActiveConfigsSafeAtTerms
 
     \*
-    \* Establishing log invariants.
+    \* Establishing log matching.
     \*
     /\ LogMatching
     /\ TermsOfEntriesGrowMonotonically
     /\ PrimaryHasEntriesItCreated
     /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
     /\ LogEntryInTermImpliesConfigInTerm
-    /\ UniformLogEntriesInTerm
 
     \*
     \* Basic type requirements of 'committed' variable.
@@ -694,6 +701,7 @@ IndAlt ==
 
     \* (alternate)
     /\ LeaderCompletenessGeneralized
+    /\ UniformLogEntriesInTerm
     /\ LogsLaterThanCommittedMustHaveCommitted
     /\ ActiveConfigsOverlapWithCommittedEntry
     /\ NewerConfigsDisablePrimaryCommitsInOlderTerms    
@@ -706,6 +714,9 @@ IInit ==
 IInitAlt == 
     /\ TypeOKRandom
     /\ IndAlt
+
+INextAlt == 
+    /\ NextVerbose
 
 \* Must check that the initial states satisfy the inductive invariant.
 Initiation == (Init => Ind)
