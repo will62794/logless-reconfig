@@ -699,25 +699,6 @@ IndAlt ==
     /\ NewerConfigsDisablePrimaryCommitsInOlderTerms    
 
 
-\* SMS_LC_II
-\* 
-\* /\ CommittedEntryIndexesAreNonZero
-\* /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
-\* /\ TermsOfEntriesGrowMonotonically
-\* /\ ExistsQuorumInLargestTerm
-\* /\ LogsMustBeSmallerThanOrEqualToLargestTerm
-\* /\ AllConfigsAreServer
-\* /\ SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm
-\* /\ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
-\* /\ CommittedTermMatchesEntry
-\* /\ LogsLaterThanCommittedMustHaveCommitted
-\* /\ LogsEqualToCommittedMustHaveCommittedIfItFits
-\* /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
-\* /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
-\* /\ LeaderCompletenessGeneralized
-\* /\ CommittedEntriesMustHaveQuorums
-
-
 IInit == 
     /\ TypeOKRandom
     /\ Ind
@@ -728,6 +709,8 @@ IInitAlt ==
 
 \* Must check that the initial states satisfy the inductive invariant.
 Initiation == (Init => Ind)
+
+--------------------------------------------------------------------------------
 
 \*
 \* DEBUGGING
@@ -761,6 +744,28 @@ Alias ==
         newestConfig |-> {<<config[s],CV(s)>> : s \in ServersInNewestConfig}
         \* configChains |-> [<<s,t>> \in ServerPair |-> ConfigChains(s,t)]
     ]
+
+
+--------------------------------------------------------------------------------
+
+\* SMS_LC_II
+\* 
+\* /\ CommittedEntryIndexesAreNonZero
+\* /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+\* /\ TermsOfEntriesGrowMonotonically
+\* /\ ExistsQuorumInLargestTerm
+\* /\ LogsMustBeSmallerThanOrEqualToLargestTerm
+\* /\ AllConfigsAreServer
+\* /\ SecondariesMustFollowPrimariesWhenLogTermMatchesCurrentTerm
+\* /\ SecondariesMustFollowPrimariesWhenLogTermExceedsCurrentTerm
+\* /\ CommittedTermMatchesEntry
+\* /\ LogsLaterThanCommittedMustHaveCommitted
+\* /\ LogsEqualToCommittedMustHaveCommittedIfItFits
+\* /\ CommittedEntryIndMustBeSmallerThanOrEqualtoAllLogLens
+\* /\ CommittedEntryTermMustBeSmallerThanOrEqualtoAllTerms
+\* /\ LeaderCompletenessGeneralized
+\* /\ CommittedEntriesMustHaveQuorums
+
 
 
 =============================================================================
