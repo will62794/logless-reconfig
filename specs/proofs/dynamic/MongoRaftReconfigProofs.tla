@@ -422,17 +422,26 @@ CommittedEntryIntersectsAnyQuorumOfNewestConfig ==
     (\A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))) =>
         \A Q \in QuorumsAt(s) : \E n \in Q : InLog(c.entry, n)
 
-\* LogEntryInTermImpliesElectionInTerm == 
-
-\* If a log contains an entry in term T at index I such that
-\* the entries at J < I are in a different term, then there must be
-\* no other logs that contains entries in term T at indices J < I
+\*
+\* If a log entry in term T exists, then some primary in term T must have
+\* created that log entry, and the corresponding log prefix must have only
+\* propagated to other servers via this primary. So, there cannot exist an
+\* entry in some other log in the same term that is in a conflicting position
+\* with entries in this term. For example, the following log state is not
+\* possible:
+\*
+\* n1: [1,2]
+\* n2: [2]
+\* 
 UniformLogEntriesInTerm ==
     \A s,t \in Server :
     \A i \in DOMAIN log[s] : 
-        (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) => 
-            (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)
-    
+    \A j \in DOMAIN log[t] : 
+        (j < i) =>
+            \* If the log entry on server t has the same term, T,
+            \* as the entry on server s, then the log on s in that
+            \* position must also be in term T.
+            ((log[t][j] = log[s][i]) => (log[s][j] = log[s][i]))
 
 \* It cannot be the case that all nodes are not members of their own configs.
 SomeActiveConfig == \E s \in Server : s \in config[s]
