@@ -117,7 +117,9 @@ AllConfigsAreServer ==
 \* A server's current term is always at least as large as the terms in its log.
 \* This is LEMMA 6 from the Raft dissertation.
 CurrentTermAtLeastAsLargeAsLogTermsForPrimary == 
-    \A s \in Server : state[s] = Primary => (\A i \in DOMAIN log[s] : currentTerm[s] >= log[s][i])
+    \A s \in Server : 
+        (state[s] = Primary) => 
+        (\A i \in DOMAIN log[s] : currentTerm[s] >= log[s][i])
 
 \* The terms of entries grow monotonically in each log.
 \* This is LEMMA 7 from the Raft dissertation.
@@ -688,10 +690,15 @@ IndAlt ==
     \* Establishing log matching.
     \*
     /\ LogMatching
-    /\ TermsOfEntriesGrowMonotonically
     /\ PrimaryHasEntriesItCreated
-    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
     /\ LogEntryInTermImpliesConfigInTerm
+
+    \*
+    \* Additional log invariants.
+    \*
+    /\ CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+    /\ TermsOfEntriesGrowMonotonically
+    /\ UniformLogEntriesInTerm
 
     \*
     \* Basic type requirements of 'committed' variable.
@@ -701,7 +708,6 @@ IndAlt ==
 
     \* (alternate)
     /\ LeaderCompletenessGeneralized
-    /\ UniformLogEntriesInTerm
     /\ LogsLaterThanCommittedMustHaveCommitted
     /\ ActiveConfigsOverlapWithCommittedEntry
     /\ NewerConfigsDisablePrimaryCommitsInOlderTerms    
