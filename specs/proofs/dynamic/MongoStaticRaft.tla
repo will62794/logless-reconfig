@@ -151,6 +151,9 @@ CommitEntry(i, commitQuorum) ==
     /\ committed' = committed \cup
             {[ entry  |-> <<ind, currentTerm[i]>>,
                term  |-> currentTerm[i]]}
+    \* \* Commit all entries in the log prefix.
+    \* /\ LET committedPrefix == {[entry |-> <<p,log[i][p]>>, term |-> currentTerm[i]] : p \in 1..ind} IN
+    \*     committed' = committed \cup committedPrefix
     /\ UNCHANGED <<currentTerm, state, log, config, elections>>
 
 \* Action that exchanges terms between two nodes and step down the primary if
