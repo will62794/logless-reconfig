@@ -205,3 +205,7 @@ instead of
 /\ NewerConfigDisablesTermsOfOlderNonDisabledConfigs
 ```
 appears to be valid using TLC to check inductiveness even with four nodes. Will have to run further to make sure.
+
+## 2021-08-19
+
+Idea: Once you've developed an inductive invariant, use the model checker to help you do a manual proof by automatically checking *which* conjuncts of the inductive invariant a particular conjunct depends on. Theoretically helps you to know exactly which facts are needed to prove a particular conjunct.
