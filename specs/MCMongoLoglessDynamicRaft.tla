@@ -9,4 +9,10 @@ StateConstraint == \A s \in Server :
                     /\ configVersion[s] <= MaxConfigVersion
 
 ServerSymmetry == Permutations(Server)
+
+OnePrimaryPerTerm == 
+    \A s,t \in Server :
+        (/\ state[s] = Primary 
+         /\ state[t] = Primary
+         /\ currentTerm[s] = currentTerm[t]) => (s = t)
 ====
