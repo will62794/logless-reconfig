@@ -244,7 +244,6 @@ Examples of log states that satisfy `LogMatching` but not `TermsOfEntriesGrowMon
 /\ log = (n1 :> <<2>> @@ n2 :> <<1, 0>> @@ n3 :> <<2, 1>>)
 ```
 Examples of states that satisfy `LogMatching /\ TermsOfEntriesGrowMonotonically` but not `UniformLogEntriesInTerm`:
-```
 
 ```tla
 /\ log = (n1 :> << >> @@ n2 :> <<0, 1>> @@ n3 :> <<1, 2>>)
@@ -261,7 +260,6 @@ Examples of states that satisfy `LogMatching /\ TermsOfEntriesGrowMonotonically`
 ```
 
 Examples of states that satisfy `LogMatching /\ TermsOfEntriesGrowMonotonically /\ UniformLogEntriesInTerm`:
-```
 
 ```tla
 /\ log = (n1 :> <<0, 1, 1>> @@ n2 :> <<0, 1, 1>> @@ n3 :> <<0, 0>>)
