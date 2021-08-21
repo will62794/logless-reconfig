@@ -213,3 +213,64 @@ Idea: Once you've developed an inductive invariant, use the model checker to hel
 ## 2021-08-21
 
 Can add `ConfigsNonEmpty` conjunct to latest version of `IndAlt` inductive invariant and it doesn't break things. So, it seems it's possible to take it or leave it. May consider including it since configs being non empty seems like a basic invariant we should establish.
+
+Examples of log states that satisfy `LogMatching` but not `TermsOfEntriesGrowMonotonically`:
+
+```tla
+/\ log = (n1 :> <<1, 2>> @@ n2 :> <<2, 1>> @@ n3 :> <<2, 0>>)
+/\ log = (n1 :> <<1>> @@ n2 :> <<0, 1>> @@ n3 :> <<2, 0>>)
+/\ log = (n1 :> <<1>> @@ n2 :> <<1>> @@ n3 :> <<1, 0>>)
+/\ log = (n1 :> <<2, 0>> @@ n2 :> << >> @@ n3 :> << >>)
+/\ log = (n1 :> <<2, 0>> @@ n2 :> <<1, 1>> @@ n3 :> <<1, 1>>)
+/\ log = (n1 :> <<2, 0>> @@ n2 :> <<1, 2>> @@ n3 :> << >>)
+/\ log = (n1 :> <<2, 0>> @@ n2 :> <<1>> @@ n3 :> <<0>>)
+/\ log = (n1 :> <<2, 0>> @@ n2 :> <<2, 0>> @@ n3 :> <<0>>)
+/\ log = (n1 :> <<2, 0>> @@ n2 :> <<2, 0>> @@ n3 :> <<1, 1>>)
+/\ log = (n1 :> <<2, 0>> @@ n2 :> <<2, 0>> @@ n3 :> <<2, 0>>)
+/\ log = (n1 :> <<2, 1>> @@ n2 :> << >> @@ n3 :> <<0, 0>>)
+/\ log = (n1 :> <<2, 1>> @@ n2 :> <<0>> @@ n3 :> <<0>>)
+/\ log = (n1 :> <<2, 1>> @@ n2 :> <<1>> @@ n3 :> <<1>>)
+/\ log = (n1 :> <<2, 1>> @@ n2 :> <<2, 1>> @@ n3 :> <<0, 0>>)
+/\ log = (n1 :> <<2, 1>> @@ n2 :> <<2, 1>> @@ n3 :> <<1, 2>>)
+/\ log = (n1 :> <<2, 1>> @@ n2 :> <<2, 1>> @@ n3 :> <<2, 0>>)
+/\ log = (n1 :> <<2, 1>> @@ n2 :> <<2, 1>> @@ n3 :> <<2, 1>>)
+/\ log = (n1 :> <<2, 1>> @@ n2 :> <<2>> @@ n3 :> <<2, 2>>)
+/\ log = (n1 :> <<2, 2>> @@ n2 :> <<1, 0>> @@ n3 :> << >>)
+/\ log = (n1 :> <<2, 2>> @@ n2 :> <<1, 0>> @@ n3 :> <<0, 1>>)
+/\ log = (n1 :> <<2, 2>> @@ n2 :> <<1, 0>> @@ n3 :> <<1, 0>>)
+/\ log = (n1 :> <<2>> @@ n2 :> <<0, 1>> @@ n3 :> <<2, 0>>)
+/\ log = (n1 :> <<2>> @@ n2 :> <<1,
+/\ log = (n1 :> <<2>> @@ n2 :> <<1, 0>> @@ n3 :> <<1, 0>>)
+/\ log = (n1 :> <<2>> @@ n2 :> <<1, 0>> @@ n3 :> <<2, 1>>)
+```
+Examples of states that satisfy `LogMatching /\ TermsOfEntriesGrowMonotonically` but not `UniformLogEntriesInTerm`:
+```
+
+```tla
+/\ log = (n1 :> << >> @@ n2 :> <<0, 1>> @@ n3 :> <<1, 2>>)
+/\ log = (n1 :> <<0, 1>> @@ n2 :> <<0, 1>> @@ n3 :> <<1>>)
+/\ log = (n1 :> <<0, 1>> @@ n2 :> <<1>> @@ n3 :> <<2>>)
+/\ log = (n1 :> <<0, 2>> @@ n2 :> <<0, 0>> @@ n3 :> <<2>>)
+/\ log = (n1 :> <<0, 2>> @@ n2 :> <<2>> @@ n3 :> <<2>>)
+/\ log = (n1 :> <<0>> @@ n2 :> <<0, 1>> @@ n3 :> <<1, 2>>)
+/\ log = (n1 :> <<0>> @@ n2 :> <<2>> @@ n3 :> <<0, 2>>)
+/\ log = (n1 :> <<1, 2>> @@ n2 :> <<0, 0>> @@ n3 :> <<0, 1>>)
+/\ log = (n1 :> <<1>> @@ n2 :> << >> @@ n3 :> <<0, 1>>)
+/\ log = (n1 :> <<2>> @@ n2 :> <<1, 2>> @@ n3 :> <<1>>)
+/\ log = (n1 :> <<2>> @@ n2 :> <<2>> @@ n3 :> <<1, 2>>)
+```
+
+Examples of states that satisfy `LogMatching /\ TermsOfEntriesGrowMonotonically /\ UniformLogEntriesInTerm`:
+```
+
+```tla
+/\ log = (n1 :> <<0, 1, 1>> @@ n2 :> <<0, 1, 1>> @@ n3 :> <<0, 0>>)
+/\ log = (n1 :> << >> @@ n2 :> <<1, 2>> @@ n3 :> <<1>>)
+/\ log = (n1 :> <<2, 2, 2>> @@ n2 :> <<0, 1, 1>> @@ n3 :> <<2, 2, 2>>)
+/\ log = (n1 :> <<0>> @@ n2 :> <<0, 1, 1>> @@ n3 :> <<2>>)
+/\ log = (n1 :> <<0, 2, 2>> @@ n2 :> <<1, 1>> @@ n3 :> <<0>>)
+/\ log = (n1 :> <<1>> @@ n2 :> <<2, 2>> @@ n3 :> <<1, 1>>)
+/\ log = (n1 :> << >> @@ n2 :> <<2, 2>> @@ n3 :> <<0, 0>>)
+/\ log = (n1 :> << >> @@ n2 :> <<2>> @@ n3 :> <<2, 2>>)
+/\ log = (n1 :> <<1>> @@ n2 :> <<1>> @@ n3 :> <<2, 2>>)
+```
