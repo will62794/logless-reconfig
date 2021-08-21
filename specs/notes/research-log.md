@@ -209,3 +209,7 @@ appears to be valid using TLC to check inductiveness even with four nodes. Will 
 ## 2021-08-19
 
 Idea: Once you've developed an inductive invariant, use the model checker to help you do a manual proof by automatically checking *which* conjuncts of the inductive invariant a particular conjunct depends on. Theoretically helps you to know exactly which facts are needed to prove a particular conjunct.
+
+## 2021-08-21
+
+Can add `ConfigsNonEmpty` conjunct to latest version of `IndAlt` inductive invariant and it doesn't break things. So, it seems it's possible to take it or leave it. May consider including it since configs being non empty seems like a basic invariant we should establish.
