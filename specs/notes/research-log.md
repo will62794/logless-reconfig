@@ -272,3 +272,7 @@ Examples of states that satisfy `LogMatching /\ TermsOfEntriesGrowMonotonically 
 /\ log = (n1 :> << >> @@ n2 :> <<2>> @@ n3 :> <<2, 2>>)
 /\ log = (n1 :> <<1>> @@ n2 :> <<1>> @@ n3 :> <<2, 2>>)
 ```
+
+## 2021-08-23
+
+`OnePrimaryPerTerm` doesn't appear to depend directly on `ActiveConfigsOverlap`. That is, if all other conjuncts of the `OnePrimaryPerTerm` inductive invariant hold, there doesn't appear to be any 1-step counterexamples to induction that violate `OnePrimaryPerTerm`. Would need to check this more thoroughly, but this would align with what appeared in the manual proof i.e. proof of `OnePrimaryPerTerm` didn't utilize `ActiveConfigsOverlap` lemma.
