@@ -272,3 +272,16 @@ Examples of states that satisfy `LogMatching /\ TermsOfEntriesGrowMonotonically 
 /\ log = (n1 :> << >> @@ n2 :> <<2>> @@ n3 :> <<2, 2>>)
 /\ log = (n1 :> <<1>> @@ n2 :> <<1>> @@ n3 :> <<2, 2>>)
 ```
+
+
+## 2021-08-23
+
+After working on the pen and paper proof I was wondering why it seemed like `ActiveconfigsOverlap` wasn't being used in the proof where I expected. Turns out that it seems we can remove it from the inductive invariant and it's still valid! That is, we can cut it down to the following:
+```tla
+/\ OnePrimaryPerTerm
+/\ PrimaryConfigTermEqualToCurrentTerm
+/\ ConfigVersionAndTermUnique
+/\ PrimaryInTermContainsNewestConfigOfTerm
+/\ ActiveConfigsSafeAtTerms
+```
+Not sure how I didn't realize this initially, but I guess I never tried removing this exact conjunct when I was originally thinking about building this inductive invariant.
