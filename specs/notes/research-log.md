@@ -273,6 +273,11 @@ Examples of states that satisfy `LogMatching /\ TermsOfEntriesGrowMonotonically 
 /\ log = (n1 :> <<1>> @@ n2 :> <<1>> @@ n3 :> <<2, 2>>)
 ```
 
-## 2021-08-23
+## 2021-08-22
 
 `OnePrimaryPerTerm` doesn't appear to depend directly on `ActiveConfigsOverlap`. That is, if all other conjuncts of the `OnePrimaryPerTerm` inductive invariant hold, there doesn't appear to be any 1-step counterexamples to induction that violate `OnePrimaryPerTerm`. Would need to check this more thoroughly, but this would align with what appeared in the manual proof i.e. proof of `OnePrimaryPerTerm` didn't utilize `ActiveConfigsOverlap` lemma.
+
+## 2021-08-23
+
+Updating the main spec to use the `ConfigCommittedAlt` definition for `Reconfig` precondition, which is how it is being explained in the paper. Also modifying `MongoStaticRaft` spec to include "prefix committed" entries in the commited set when we commit an entry via a `CommitEntry` action. Note that the prefix commitment change may affect the inductive invariant that was developed. It may need to be modified slightly.
+
