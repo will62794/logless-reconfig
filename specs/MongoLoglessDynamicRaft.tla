@@ -141,7 +141,8 @@ BecomeLeader(i, voteQuorum) ==
 \* A reconfig occurs on node i. The node must currently be a leader.
 Reconfig(i, newConfig) ==
     /\ state[i] = Primary
-    /\ ConfigIsCommitted(i)
+    \* /\ ConfigIsCommitted(i)
+    /\ ConfigIsCommittedAlt(i)
     /\ QuorumsOverlap(config[i], newConfig)
     /\ i \in newConfig
     /\ configTerm' = [configTerm EXCEPT ![i] = currentTerm[i]]
