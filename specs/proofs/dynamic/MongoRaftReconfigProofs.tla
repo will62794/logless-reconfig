@@ -698,12 +698,12 @@ IndAlt ==
     /\ ActiveConfigsOverlap
     /\ ActiveConfigsSafeAtTerms
 
-    \*
-    \* Establishing log matching.
-    \*
-    /\ LogMatching
-    /\ PrimaryHasEntriesItCreated
+    \* Helper log invariant 1.
     /\ LogEntryInTermImpliesConfigInTerm
+    \* Helper log invariant 2.
+    /\ PrimaryHasEntriesItCreated
+    \* Establish log matching, which relies on helper log invariants above.
+    /\ LogMatching
 
     \*
     \* Additional local log invariants.
@@ -737,8 +737,7 @@ IInitAlt ==
     /\ TypeOKRandom
     /\ IndAlt
 
-INextAlt == 
-    /\ NextVerbose
+INextAlt == NextVerbose
 
 \* Must check that the initial states satisfy the inductive invariant.
 Initiation == (Init => Ind)
