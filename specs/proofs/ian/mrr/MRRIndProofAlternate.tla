@@ -511,58 +511,6 @@ PROVE /\ ~CSM!IsNewerConfig(s, s)
       /\ ~CSM!NewerConfig(CV(s), CV(s))
 BY DEF CSM!IsNewerConfig, CV, CSM!NewerConfig, TypeOK
 
-(*
-\* take this as an axiom
-\* maybe if it went in the II we could prove it
-LEMMA ServersInNewestConfigNotEmpty ==
-ASSUME TypeOK, Ind
-PROVE ServersInNewestConfig # {}
-
-LEMMA ServersInNewestConfigDef ==
-ASSUME TypeOK
-PROVE \A s \in ServersInNewestConfig : \A t \in Server : CSM!IsNewerOrEqualConfig(s, t)
-PROOF BY NewerOrEqualConfigEquivalence DEF ServersInNewestConfig, NewestConfig, CSM!NewerOrEqualConfig
-
-COROLLARY ServersInNewestConfigHaveLatestConfigTerm ==
-ASSUME TypeOK
-PROVE \A s \in ServersInNewestConfig : \A t \in Server : configTerm[s] >= configTerm[t]
-PROOF
-    <1>. TAKE s \in ServersInNewestConfig
-    <1>. TAKE t \in Server
-    <1>1. CSM!IsNewerOrEqualConfig(s, t) BY ServersInNewestConfigDef
-    <1>2. configTerm[s] = configTerm[t] \/ configTerm[s] > configTerm[t] BY <1>1 DEF CSM!IsNewerOrEqualConfig, CSM!IsNewerConfig, TypeOK
-    <1>3. s \in Server BY DEF ServersInNewestConfig
-    <1>. QED BY <1>2, <1>3 DEF TypeOK
-
-LEMMA ConfigTermsFollowCurrentTerm ==
-ASSUME TypeOK, Ind,
-       NEW p \in Server,
-       \A s \in Server : currentTerm[p] >= currentTerm[s]
-PROVE \A s \in Server : currentTerm[p] >= configTerm[s]
-PROOF
-    <1>1. \E s \in ServersInNewestConfig :
-                    \E n \in config[s] :
-                        /\ currentTerm[n] = configTerm[s]
-                        /\ configTerm[n] = configTerm[s]
-        BY ServersInNewestConfigNotEmpty DEF Ind, NewestConfigHasSomeNodeInConfig, CV
-    <1>. QED BY <1>1, ServersInNewestConfigHaveLatestConfigTerm DEF ServersInNewestConfig, TypeOK*)
-
-(*LEMMA BecomeLeaderQuorumsInLargestTerm ==
-ASSUME TypeOK, Ind,
-       NEW p \in Server,
-       NEW Q \in QuorumsAt(p),
-       OSM!BecomeLeader(p, Q),
-       CSM!BecomeLeader(p, Q)
-PROVE \A s \in Q : \A t \in Server : t \notin Q => currentTerm'[s] > currentTerm'[t]
-PROOF
-    <1>. TAKE s \in Q
-    <1>. TAKE t \in Server
-    <1>. SUFFICES ASSUME t \notin Q
-         PROVE currentTerm'[s] > currentTerm'[t] OBVIOUS
-    <1>1. currentTerm[p] >= currentTerm[t] BY ElectedLeadersHaveLatestTerm
-    <1>2. currentTerm'[p] > currentTerm[t] BY <1>1 DEF OSM!BecomeLeader, TypeOK
-    <1>. QED BY <1>2 DEF OSM!BecomeLeader, TypeOK, QuorumsAt, Quorums*)
-
 LEMMA ReconfigImpliesConfigTermUnchanged ==
 ASSUME TypeOK, Ind,
        NEW s \in Server,
@@ -733,24 +681,6 @@ PROVE \A n \in ActiveConfigSet' : n \in ActiveConfigSet
             <6>. QED BY <4>2, <6>2 DEF CSM!Reconfig, CSM!NewerConfig, CV
         <5>. QED BY <5>1, <5>2 DEF ActiveConfigSet, ConfigDisabled
     <4>. QED OBVIOUS
-
-(*
-LEMMA ReconfigImpliesActiveConfigSetHaveSmallerOrEqualConfigTerm ==
-ASSUME TypeOK, Ind,
-       NEW p \in Server,
-       NEW newConfig \in SUBSET Server,
-       CSM!Reconfig(p, newConfig)
-PROVE \A n \in ActiveConfigSet : configTerm[p] >= configTerm[n]
-PROOF
-    <1>1. PICK Q \in Quorums(config[p]) : \A t \in Q : CVT(t) = CVT(p)
-        BY QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigIsCommitted, CSM!QuorumsAt, CVT
-    <1>2. TAKE n \in ActiveConfigSet
-    <1>3. n \in Server BY <1>2 DEF ActiveConfigSet, ConfigDisabled
-    <1>4. PICK q \in Q : currentTerm[q] >= configTerm[n]
-        BY <1>1, <1>2, <1>3, ReconfigImpliesInActiveConfigSet DEF Ind, ActiveConfigsSafeAtTerms
-    <1>5. configTerm[q] = currentTerm[q]
-        BY <1>1, <1>4 DEF CSM!Reconfig, CSM!ConfigIsCommitted, Quorums, CVT, TypeOK
-    <1>. QED BY <1>1, <1>3, <1>4, <1>5 DEF Quorums, CVT, TypeOK*)
 
 LEMMA NewerOrEqualConfigWithSameTermImpliesGreaterOrEqualVersion ==
 ASSUME TypeOK,
@@ -1205,20 +1135,6 @@ PROOF
             <3>1. PICK u \in Server, v \in Server : CSM!SendConfig(u, v) BY <2>2
             <3>2. \A n \in Server : n # v => config[n] = config'[n] BY <3>1 DEF CSM!SendConfig, TypeOK
             <3>3. \A n \in ActiveConfigSet' : n # v => n \in ActiveConfigSet BY <3>1, SendConfigActiveConfigSetIdenticalExceptRecipient
-                \* this took so much longer than it needed to...
-                (*<4>1. TAKE n \in ActiveConfigSet'
-                <4>2. SUFFICES ASSUME n # v
-                      PROVE n \in ActiveConfigSet BY <4>1
-                <4>3. PICK Q \in Quorums(config[n])' : \A q \in Q : ~CSM!NewerConfig(CV(q), CV(n))' BY <4>1 DEF ActiveConfigSet, ConfigDisabled
-                <4>4. n \in Server /\ Q \in SUBSET Server BY <4>1, <4>3, TypeOKAndNext DEF ActiveConfigSet, ConfigDisabled, Quorums, TypeOK
-                <4>5. \A q \in Q : CSM!NewerOrEqualConfig(CV(n), CV(q))' BY <4>3, <4>4, NewerIsNotSymmetricAndNext
-                <4>6. \A q \in Q : CSM!NewerOrEqualConfig(CV(q)', CV(q)) BY <3>1, <4>4, SendConfigImpliesNewerOrEqualConfig
-                <4>7. \A q \in Q : CSM!NewerOrEqualConfig(CV(n)', CV(q)) BY <4>4, <4>5, <4>6, NewerOrEqualConfigTransitivityAndNext
-                <4>8. CV(n) = CV(n)' BY <3>1, <4>2 DEF CSM!SendConfig, CV, TypeOK
-                <4>9. \A q \in Q : CSM!NewerOrEqualConfig(CV(n), CV(q)) BY <4>7, <4>8
-                <4>10. \A q \in Q : ~CSM!NewerConfig(CV(q), CV(n)) BY <4>4, <4>9, NewerIsNotSymmetric
-                <4>11. Q \in Quorums(config[n]) BY <3>1, <4>2, <4>3, <4>4 DEF CSM!SendConfig, Quorums, TypeOK
-                <4>. QED BY <4>10, <4>11 DEF ActiveConfigSet, ConfigDisabled*)
             <3>4. \A s,t \in ActiveConfigSet' : (s # v /\ t # v) => QuorumsOverlap(config[s], config[t])'
                 <4>1. \A s,t \in ActiveConfigSet' : (s # v /\ t # v) => QuorumsOverlap(config[s], config[t]) BY <3>3 DEF Ind, ActiveConfigsOverlap
                 <4>. QED BY <3>2, <4>1 DEF ActiveConfigSet, ConfigDisabled
@@ -1246,22 +1162,6 @@ PROOF
             <3>1. \A s \in Server : Quorums(config'[s]) = Quorums(config[s]) BY <2>1 DEF CSM!BecomeLeader, Quorums
             <3>2. \A s,t \in Server : QuorumsOverlap(config[s],config[t]) <=> QuorumsOverlap(config[s],config[t])' BY <3>1 DEF QuorumsOverlap
             <3>3. \A s \in ActiveConfigSet' : s \in ActiveConfigSet BY <2>1, BecomeLeaderActiveConfigSetIdentical
-                (*<4>1. PICK p \in Server : \E Q \in Quorums(config[p]) : CSM!BecomeLeader(p, Q) BY <2>1
-                <4>2. TAKE s \in ActiveConfigSet'
-                <4>. CASE s # p
-                    <5>2. PICK Q \in Quorums(config[s])' : \A q \in Q : ~CSM!NewerConfig(CV(q), CV(s))' BY <4>2 DEF ActiveConfigSet, ConfigDisabled
-                    <5>3. Q \in Quorums(config[s])' /\ \A q \in Q : ~CSM!NewerConfig(CV(q), CV(s))' BY <5>2
-                    <5>4. s \in Server /\ Q \in SUBSET Server BY <4>2, <5>2, TypeOKAndNext DEF ActiveConfigSet, ConfigDisabled, Quorums, TypeOK
-                    <5>5. \A q \in Q : CSM!NewerOrEqualConfig(CV(s), CV(q))' BY <5>3, <5>4, NewerIsNotSymmetricAndNext
-                    <5>6. \A q \in Q : CSM!NewerOrEqualConfig(CV(q)', CV(q)) BY <3>1, <5>4, ConfigsIncreaseMonotonically
-                    <5>7. \A q \in Q : CSM!NewerOrEqualConfig(CV(s)', CV(q)) BY <5>4, <5>5, <5>6, NewerOrEqualConfigTransitivityAndNext
-                    <5>8. CV(s) = CV(s)' BY <3>1, <4>1 DEF CSM!BecomeLeader, CV, TypeOK
-                    <5>9. \A q \in Q : CSM!NewerOrEqualConfig(CV(s), CV(q)) BY <5>7, <5>8
-                    <5>10. \A q \in Q : ~CSM!NewerConfig(CV(q), CV(s)) BY <5>4, <5>9, NewerIsNotSymmetric
-                    <5>11. Q \in Quorums(config[s]) BY <3>1, <5>2, <5>3, <5>4 DEF CSM!SendConfig, Quorums, TypeOK
-                    <5>. QED BY <5>10, <5>11 DEF ActiveConfigSet, ConfigDisabled
-                <4>. CASE s = p BY <4>1, ElectedLeadersInActiveConfigSet
-                <4>. QED OBVIOUS*)
             <3>. QED BY <3>2, <3>3 DEF Ind, ActiveConfigsOverlap, ActiveConfigSet, ConfigDisabled, Quorums, TypeOK
         <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
             BY <2>2 DEF CSM!UpdateTerms, Ind, ActiveConfigsOverlap,
