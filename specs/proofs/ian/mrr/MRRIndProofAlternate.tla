@@ -71,7 +71,8 @@ NewerConfigDisablesTermsOfOlderNonDisabledConfigs ==
 \*
 
 EqualUpTo(log1, log2, i) ==
-    \A j \in 1..i : log1[j] = log2[j]
+    \*\A j \in 1..i : log1[j] = log2[j]
+    \A j \in Nat : (j > 0 /\ j <= i) => log1[j] = log2[j]
 
 \* This is a core property of Raft, but MongoStaticRaft does not satisfy this
 LogMatching ==
@@ -948,6 +949,7 @@ PROOF
 \* alt: began 8/16
 \* alt: completed 8/16
 \* approx: 1-2 hr
+\* updated to more concise version later, 5 min
 LEMMA ConfigVersionAndTermUniqueAndNext_BecomeLeader ==
 ASSUME TypeOK, Ind, Next,
        NEW s \in Server,
@@ -958,19 +960,8 @@ ASSUME TypeOK, Ind, Next,
        <<configVersion'[s],configTerm'[s]>> = <<configVersion'[t],configTerm'[t]>>
 PROVE config'[s] = config'[t]
 PROOF
-    <1>1. SUFFICES ASSUME t # s
-          PROVE FALSE BY TypeOKAndNext DEF TypeOK
-    <1>2. currentTerm[s] + 1 = configTerm'[s] BY DEF CSM!BecomeLeader, TypeOK
-    <1>3. CASE t \notin Q
-        \* proof by contradiction
-        <2>1. configTerm[t] = configTerm'[t] BY <1>3 DEF CSM!BecomeLeader, TypeOK
-        <2>2. \E n \in Q : currentTerm[n] >= configTerm[t] BY ElectedLeadersInActiveConfigSet DEF Ind, ActiveConfigsSafeAtTerms
-        <2>3. \E n \in Q : currentTerm[n] > currentTerm[s] BY <1>2, <2>1, <2>2 DEF Quorums, TypeOK
-        <2>. QED BY <2>3 DEF CSM!BecomeLeader, CSM!CanVoteForConfig, Quorums, TypeOK
-    <1>4. CASE t \in Q
-        <2>1. currentTerm[s] >= configTerm[t] BY ElectedLeadersCurrentTermGreaterThanConfigTerms
-        <2>. QED BY <1>1, <2>1 DEF CSM!BecomeLeader, TypeOK
-    <1>. QED BY <1>3, <1>4
+    <1>1. \A n \in Server : currentTerm[s] >= configTerm[n] BY ElectedLeadersCurrentTermGreaterThanConfigTerms
+    <1>. QED BY <1>1, TypeOKAndNext DEF CSM!BecomeLeader, TypeOK
 
 \* approx 1 day
 \* completed 6/29
@@ -1171,6 +1162,8 @@ PROOF
 
 \* began: 8/24
 \* finished: 8/24
+\* 1 long day (6 hrs?).  Having the lemmas generated from ActiveConfigsOverlapAndNext
+\* for CSM!Reconfig and CSM!SendConfig really helped speed up this proof.
 LEMMA ActiveConfigsSafeAtTermsAndNext ==
 ASSUME TypeOK, Ind, Next
 PROVE ActiveConfigsSafeAtTerms'
@@ -1289,10 +1282,15 @@ PROOF
                 <4>1. currentTerm'[n] = currentTerm[n] BY <3>p, <3>q, <3>n, <3>9 DEF CSM!BecomeLeader, TypeOK
                 <4>2. CASE s # p BY <3>p, <3>7, <4>1, <4>2 DEF CSM!BecomeLeader, TypeOK
                 <4>3. CASE s = p
+                    \* this case is very interesting because we rely on the currentTerm update \A q \in pQ, in particular
+                    \* \A q \in pQ : q # p, I wouldn't expect the update on currentTerm to be atomic but it is in this
+                    \* protocol.  see <5>4.
                     <5>1. s \in ActiveConfigSet BY <3>p, <4>3, ElectedLeadersInActiveConfigSet
                     <5>2. QuorumsOverlap(config[t], config[s]) BY <3>4, <5>1 DEF Ind, ActiveConfigsOverlap
                     <5>3. PICK q \in pQ : q \in Q BY <3>6, <3>p, <3>q, <4>3, <5>2 DEF QuorumsOverlap
-                    <5>4. currentTerm'[q] >= currentTerm'[s] BY <3>p, <3>q, <4>3, <5>3, TypeOKAndNext DEF CSM!BecomeLeader, Quorums, TypeOK
+                    <5>4. currentTerm'[q] >= currentTerm'[s] \* their currentTerm's are equal because the update on q's
+                                                             \* currentTerm is atomic (as well as p's)
+                        BY <3>p, <3>q, <4>3, <5>3, TypeOKAndNext DEF CSM!BecomeLeader, Quorums, TypeOK
                     <5>5. currentTerm'[s] = configTerm'[s] BY <3>p, <4>3 DEF CSM!BecomeLeader, TypeOK
                     <5>6. q \in Server BY <3>4, <3>6, <5>3 DEF ActiveConfigSet, ConfigDisabled, Quorums, TypeOK
                     <5>. QED BY <5>3, <5>4, <5>5, <5>6, TypeOKAndNext DEF TypeOK
@@ -1314,6 +1312,114 @@ PROOF
                 <4>1. n \in Server BY <3>5, <3>7, <3>8 DEF Quorums, TypeOK
                 <4>. QED BY <2>2, <4>1, TypeOKAndNext DEF CSM!UpdateTerms, CSM!UpdateTermsExpr, TypeOK
             <3>. QED BY <2>2, <3>5, <3>9, <3>8, <3>9, TypeOKAndNext DEF CSM!UpdateTerms, Quorums, TypeOK
+        <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
+    <1>. QED BY <1>1, <1>2, <1>3 DEF Next
+
+LEMMA LogMatchingAndNext_ClientRequest ==
+ASSUME TypeOK, Ind, Next,
+       NEW s \in Server,
+       NEW t \in Server,
+       OSM!ClientRequest(s),
+       s # t,
+       NEW i \in (DOMAIN log[s] \cap DOMAIN log[t])',
+       log'[s][i] = log'[t][i]
+PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
+PROOF
+    <4>. SUFFICES ASSUME i > 1
+          PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
+          BY TypeOKAndNext DEF OSM!ClientRequest, TypeOK
+    <4>1. log[s][i-1] = log'[s][i-1] BY DEF OSM!ClientRequest, TypeOK
+    <4>2. log[t][i] = log'[t][i] BY DEF OSM!ClientRequest, TypeOK
+    <4>3. CASE log[s][i-1] = log[t][i-1]
+        BY <4>3 DEF Ind, LogMatching, EqualUpTo, OSM!ClientRequest, TypeOK
+    <4>4. CASE log[s][i-1] # log[t][i-1]
+        \* proof by contradiction, we will see that s is a primary without the log entries it created
+        <5>1. Len(log[s]) = i-1
+            <6>1. SUFFICES ASSUME Len(log[s]) # i-1
+                  PROVE FALSE OBVIOUS
+            <6>2. i-1 \in DOMAIN log[s] BY <4>4 DEF OSM!ClientRequest, TypeOK
+            <6>3. Len(log[s]) > i-1 BY <4>4, <6>1, <6>2 DEF TypeOK
+            <6>4. log[s][i] = log'[s][i] BY <6>3 DEF OSM!ClientRequest, TypeOK
+            <6>5. log[s][i] = log[t][i] BY <4>2, <6>4 DEF TypeOK
+            <6>6. log[s][i-1] = log[t][i-1]
+                <7>1. i \in (DOMAIN log[s] \cap DOMAIN log[t]) BY <6>3 DEF OSM!ClientRequest, TypeOK
+                <7>2. i-1 > 0 /\ i-1 <= i BY <6>3, TypeOKAndNext DEF OSM!ClientRequest, TypeOK
+                <7>. QED BY <6>5, <7>1, <7>2 DEF Ind, LogMatching, EqualUpTo, TypeOK
+            <6>. QED BY <4>4, <6>6 DEF TypeOK
+        <5>2. log'[s][i] = currentTerm[s] BY <5>1 DEF OSM!ClientRequest
+        <5>3. log[t][i] = currentTerm[s] BY <5>2 DEF OSM!ClientRequest
+        <5>. QED BY <5>1, <5>3 DEF Ind, PrimaryHasEntriesItCreated, InLog, OSM!ClientRequest
+    <4>. QED BY <4>3, <4>4
+
+\* began: 8/26 (kinda on 8/24 at like 11pm but not really)
+LEMMA LogMatchingAndNext ==
+ASSUME TypeOK, Ind, Next
+PROVE LogMatching'
+PROOF
+    <1>1. CASE OSMNext /\ UNCHANGED csmVars
+        <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
+            <3>1. SUFFICES ASSUME NEW s \in Server, NEW t \in Server,
+                                  NEW i \in (DOMAIN log[s] \cap DOMAIN log[t])',
+                                  log'[s][i] = log'[t][i]
+                  PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
+                  BY DEF LogMatching, EqualUpTo
+            <3>2. SUFFICES ASSUME i > 1
+                  PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
+                  BY <3>1, TypeOKAndNext DEF OSM!ClientRequest, TypeOK
+            <3>3. CASE s = t BY <3>1, <3>2, <3>3 DEF OSM!ClientRequest, TypeOK
+            <3>4. CASE OSM!ClientRequest(s) /\ s # t BY <3>1, <3>2, <3>4, LogMatchingAndNext_ClientRequest
+            <3>5. CASE OSM!ClientRequest(t) /\ s # t BY <3>1, <3>2, <3>5, LogMatchingAndNext_ClientRequest
+            <3>6. CASE ~OSM!ClientRequest(s) /\ ~OSM!ClientRequest(t) /\ s # t
+                \*<4>1. log[s][i] = log'[s][i] /\ log[t][i] = log'[t][i]
+                \*    BY <2>1, <3>1, <3>6 DEF OSM!ClientRequest, TypeOK
+                <4>1. log[s][i] = log[t][i] BY <2>1, <3>1, <3>6 DEF OSM!ClientRequest, TypeOK
+                <4>2. i \in (DOMAIN log[s] \cap DOMAIN log[t]) BY <2>1, <3>1, <3>6 DEF OSM!ClientRequest, TypeOK
+                <4>3. \A j \in Nat : (j > 0 /\ j <= i) => log[s][j] = log[t][j] BY <3>1, <4>1, <4>2 DEF Ind, LogMatching, EqualUpTo
+                <4>. QED BY <2>1, <3>1, <3>6, <4>3 DEF OSM!ClientRequest, TypeOK
+            <3>. QED BY <3>3, <3>4, <3>5, <3>6
+            
+            (*<3>1. SUFFICES ASSUME NEW s \in Server, NEW t \in Server,
+                                  NEW i \in (DOMAIN log[s] \cap DOMAIN log[t])',
+                                  log'[s][i] = log'[t][i]
+                  PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
+                  BY DEF LogMatching, EqualUpTo
+            <3>2. SUFFICES ASSUME i > 1
+                  PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
+                  BY <3>1, TypeOKAndNext DEF OSM!ClientRequest, TypeOK
+            <3>3. CASE OSM!ClientRequest(s) /\ s # t
+                <4>1. log[s][i-1] = log'[s][i-1] BY <3>1, <3>2, <3>3 DEF OSM!ClientRequest, TypeOK
+                <4>2. log[t][i] = log'[t][i] BY <3>1, <3>3 DEF OSM!ClientRequest, TypeOK
+                <4>3. CASE log[s][i-1] = log[t][i-1]
+                    BY <3>1, <3>2, <3>3, <4>3 DEF Ind, LogMatching, EqualUpTo, OSM!ClientRequest, TypeOK
+                <4>4. CASE log[s][i-1] # log[t][i-1]
+                    \* proof by contradiction, we will see that s is a primary without the log entries it created
+                    <5>1. Len(log[s]) = i-1
+                        <6>1. SUFFICES ASSUME Len(log[s]) # i-1
+                              PROVE FALSE OBVIOUS
+                        <6>2. i-1 \in DOMAIN log[s] BY <3>1, <3>2, <3>3, <4>4 DEF OSM!ClientRequest, TypeOK
+                        <6>3. Len(log[s]) > i-1 BY <3>1, <4>4, <6>1, <6>2 DEF TypeOK
+                        <6>4. log[s][i] = log'[s][i] BY <3>1, <3>2, <3>3, <6>3 DEF OSM!ClientRequest, TypeOK
+                        <6>5. log[s][i] = log[t][i] BY <3>1, <4>2, <6>4 DEF TypeOK
+                        <6>6. log[s][i-1] = log[t][i-1]
+                            <7>1. i \in (DOMAIN log[s] \cap DOMAIN log[t]) BY <3>1, <3>2, <3>3, <6>3 DEF OSM!ClientRequest, TypeOK
+                            <7>2. i-1 > 0 /\ i-1 <= i BY <3>1, <3>2, <6>3, TypeOKAndNext DEF OSM!ClientRequest, TypeOK
+                            <7>. QED BY <3>1, <6>5, <7>1, <7>2 DEF Ind, LogMatching, EqualUpTo, TypeOK
+                        <6>. QED BY <4>4, <6>6 DEF TypeOK
+                    <5>2. log'[s][i] = currentTerm[s] BY <3>3, <5>1 DEF OSM!ClientRequest
+                    <5>3. log[t][i] = currentTerm[s] BY <3>1, <3>3, <5>2 DEF OSM!ClientRequest
+                    <5>. QED BY <3>1, <3>3, <5>1, <5>3 DEF Ind, PrimaryHasEntriesItCreated, InLog, OSM!ClientRequest
+                <4>. QED BY <4>3, <4>4*)
+        <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
+        <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
+        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+        <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
+    <1>2. CASE CSMNext /\ UNCHANGED osmVars
+        <2>1. CASE \E s \in Server, newConfig \in SUBSET Server : OplogCommitment(s) /\ CSM!Reconfig(s, newConfig)
+        <2>2. CASE \E s,t \in Server : CSM!SendConfig(s, t)
+        <2>. QED BY <1>2, <2>1, <2>2 DEF CSMNext
+    <1>3. CASE JointNext
+        <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
+        <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
@@ -1347,7 +1453,7 @@ PROOF
     <1>4. PrimaryInTermContainsNewestConfigOfTerm' BY PrimaryInTermContainsNewestConfigOfTermAndNext
     <1>5. ActiveConfigsOverlap' BY ActiveConfigsOverlapAndNext
     <1>6. ActiveConfigsSafeAtTerms' BY ActiveConfigsSafeAtTermsAndNext
-    <1>7. LogMatching'
+    <1>7. LogMatching' BY LogMatchingAndNext
     <1>8. TermsOfEntriesGrowMonotonically'
     <1>9. PrimaryHasEntriesItCreated'
     <1>10. CurrentTermAtLeastAsLargeAsLogTermsForPrimary'
