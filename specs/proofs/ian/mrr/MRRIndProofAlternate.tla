@@ -795,6 +795,12 @@ PROOF
     <4>. CASE s = p BY ElectedLeadersInActiveConfigSet
     <4>. QED OBVIOUS
 
+LEMMA EmptyIdentical ==
+ASSUME TypeOK,
+       NEW s \in Server
+       \*NEW lg \in [Server -> Seq(Nat)]
+PROVE Empty(log[s]) <=> OSM!Empty(log[s])
+BY DEF OSM!Empty, Empty, TypeOK
 
 --------------------------------------------------------------------------------
 
@@ -1315,6 +1321,7 @@ PROOF
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
+\* 2-4 hours
 LEMMA LogMatchingAndNext_ClientRequest ==
 ASSUME TypeOK, Ind, Next,
        NEW s \in Server,
@@ -1326,8 +1333,8 @@ ASSUME TypeOK, Ind, Next,
 PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
 PROOF
     <4>. SUFFICES ASSUME i > 1
-          PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
-          BY TypeOKAndNext DEF OSM!ClientRequest, TypeOK
+         PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
+         BY TypeOKAndNext DEF OSM!ClientRequest, TypeOK
     <4>1. log[s][i-1] = log'[s][i-1] BY DEF OSM!ClientRequest, TypeOK
     <4>2. log[t][i] = log'[t][i] BY DEF OSM!ClientRequest, TypeOK
     <4>3. CASE log[s][i-1] = log[t][i-1]
@@ -1351,7 +1358,52 @@ PROOF
         <5>. QED BY <5>1, <5>3 DEF Ind, PrimaryHasEntriesItCreated, InLog, OSM!ClientRequest
     <4>. QED BY <4>3, <4>4
 
+LEMMA LogMatchingAndNext_GetEntries ==
+ASSUME TypeOK, Ind, Next,
+       NEW s \in Server,
+       NEW t \in Server,
+       OSM!GetEntries(s, t),
+       NEW i \in (DOMAIN log[s] \cap DOMAIN log[t])',
+       log'[s][i] = log'[t][i]
+PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
+PROOF
+    <1>1. TAKE j \in Nat
+    <1>2. CASE j = i BY <1>2
+    <1>3. CASE j < i
+        <2>1. SUFFICES ASSUME ~Empty(log[s])
+              PROVE (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
+              BY DEF OSM!GetEntries, Empty, TypeOK
+        <2>.  DEFINE sLastIdx == Len(log[s])
+        <2>3. log[s][sLastIdx] = log[t][sLastIdx] BY <2>1, EmptyIdentical DEF OSM!GetEntries
+        <2>4. j <= sLastIdx BY <1>3, <2>1 DEF OSM!GetEntries, Empty, TypeOK
+        <2>. QED BY <1>1, <2>3, <2>4 DEF Ind, LogMatching, EqualUpTo, OSM!GetEntries, TypeOK
+    <1>. QED BY <1>1, <1>2, <1>3 DEF OSM!GetEntries, TypeOK
+
+LEMMA LogMatchingAndNext_GetEntriesOneOutside ==
+ASSUME TypeOK, Ind, Next,
+       NEW s \in Server,
+       NEW t \in Server,
+       NEW u \in Server,
+       NEW v \in Server,
+       OSM!GetEntries(u, v),
+       s # u, s # v,
+       NEW i \in (DOMAIN log[s] \cap DOMAIN log[t])',
+       log'[s][i] = log'[t][i]
+PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
+PROOF
+    <1>1. TAKE j \in Nat
+    <1>2. CASE j = i BY <1>2
+    <1>3. CASE j < i
+        <2>1. SUFFICES ASSUME ~Empty(log[s])
+              PROVE (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
+              BY DEF OSM!GetEntries, Empty, TypeOK
+        <2>2. CASE t = u BY <1>1, <1>3, <2>1, <2>2 DEF Ind, LogMatching, EqualUpTo, OSM!GetEntries, Empty, OSM!Empty, TypeOK
+        <2>3. CASE t # u BY <1>1, <1>3, <2>1, <2>3 DEF Ind, LogMatching, EqualUpTo, OSM!GetEntries, TypeOK
+        <2>. QED BY <2>2, <2>3
+    <1>. QED BY <1>1, <1>2, <1>3 DEF OSM!GetEntries, TypeOK
+
 \* began: 8/26 (kinda on 8/24 at like 11pm but not really)
+\* finished: 8/26
 LEMMA LogMatchingAndNext ==
 ASSUME TypeOK, Ind, Next
 PROVE LogMatching'
@@ -1370,56 +1422,40 @@ PROOF
             <3>4. CASE OSM!ClientRequest(s) /\ s # t BY <3>1, <3>2, <3>4, LogMatchingAndNext_ClientRequest
             <3>5. CASE OSM!ClientRequest(t) /\ s # t BY <3>1, <3>2, <3>5, LogMatchingAndNext_ClientRequest
             <3>6. CASE ~OSM!ClientRequest(s) /\ ~OSM!ClientRequest(t) /\ s # t
-                \*<4>1. log[s][i] = log'[s][i] /\ log[t][i] = log'[t][i]
-                \*    BY <2>1, <3>1, <3>6 DEF OSM!ClientRequest, TypeOK
                 <4>1. log[s][i] = log[t][i] BY <2>1, <3>1, <3>6 DEF OSM!ClientRequest, TypeOK
                 <4>2. i \in (DOMAIN log[s] \cap DOMAIN log[t]) BY <2>1, <3>1, <3>6 DEF OSM!ClientRequest, TypeOK
                 <4>3. \A j \in Nat : (j > 0 /\ j <= i) => log[s][j] = log[t][j] BY <3>1, <4>1, <4>2 DEF Ind, LogMatching, EqualUpTo
                 <4>. QED BY <2>1, <3>1, <3>6, <4>3 DEF OSM!ClientRequest, TypeOK
             <3>. QED BY <3>3, <3>4, <3>5, <3>6
-            
-            (*<3>1. SUFFICES ASSUME NEW s \in Server, NEW t \in Server,
-                                  NEW i \in (DOMAIN log[s] \cap DOMAIN log[t])',
-                                  log'[s][i] = log'[t][i]
-                  PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
-                  BY DEF LogMatching, EqualUpTo
-            <3>2. SUFFICES ASSUME i > 1
-                  PROVE \A j \in Nat : (j > 0 /\ j <= i) => log'[s][j] = log'[t][j]
-                  BY <3>1, TypeOKAndNext DEF OSM!ClientRequest, TypeOK
-            <3>3. CASE OSM!ClientRequest(s) /\ s # t
-                <4>1. log[s][i-1] = log'[s][i-1] BY <3>1, <3>2, <3>3 DEF OSM!ClientRequest, TypeOK
-                <4>2. log[t][i] = log'[t][i] BY <3>1, <3>3 DEF OSM!ClientRequest, TypeOK
-                <4>3. CASE log[s][i-1] = log[t][i-1]
-                    BY <3>1, <3>2, <3>3, <4>3 DEF Ind, LogMatching, EqualUpTo, OSM!ClientRequest, TypeOK
-                <4>4. CASE log[s][i-1] # log[t][i-1]
-                    \* proof by contradiction, we will see that s is a primary without the log entries it created
-                    <5>1. Len(log[s]) = i-1
-                        <6>1. SUFFICES ASSUME Len(log[s]) # i-1
-                              PROVE FALSE OBVIOUS
-                        <6>2. i-1 \in DOMAIN log[s] BY <3>1, <3>2, <3>3, <4>4 DEF OSM!ClientRequest, TypeOK
-                        <6>3. Len(log[s]) > i-1 BY <3>1, <4>4, <6>1, <6>2 DEF TypeOK
-                        <6>4. log[s][i] = log'[s][i] BY <3>1, <3>2, <3>3, <6>3 DEF OSM!ClientRequest, TypeOK
-                        <6>5. log[s][i] = log[t][i] BY <3>1, <4>2, <6>4 DEF TypeOK
-                        <6>6. log[s][i-1] = log[t][i-1]
-                            <7>1. i \in (DOMAIN log[s] \cap DOMAIN log[t]) BY <3>1, <3>2, <3>3, <6>3 DEF OSM!ClientRequest, TypeOK
-                            <7>2. i-1 > 0 /\ i-1 <= i BY <3>1, <3>2, <6>3, TypeOKAndNext DEF OSM!ClientRequest, TypeOK
-                            <7>. QED BY <3>1, <6>5, <7>1, <7>2 DEF Ind, LogMatching, EqualUpTo, TypeOK
-                        <6>. QED BY <4>4, <6>6 DEF TypeOK
-                    <5>2. log'[s][i] = currentTerm[s] BY <3>3, <5>1 DEF OSM!ClientRequest
-                    <5>3. log[t][i] = currentTerm[s] BY <3>1, <3>3, <5>2 DEF OSM!ClientRequest
-                    <5>. QED BY <3>1, <3>3, <5>1, <5>3 DEF Ind, PrimaryHasEntriesItCreated, InLog, OSM!ClientRequest
-                <4>. QED BY <4>3, <4>4*)
         <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
+            BY <2>2, LogMatchingAndNext_GetEntries, LogMatchingAndNext_GetEntriesOneOutside DEF LogMatching, EqualUpTo
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
+            BY <2>3 DEF Ind, LogMatching, EqualUpTo, OSM!RollbackEntries, TypeOK
         <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+            \* no idea why TLAPS needs me to break this out
+            <3>1. UNCHANGED log BY <2>4 DEF OSM!CommitEntry, TypeOK
+            <3>. QED BY <3>1 DEF Ind, LogMatching, EqualUpTo
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
     <1>2. CASE CSMNext /\ UNCHANGED osmVars
-        <2>1. CASE \E s \in Server, newConfig \in SUBSET Server : OplogCommitment(s) /\ CSM!Reconfig(s, newConfig)
-        <2>2. CASE \E s,t \in Server : CSM!SendConfig(s, t)
-        <2>. QED BY <1>2, <2>1, <2>2 DEF CSMNext
+        BY <1>2 DEF osmVars, Ind, LogMatching, EqualUpTo
     <1>3. CASE JointNext
         <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
+            <3>1. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!BecomeLeader(p, Q) /\ CSM!BecomeLeader(p, Q) BY <2>1
+            <3>2. CASE UNCHANGED log BY <3>2 DEF Ind, LogMatching, EqualUpTo
+            <3>3. CASE log' = [log EXCEPT ![p] = Append(log[p], currentTerm[p]+1)]
+                <4>1. \A t \in Server : t # p => (\A i \in DOMAIN log[t] : LastTerm(log'[p]) > log'[t][i])
+                    <5>1. \A t \in Server : currentTerm[p] >= configTerm[t] BY <3>1, ElectedLeadersCurrentTermGreaterThanConfigTerms
+                    <5>2. \A t \in Server : \A i \in DOMAIN log[t] : currentTerm[p] >= log[t][i]
+                        BY <3>1, <5>1 DEF Ind, LogEntryInTermImpliesConfigInTerm, TypeOK
+                    <5>3. LastTerm(log'[p]) > currentTerm[p] BY <3>1, <3>3, <5>2, TypeOKAndNext DEF LastTerm, TypeOK
+                    <5>4. \A t \in Server : \A i \in DOMAIN log[t] : LastTerm(log'[p]) > log[t][i]
+                        BY <3>1, <5>2, <5>3, TypeOKAndNext DEF LastTerm, TypeOK
+                    <5>. QED BY <3>1, <5>4, TypeOKAndNext DEF OSM!BecomeLeader, LastTerm, TypeOK
+                <4>2. \A t \in Server : \A i \in DOMAIN log[t] : log'[t][i] = log[t][i] BY <3>1, <3>3 DEF OSM!BecomeLeader, TypeOK
+                <4>. QED BY <3>1, <4>1, <4>2, TypeOKAndNext DEF Ind, LogMatching, EqualUpTo, OSM!BecomeLeader, LastTerm, TypeOK
+            <3>. QED BY <3>1, <3>2, <3>3 DEF OSM!BecomeLeader, TypeOK
         <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
+            BY <2>2 DEF Ind, LogMatching, EqualUpTo, OSM!UpdateTerms, TypeOK
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
