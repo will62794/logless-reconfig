@@ -96,6 +96,15 @@ IsCommitted(index, primary) ==
             /\ log[s][k] = log[primary][k]    \* they have the entry.
             /\ currentTerm[s] = currentTerm[primary]  \* they are in the same term.
 
+\* OLDER VERSION OF DEFINITION.
+\* OplogCommitment(s) == 
+\*     \* The primary has at least committed one entry in its term if there are any
+\*     \* entries committed in earlier terms.
+\*     /\ committed = {} \/ \E c \in committed : IsCommitted(c.entry[1], s)
+\*     \* All entries committed in the primary's term have been committed in the
+\*     \* current config.
+\*     /\ \A c \in committed : (c.term = currentTerm[s]) => IsCommitted(c.entry[1], s)
+
 \*
 \* This is the precondition about committed oplog entries that must be satisfied
 \* on a primary server s in order for it to execute a reconfiguration.
@@ -108,11 +117,9 @@ IsCommitted(index, primary) ==
 \* committed by the rules of configuration C i.e. it is "immediately committed"
 \* in C. That is, present on some quorum of servers in C that are in term T. 
 OplogCommitment(s) == 
-    \* The primary has at least committed one entry in its term if there are any
-    \* entries committed in earlier terms.
-    /\ committed = {} \/ \E c \in committed : IsCommitted(c.entry[1], s)
-    \* All entries committed in the primary's term have been committed in the
-    \* current config.
+    \* The primary has committed at least one entry in its term.
+    /\ \E c \in committed : (c.term = currentTerm[s])
+    \* All entries committed in the primary's term are committed in its current config.
     /\ \A c \in committed : (c.term = currentTerm[s]) => IsCommitted(c.entry[1], s)
 
 \* Config State Machine actions.
