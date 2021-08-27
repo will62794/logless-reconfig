@@ -45,18 +45,18 @@ IsPrefix(s, t) ==
   (**************************************************************************)
   Len(s) <= Len(t) /\ SubSeq(s, 1, Len(s)) = SubSeq(t, 1, Len(s))
 
-\* Is it possible for log 'i' to roll back against log 'j'. 
-\* If this is true, it implies that log 'i' should remove entries from the end of its log.
-CanRollback(i, j) ==
-    /\ Len(log[i]) > 0
-    /\ \* The log with later term is more up-to-date.
-       LastTerm(log[i]) < LastTerm(log[j])
-    /\ \/ Len(log[i]) > Len(log[j])
-       \* There seems no short-cut of OR clauses, so we specify the negative case.
-       \/ /\ Len(log[i]) <= Len(log[j])
-          /\ LastTerm(log[i]) /= LogTerm(j, Len(log[i]))
+\* \* Is it possible for log 'i' to roll back against log 'j'. 
+\* \* If this is true, it implies that log 'i' should remove entries from the end of its log.
+\* CanRollback(i, j) ==
+\*     /\ Len(log[i]) > 0
+\*     /\ \* The log with later term is more up-to-date.
+\*        LastTerm(log[i]) < LastTerm(log[j])
+\*     /\ \/ Len(log[i]) > Len(log[j])
+\*        \* There seems no short-cut of OR clauses, so we specify the negative case.
+\*        \/ /\ Len(log[i]) <= Len(log[j])
+\*           /\ LastTerm(log[i]) /= LogTerm(j, Len(log[i]))
 
-CanRollbackAlt(i, j) ==
+CanRollback(i, j) ==
     /\ LastTerm(log[i]) < LastTerm(log[j])
     /\ ~IsPrefix(log[i],log[j])
 
@@ -119,8 +119,7 @@ GetEntries(i, j) ==
 
 \*  Node 'i' rolls back against the log of node 'j'.  
 RollbackEntries(i, j) ==
-    \* /\ CanRollback(i, j)
-    /\ CanRollbackAlt(i, j)
+    /\ CanRollback(i, j)
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
     /\ UNCHANGED <<committed, currentTerm, state, config>>
