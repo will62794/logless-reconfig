@@ -151,8 +151,9 @@ CommitEntry(i, commitQuorum) ==
     /\ committed' = committed \cup
             {[ entry  |-> <<ind, currentTerm[i]>>,
                term  |-> currentTerm[i]]}
-    \* \* Commit all entries in the log prefix.
-    \* /\ LET committedPrefix == {[entry |-> <<p,log[i][p]>>, term |-> currentTerm[i]] : p \in 1..ind} IN
+    \* Commit all entries in the prefix up to and including the latest entry.
+    \* /\ LET committedPrefix == {[ entry |-> <<idx,log[i][idx]>>, 
+    \*                              term |-> currentTerm[i]] : idx \in 1..ind} IN
     \*     committed' = committed \cup committedPrefix
     /\ UNCHANGED <<currentTerm, state, log, config, elections>>
 
