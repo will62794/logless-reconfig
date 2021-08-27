@@ -777,6 +777,19 @@ Alias ==
         \* configChains |-> [<<s,t>> \in ServerPair |-> ConfigChains(s,t)]
     ]
 
+\*
+\* Some predicates from trying to incorporate prefix committed definitions.
+\*
+\* /\ \A c \in committed : c.term <= c.entry[2]
+\* \* Prefix committed entry implies existence of an
+\* \* immediately committed entry in a newer term.
+\* /\ \A c \in committed : (c.term < c.entry[2]) => 
+\*         \E ic \in committed : 
+\*             /\ ic.term > c.term 
+\*             /\ ic.term = ic.entry[2]  
+\*             \* Exists in the same log, but in later position.
+\*             /\ ic.entry[1] > c.entry[1]
+
 
 --------------------------------------------------------------------------------
 
