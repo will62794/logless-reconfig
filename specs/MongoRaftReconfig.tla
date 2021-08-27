@@ -107,9 +107,12 @@ IsCommitted(index, primary) ==
 OplogCommitment(s) == 
     \* The primary has at least committed one entry in its term if there are any
     \* entries committed in earlier terms.
-    /\ committed = {} \/ \E c \in committed : IsCommitted(c.entry[1], s)
-    \* All entries committed in the primary's term have been committed in the
-    \* current config.
+    \* /\ committed = {} \/ \E c \in committed : IsCommitted(c.entry[1], s)
+    \* /\ (*committed = {} \/*) 
+
+    \* The primary has committed some entry in its term already.
+    /\ \E c \in committed : (c.term = currentTerm[s])
+    \* All entries committed in the primary's term are committed in its current config.
     /\ \A c \in committed : (c.term = currentTerm[s]) => IsCommitted(c.entry[1], s)
 
 \* Config State Machine actions.
