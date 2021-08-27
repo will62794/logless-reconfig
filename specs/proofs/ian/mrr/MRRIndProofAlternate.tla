@@ -1404,6 +1404,7 @@ PROOF
 
 \* began: 8/26 (kinda on 8/24 at like 11pm but not really)
 \* finished: 8/26
+\* took a few hours, maybe 2-5
 LEMMA LogMatchingAndNext ==
 ASSUME TypeOK, Ind, Next
 PROVE LogMatching'
@@ -1459,6 +1460,60 @@ PROOF
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
+\* began: 8/26
+\* finished: 8/26
+\* about 45 min
+LEMMA TermsOfEntriesGrowMonotonicallyAndNext ==
+ASSUME TypeOK, Ind, Next
+PROVE TermsOfEntriesGrowMonotonically'
+PROOF
+    <1>1. CASE OSMNext /\ UNCHANGED csmVars
+        <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
+            BY <2>1 DEF Ind, TermsOfEntriesGrowMonotonically, CurrentTermAtLeastAsLargeAsLogTermsForPrimary, OSM!ClientRequest, TypeOK
+        <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
+            <3>1. PICK s \in Server, t \in Server : OSM!GetEntries(s, t) BY <2>2
+            <3>.  DEFINE sLastIdx == Len(log'[s])
+            <3>2. SUFFICES ASSUME sLastIdx > 1
+                  PROVE TermsOfEntriesGrowMonotonically'
+                  BY <3>1 DEF Ind, TermsOfEntriesGrowMonotonically, OSM!GetEntries, OSM!Empty, TypeOK
+            <3>3. log'[s][sLastIdx] >= log'[s][sLastIdx-1]
+                <4>1. log'[s][sLastIdx] = log'[t][sLastIdx] BY <3>1 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>2. log'[t][sLastIdx] = log[t][sLastIdx] BY <3>1 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>3. log[t][sLastIdx] >= log[t][sLastIdx-1] BY <3>1, <3>2 DEF Ind, TermsOfEntriesGrowMonotonically, OSM!GetEntries, OSM!Empty, TypeOK
+                <4>4. log[t][sLastIdx-1] = log[s][sLastIdx-1] BY <3>1, <3>2 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>5. log'[s][sLastIdx-1] = log[s][sLastIdx-1] BY <3>1, <3>2 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>. QED BY <3>1, <3>2, <4>1, <4>2, <4>3, <4>4, <4>5 DEF OSM!GetEntries, OSM!Empty, TypeOK
+            <3>. QED BY <3>1, <3>3 DEF Ind, TermsOfEntriesGrowMonotonically, OSM!GetEntries, OSM!Empty, TypeOK
+        <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
+            BY <2>3 DEF Ind, TermsOfEntriesGrowMonotonically, OSM!RollbackEntries, TypeOK
+        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+            BY <2>4 DEF Ind, TermsOfEntriesGrowMonotonically, OSM!CommitEntry, TypeOK
+        <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
+    <1>2. CASE CSMNext /\ UNCHANGED osmVars
+        BY <1>2 DEF osmVars, Ind, TermsOfEntriesGrowMonotonically
+    <1>3. CASE JointNext
+        <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
+            <3>1. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!BecomeLeader(p, Q) /\ CSM!BecomeLeader(p, Q) BY <2>1
+            <3>2. CASE UNCHANGED log BY <3>2 DEF Ind, TermsOfEntriesGrowMonotonically
+            <3>3. CASE log' = [log EXCEPT ![p] = Append(log[p], currentTerm[p]+1)]
+                <4>.  DEFINE pLastIdx == Len(log'[p])
+                <4>1. \A i \in DOMAIN log'[p] : log'[p][pLastIdx] >= log'[p][i]
+                    <5>1. \A t \in Server : currentTerm[p] >= configTerm[t] BY <3>1, ElectedLeadersCurrentTermGreaterThanConfigTerms
+                    <5>2. \A t \in Server : \A i \in DOMAIN log[t] : currentTerm[p] >= log[t][i]
+                        BY <3>1, <5>1 DEF Ind, LogEntryInTermImpliesConfigInTerm, TypeOK
+                    <5>3. LastTerm(log'[p]) > currentTerm[p] BY <3>1, <3>3, <5>2, TypeOKAndNext DEF LastTerm, TypeOK
+                    <5>4. \A i \in DOMAIN log[p] : log'[p][pLastIdx] > log[p][i] BY <3>1, <5>2, <5>3, TypeOKAndNext DEF LastTerm, TypeOK
+                    <5>5. \A i \in DOMAIN log'[p] : i < pLastIdx => log'[p][i] = log[p][i] BY <3>1, <3>3 DEF OSM!BecomeLeader, TypeOK
+                    <5>. QED BY <3>1, <5>4, <5>5 DEF OSM!BecomeLeader, TypeOK
+                <4>2. \A t \in Server : t # p => log'[t] = log[t] BY <3>1, <3>3 DEF OSM!BecomeLeader, TypeOK
+                <4>. QED BY <3>1, <3>3, <4>1, <4>2 DEF Ind, TermsOfEntriesGrowMonotonically, OSM!BecomeLeader, OSM!Empty, TypeOK
+            <3>. QED BY <3>1, <3>2, <3>3 DEF Ind, TermsOfEntriesGrowMonotonically, OSM!BecomeLeader, TypeOK
+        <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
+            BY <2>2 DEF Ind, TermsOfEntriesGrowMonotonically, OSM!UpdateTerms, TypeOK
+        <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
+    <1>. QED BY <1>1, <1>2, <1>3 DEF Next
+
+
 \* Template
 (*
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
@@ -1490,7 +1545,7 @@ PROOF
     <1>5. ActiveConfigsOverlap' BY ActiveConfigsOverlapAndNext
     <1>6. ActiveConfigsSafeAtTerms' BY ActiveConfigsSafeAtTermsAndNext
     <1>7. LogMatching' BY LogMatchingAndNext
-    <1>8. TermsOfEntriesGrowMonotonically'
+    <1>8. TermsOfEntriesGrowMonotonically' BY TermsOfEntriesGrowMonotonicallyAndNext
     <1>9. PrimaryHasEntriesItCreated'
     <1>10. CurrentTermAtLeastAsLargeAsLogTermsForPrimary'
     <1>11. LogEntryInTermImpliesConfigInTerm'
