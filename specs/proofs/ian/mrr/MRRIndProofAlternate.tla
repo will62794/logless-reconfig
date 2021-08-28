@@ -1640,23 +1640,111 @@ PROOF
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
 \* began: 8/27
+\* finished: 8/27
+\* approx 20 min
 LEMMA CurrentTermAtLeastAsLargeAsLogTermsForPrimaryAndNext ==
 ASSUME TypeOK, Ind, Next
 PROVE CurrentTermAtLeastAsLargeAsLogTermsForPrimary'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
         <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
+            BY <2>1 DEF OSM!ClientRequest, TypeOK, Ind, CurrentTermAtLeastAsLargeAsLogTermsForPrimary
         <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
+            BY <2>2, PrimaryAndSecondaryAreDifferent DEF OSM!GetEntries, TypeOK, Ind, CurrentTermAtLeastAsLargeAsLogTermsForPrimary
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
+            BY <2>3, PrimaryAndSecondaryAreDifferent DEF OSM!RollbackEntries, TypeOK, Ind, CurrentTermAtLeastAsLargeAsLogTermsForPrimary
         <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+            BY <2>4 DEF OSM!CommitEntry, TypeOK, Ind, CurrentTermAtLeastAsLargeAsLogTermsForPrimary
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
     <1>2. CASE CSMNext /\ UNCHANGED osmVars
         <2>1. CASE \E s \in Server, newConfig \in SUBSET Server : OplogCommitment(s) /\ CSM!Reconfig(s, newConfig)
+            BY <1>2, <2>1 DEF osmVars, CSM!Reconfig, TypeOK, Ind, CurrentTermAtLeastAsLargeAsLogTermsForPrimary
         <2>2. CASE \E s,t \in Server : CSM!SendConfig(s, t)
+            BY <1>2, <2>2 DEF osmVars, CSM!SendConfig, TypeOK, Ind, CurrentTermAtLeastAsLargeAsLogTermsForPrimary
         <2>. QED BY <1>2, <2>1, <2>2 DEF CSMNext
     <1>3. CASE JointNext
         <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
+            \* the result is obvious for any server not becoming the new leader
+            <3>1. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!BecomeLeader(p, Q) /\ CSM!BecomeLeader(p, Q) BY <2>1
+            <3>2. \A i \in DOMAIN log[p] : currentTerm[p] >= log[p][i]
+                BY <3>1, ElectedLeadersCurrentTermGreaterThanConfigTerms DEF Ind, LogEntryInTermImpliesConfigInTerm, TypeOK
+            <3>3. \A i \in DOMAIN log'[p] : currentTerm'[p] >= log'[p][i]
+                <4>1. CASE UNCHANGED log BY <3>1, <3>2, <4>1 DEF OSM!BecomeLeader, TypeOK
+                <4>2. CASE log' = [log EXCEPT ![p] = Append(log[p], currentTerm[p]+1)]
+                    <5>1. \A i \in DOMAIN log'[p] : i = Len(log'[p]) => log'[p][i] = currentTerm'[p] BY <3>1, <4>2 DEF OSM!BecomeLeader, TypeOK
+                    <5>2. \A i \in DOMAIN log'[p] : i < Len(log'[p]) => log'[p][i] = log[p][i] BY <3>1, <4>2 DEF OSM!BecomeLeader, TypeOK
+                    <5>3. \A i \in DOMAIN log'[p] : i < Len(log'[p]) => log'[p][i] <= currentTerm'[p] BY <3>1, <3>2, <5>2 DEF OSM!BecomeLeader, TypeOK
+                    <5>. QED BY <3>1, <3>2, <5>1, <5>3 DEF OSM!BecomeLeader, TypeOK
+                <4>. QED BY <3>1, <4>1, <4>2 DEF OSM!BecomeLeader, TypeOK
+            <3>. QED BY <3>1, <3>3, PrimaryAndSecondaryAreDifferent DEF Ind, CurrentTermAtLeastAsLargeAsLogTermsForPrimary, OSM!BecomeLeader, TypeOK
         <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
+            BY <2>2, PrimaryAndSecondaryAreDifferent DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, TypeOK, Ind, CurrentTermAtLeastAsLargeAsLogTermsForPrimary
+        <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
+    <1>. QED BY <1>1, <1>2, <1>3 DEF Next
+
+\* began: 8/27
+\* finished: 8/27
+\* approx 3 hours
+LEMMA LogEntryInTermImpliesConfigInTermAndNext ==
+ASSUME TypeOK, Ind, Next
+PROVE LogEntryInTermImpliesConfigInTerm'
+PROOF
+    <1>1. CASE OSMNext /\ UNCHANGED csmVars
+        <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
+            <3>1. PICK s \in Server : OSM!ClientRequest(s) BY <2>1
+            <3>2. \A i \in DOMAIN log'[s] : i = Len(log'[s]) => configTerm'[s] = log'[s][i]
+                BY <1>1, <3>1 DEF csmVars, OSM!ClientRequest, TypeOK, Ind, PrimaryConfigTermEqualToCurrentTerm
+            <3>3. \A i \in DOMAIN log'[s] : i < Len(log'[s]) => configTerm[s] >= log[s][i]
+                BY <3>1 DEF OSM!ClientRequest, TypeOK, Ind, CurrentTermAtLeastAsLargeAsLogTermsForPrimary, PrimaryConfigTermEqualToCurrentTerm
+            <3>4. \A i \in DOMAIN log'[s] : i < Len(log'[s]) => configTerm'[s] >= log'[s][i]
+                BY <1>1, <3>1, <3>3 DEF csmVars, OSM!ClientRequest, TypeOK
+            <3>. QED BY <1>1, <3>1, <3>2, <3>4 DEF csmVars, OSM!ClientRequest, TypeOK, Ind, LogEntryInTermImpliesConfigInTerm
+        <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
+            <3>1. PICK s,t \in Server : OSM!GetEntries(s, t) BY <2>2
+            <3>2. \A i \in DOMAIN log'[s] : i <= Len(log'[s]) => \E u \in Server : configTerm'[u] >= log'[s][i]
+                <4>1. \A i \in DOMAIN log'[s] : i < Len(log'[s]) => \E u \in Server : configTerm[u] >= log[s][i]
+                    \* absolutely ridiculous that i need to spell this out
+                    <5>1. \A i \in DOMAIN log'[s] : i < Len(log'[s]) => s \in Server /\ i \in DOMAIN log[s]
+                        BY <3>1 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, LogEntryInTermImpliesConfigInTerm
+                    <5>. QED BY <3>1, <5>1 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, LogEntryInTermImpliesConfigInTerm
+                <4>2. \A i \in DOMAIN log'[s] : i = Len(log'[s]) => log[t][i] = log'[s][i] BY <3>1 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>3. \A i \in DOMAIN log'[s] : i = Len(log'[s]) => \E u \in Server : configTerm[u] >= log'[s][i]
+                    BY <3>1, <4>2 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, LogEntryInTermImpliesConfigInTerm
+                <4>. QED BY <1>1, <3>1, <4>1, <4>3, TypeOKAndNext DEF csmVars, OSM!GetEntries, OSM!Empty, TypeOK
+            <3>3. \A u \in Server : u # s => \A i \in DOMAIN log'[u] : \E v \in Server : configTerm'[v] >= log'[u][i]
+                BY <1>1, <3>1 DEF csmVars, OSM!GetEntries, OSM!Empty, TypeOK, Ind, LogEntryInTermImpliesConfigInTerm
+            <3>. QED BY <3>2, <3>3 DEF LogEntryInTermImpliesConfigInTerm
+        <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
+            BY <1>1, <2>3 DEF csmVars, OSM!RollbackEntries, TypeOK, Ind, LogEntryInTermImpliesConfigInTerm
+        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+            BY <1>1, <2>4 DEF csmVars, OSM!CommitEntry, TypeOK, Ind, LogEntryInTermImpliesConfigInTerm
+        <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
+    <1>2. CASE CSMNext /\ UNCHANGED osmVars
+        <2>1. CASE \E s \in Server, newConfig \in SUBSET Server : OplogCommitment(s) /\ CSM!Reconfig(s, newConfig)
+            BY <1>2, <2>1, ConfigsIncreaseMonotonically DEF osmVars, CSM!Reconfig, TypeOK,
+                Ind, LogEntryInTermImpliesConfigInTerm, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV
+        <2>2. CASE \E s,t \in Server : CSM!SendConfig(s, t)
+            BY <1>2, <2>2, ConfigsIncreaseMonotonically DEF osmVars, CSM!SendConfig, TypeOK,
+                Ind, LogEntryInTermImpliesConfigInTerm, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV
+        <2>. QED BY <1>2, <2>1, <2>2 DEF CSMNext
+    <1>3. CASE JointNext
+        <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
+            <3>1. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!BecomeLeader(p, Q) /\ CSM!BecomeLeader(p, Q) BY <2>1
+            <3>2. \A s \in Server : \A i \in DOMAIN log[s] : currentTerm[p] >= log[s][i]
+                BY <3>1, ElectedLeadersCurrentTermGreaterThanConfigTerms DEF Ind, LogEntryInTermImpliesConfigInTerm, TypeOK
+            <3>3. \A s \in Server : s # p => \A i \in DOMAIN log'[s] : currentTerm'[p] >= log'[s][i]
+                BY <3>1, <3>2 DEF OSM!BecomeLeader, CSM!BecomeLeader, TypeOK
+            <3>4. \A i \in DOMAIN log'[p] : currentTerm'[p] >= log'[p][i]
+                <4>1. CASE UNCHANGED log
+                    <5>1. currentTerm'[p] >= currentTerm[p]
+                        BY <3>1, ConfigsIncreaseMonotonically DEF OSM!BecomeLeader, CSM!BecomeLeader, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, TypeOK
+                    <5>. QED BY <3>1, <3>2, <4>1, <5>1 DEF OSM!BecomeLeader, CSM!BecomeLeader, TypeOK
+                <4>2. CASE log' = [log EXCEPT ![p] = Append(log[p], currentTerm[p]+1)]
+                    BY <3>1, <3>2, <4>2 DEF OSM!BecomeLeader, CSM!BecomeLeader, TypeOK
+                <4>. QED BY <3>1, <4>1, <4>2 DEF OSM!BecomeLeader, CSM!BecomeLeader, TypeOK
+            <3>. QED BY <3>1, <3>3, <3>4 DEF OSM!BecomeLeader, CSM!BecomeLeader, TypeOK, LogEntryInTermImpliesConfigInTerm
+        <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
+            BY <2>2 DEF OSM!UpdateTerms, CSM!UpdateTerms, TypeOK, Ind, LogEntryInTermImpliesConfigInTerm
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
@@ -1695,7 +1783,7 @@ PROOF
     <1>8. TermsOfEntriesGrowMonotonically' BY TermsOfEntriesGrowMonotonicallyAndNext
     <1>9. PrimaryHasEntriesItCreated' BY PrimaryHasEntriesItCreatedAndNext
     <1>10. CurrentTermAtLeastAsLargeAsLogTermsForPrimary' BY CurrentTermAtLeastAsLargeAsLogTermsForPrimaryAndNext
-    <1>11. LogEntryInTermImpliesConfigInTerm'
+    <1>11. LogEntryInTermImpliesConfigInTerm' BY LogEntryInTermImpliesConfigInTermAndNext
     <1>12. UniformLogEntriesInTerm'
     <1>13. CommittedEntryIndexesAreNonZero'
     <1>14. CommittedTermMatchesEntry'
