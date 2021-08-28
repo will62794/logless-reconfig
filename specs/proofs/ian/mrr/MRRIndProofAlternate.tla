@@ -1748,6 +1748,131 @@ PROOF
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
+(*
+UniformLogEntriesInTermAlt ==
+    \A s,t \in Server :
+    \A i \in DOMAIN log[s] :
+        \A j \in DOMAIN log[s] : (j < i /\ log[s][j] # log[s][i]) =>
+            (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)
+
+LEMMA UniformLogEntriesInTermAltEq ==
+ASSUME TypeOK
+PROVE UniformLogEntriesInTerm <=> UniformLogEntriesInTermAlt
+BY DEF TypeOK, UniformLogEntriesInTerm, UniformLogEntriesInTermAlt
+*)
+
+\* began: 8/27
+\* UniformLogEntriesInTerm notes:
+\* DEF boundary == an index i in a server s' log where log[s][i] # log[s][i-1]
+\* DEF local boundary == a boundary for a single server
+\* DEF global boundary == a boundary for all servers
+\* UniformLogEntriesInTerm in a nutshell:
+\*   for all local log term boundaries, the boundary is in fact global
+\* 
+LEMMA UniformLogEntriesInTermAndNext ==
+ASSUME TypeOK, Ind, Next
+PROVE UniformLogEntriesInTerm'
+PROOF
+    <1>1. CASE OSMNext /\ UNCHANGED csmVars
+        <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
+            <3>1. PICK p \in Server : OSM!ClientRequest(p) BY <2>1
+            <3>2. SUFFICES ASSUME TRUE
+                  PROVE (\A s,t \in Server : \A i \in DOMAIN log[s] :
+                            (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) =>
+                                (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i))'
+                  BY DEF UniformLogEntriesInTerm
+            <3>3. TAKE s \in Server
+            <3>4. TAKE t \in Server
+            <3>5. TAKE i \in DOMAIN log'[s]
+            \* this is unneeded, but it helps me to clearly see the proof goal
+            <3>f. SUFFICES ASSUME TRUE
+                  PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)'
+                  OBVIOUS
+            <3>6. CASE s = p
+                <4>1. CASE i = Len(log'[p])
+                    <5>1. SUFFICES ASSUME (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])',
+                                          NEW k \in DOMAIN log'[t], log'[t][k] = log'[s][i], k < i
+                          PROVE FALSE OBVIOUS
+                    \*<5>2. SUFFICES ASSUME p # t
+                    \*      PROVE FALSE BY <3>1, <3>6, <4>1, <5>1 DEF OSM!ClientRequest, TypeOK
+                    <5>2. k \in DOMAIN log[t] BY <3>1, <3>6, <4>1, <5>1 DEF OSM!ClientRequest, TypeOK
+                    <5>3. log[t][k] = currentTerm[p] BY <3>1, <3>6, <4>1, <5>1 DEF OSM!ClientRequest, TypeOK
+                    <5>4. ~InLog(<<k, log[t][k]>>, p) BY <3>1, <3>6, <4>1, <5>1 DEF OSM!ClientRequest, InLog, TypeOK
+                    <5>. QED BY <3>1, <3>4, <5>2, <5>3, <5>4 DEF Ind, PrimaryHasEntriesItCreated, OSM!ClientRequest, InLog, TypeOK
+                <4>2. CASE i < Len(log'[p])
+                    <5>1. i \in DOMAIN log[p] BY <3>1, <3>5, <3>6, <4>2 DEF OSM!ClientRequest, TypeOK
+                    <5>2. log[p][i] = log'[p][i] BY <3>1, <3>5, <3>6, <4>2 DEF OSM!ClientRequest, TypeOK
+                    <5>3. (\A j \in DOMAIN log[p] : (j < i) => log[p][j] # log[p][i]) => (~\E k \in DOMAIN log[t] : log[t][k] = log[p][i] /\ k < i)
+                        BY <3>1, <3>5, <3>6, <4>2, <5>1, <5>2 DEF OSM!ClientRequest, TypeOK, Ind, UniformLogEntriesInTerm
+                    <5>i. (DOMAIN log'[p] \cap DOMAIN log[p]) = DOMAIN log[p] BY <3>1 DEF OSM!ClientRequest, TypeOK
+                    <5>4. \A j \in DOMAIN log'[p] : (j < i) => j \in DOMAIN log[p] BY <3>1, <3>6, <4>2, <5>i DEF OSM!ClientRequest, TypeOK
+                    <5>5. \A j \in DOMAIN log[p] : (j < i) => log[p][j] = log'[p][j] BY <3>1, <3>6, <4>2, <5>i DEF OSM!ClientRequest, TypeOK
+                    <5>6. (\A j \in DOMAIN log[p] : (j < i) => log[p][j] # log'[p][i]) => (~\E k \in DOMAIN log'[t] : log'[t][k] = log'[p][i] /\ k < i)
+                        BY <3>1, <5>1, <5>3 DEF OSM!ClientRequest, TypeOK
+                    <5>7. (\A j \in DOMAIN log[p] : (j < i) => log'[p][j] # log'[p][i]) => (~\E k \in DOMAIN log'[t] : log'[t][k] = log'[p][i] /\ k < i)
+                        BY <3>1, <5>4, <5>5, <5>6 DEF OSM!ClientRequest, TypeOK
+                    <5>8. (\A j \in DOMAIN log'[p] : (j < i) => log'[p][j] # log'[p][i]) => (~\E k \in DOMAIN log'[t] : log'[t][k] = log'[p][i] /\ k < i)
+                        BY <3>1, <5>7, <5>i DEF OSM!ClientRequest, TypeOK
+                    <5>. QED BY <3>1, <3>5, <3>6, <4>2, <5>8 DEF OSM!ClientRequest, TypeOK, Ind, UniformLogEntriesInTerm
+                <4>. QED BY <3>1, <3>5, <3>6, <4>1, <4>2 DEF OSM!ClientRequest, TypeOK
+            <3>7. CASE t = p
+            <3>8. CASE s # p /\ t # p
+            \* we can easily add an extra case if we want to add /\ s # t to everything later
+            <3>. QED BY <3>6, <3>7, <3>8
+            
+            (*<3>2. (\A s \in Server : \A i \in DOMAIN log[s] :
+                    (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) =>
+                        (~\E k \in DOMAIN log[p] : log[p][k] = log[s][i] /\ k < i))'
+                \* yes, a weird strategy.  but it works and i promise makes the proof shorter
+                <4>1. SUFFICES ASSUME \E s \in Server : \E i \in DOMAIN log'[s] : \E j \in DOMAIN log'[s] :
+                        j < i /\ log'[s][j] # log'[s][i] /\ (\E k \in DOMAIN log'[p] : log'[p][k] = log'[s][i] /\ k < i)
+                      PROVE FALSE BY <3>1 DEF OSM!ClientRequest, TypeOK
+                <4>2. SUFFICES ASSUME NEW s \in Server,
+                                      NEW i \in DOMAIN log'[s],
+                                      NEW j \in DOMAIN log'[s],
+                                      j < i, log'[s][j] # log'[s][i],
+                                      NEW k \in DOMAIN log'[p], log'[p][k] = log'[s][i], k < i
+                      PROVE FALSE BY <4>1
+                <4>. QED
+            <3>3. (\A t \in Server : \A i \in DOMAIN log[p] :
+                    (\A j \in DOMAIN log[p] : (j < i) => log[p][j] # log[p][i]) =>
+                        (~\E k \in DOMAIN log[t] : log[t][k] = log[p][i] /\ k < i))'
+                <4>1. SUFFICES ASSUME \E t \in Server : \E i \in DOMAIN log'[p] : \E j \in DOMAIN log'[p] :
+                        j < i /\ log'[p][j] # log'[p][i] /\ (\E k \in DOMAIN log'[t] : log'[t][k] = log'[p][i] /\ k < i)
+                      PROVE FALSE BY <3>1, TypeOKAndNext DEF OSM!ClientRequest, TypeOK
+                <4>2. SUFFICES ASSUME NEW t \in Server,
+                                      NEW i \in DOMAIN log'[p],
+                                      NEW j \in DOMAIN log'[p],
+                                      j < i, log'[p][j] # log'[p][i],
+                                      NEW k \in DOMAIN log'[t], log'[t][k] = log'[p][i], k < i
+                      PROVE FALSE BY <4>1
+                <4>. QED
+            <3>4. (\A s,t \in Server : (s # p /\ t # p) => \A i \in DOMAIN log[s] :
+                    (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) =>
+                        (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i))'
+                BY <3>1 DEF Ind, UniformLogEntriesInTerm, OSM!ClientRequest, TypeOK
+            <3>. QED BY <3>1, <3>2, <3>3, <3>4 DEF Ind, UniformLogEntriesInTerm, OSM!ClientRequest, TypeOK*)
+                
+            (*<3>2. CASE Empty(log[p])
+                \*BY <3>1, <3>2 DEF Ind, PrimaryHasEntriesItCreated, UniformLogEntriesInTerm, Empty, InLog, OSM!ClientRequest, TypeOK
+            <3>3. CASE LastTerm(log[p]) = LastTerm(log'[p])
+                \*BY <3>1 DEF OSM!ClientRequest, Empty, LastTerm, TypeOK, Ind, UniformLogEntriesInTerm
+            <3>4. CASE ~Empty(log[p]) /\ LastTerm(log[p]) # LastTerm(log'[p])
+            <3>. QED BY <3>1, <3>2, <3>3, <3>4*)
+        <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
+        <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
+        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+            BY <2>4 DEF OSM!CommitEntry, TypeOK, Ind, UniformLogEntriesInTerm
+        <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
+    <1>2. CASE CSMNext /\ UNCHANGED osmVars
+        BY <1>2 DEF osmVars, Ind, UniformLogEntriesInTerm
+    <1>3. CASE JointNext
+        <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
+        <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
+            BY <2>2 DEF OSM!UpdateTerms, TypeOK, Ind, UniformLogEntriesInTerm
+        <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
+    <1>. QED BY <1>1, <1>2, <1>3 DEF Next
+
 
 \* Template
 (*
@@ -1784,7 +1909,7 @@ PROOF
     <1>9. PrimaryHasEntriesItCreated' BY PrimaryHasEntriesItCreatedAndNext
     <1>10. CurrentTermAtLeastAsLargeAsLogTermsForPrimary' BY CurrentTermAtLeastAsLargeAsLogTermsForPrimaryAndNext
     <1>11. LogEntryInTermImpliesConfigInTerm' BY LogEntryInTermImpliesConfigInTermAndNext
-    <1>12. UniformLogEntriesInTerm'
+    <1>12. UniformLogEntriesInTerm' BY UniformLogEntriesInTermAndNext
     <1>13. CommittedEntryIndexesAreNonZero'
     <1>14. CommittedTermMatchesEntry'
     <1>15. LeaderCompletenessGeneralized'
