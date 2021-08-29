@@ -1880,6 +1880,38 @@ PROOF
             <3>8. CASE s # u /\ t # u BY <3>1, <3>8 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, UniformLogEntriesInTerm
             <3>. QED BY <3>6, <3>7, <3>8
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
+            <3>1. PICK u, v \in Server : OSM!RollbackEntries(u, v) BY <2>3
+            <3>2. SUFFICES ASSUME TRUE
+                  PROVE (\A s,t \in Server : \A i \in DOMAIN log[s] :
+                            (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) =>
+                                (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i))'
+                  BY DEF UniformLogEntriesInTerm
+            <3>3. TAKE s \in Server
+            <3>4. TAKE t \in Server
+            <3>5. TAKE i \in DOMAIN log'[s]
+            <3>f. SUFFICES ASSUME TRUE
+                  PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
+                  OBVIOUS
+            <3>6. CASE s = u
+                <4>a. SUFFICES ASSUME t # s
+                      PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
+                      BY <3>1, <3>5, <3>6 DEF OSM!RollbackEntries, TypeOK
+                <4>1. \A j \in DOMAIN log'[s] : j \in DOMAIN log[s] /\ log'[s][j] = log[s][j]
+                    BY <3>1, <3>5, <3>6 DEF OSM!RollbackEntries, TypeOK
+                <4>2. \A j \in DOMAIN log[s] : (j < i) => (j \in DOMAIN log'[s] /\ log'[s][j] = log[s][j])
+                    BY <3>1, <3>5, <3>6 DEF OSM!RollbackEntries, TypeOK
+                <4>3. (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])
+                    BY <3>5, <4>1, <4>2
+                <4>4. (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])
+                    BY <3>1, <3>5, <3>6 DEF OSM!RollbackEntries, TypeOK, Ind, UniformLogEntriesInTerm
+                <4>5. (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i]) => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
+                    BY <3>1, <3>5, <3>6, <4>a DEF OSM!RollbackEntries, TypeOK
+                <4>. QED BY <4>1, <4>2, <4>3, <4>4, <4>5
+            <3>7. CASE t = u
+                \* i think if i included the def of OSM!CanRollback, OSM!LastTerm, OSM!LogTerm, OSM!GetTerm then i wouldn't need LogMatching
+                BY <3>1, <3>5, <3>7 DEF OSM!RollbackEntries, OSM!Empty, TypeOK, Ind, UniformLogEntriesInTerm, LogMatching, EqualUpTo
+            <3>8. CASE s # u /\ t # u BY <3>1, <3>8 DEF OSM!RollbackEntries, OSM!Empty, TypeOK, Ind, UniformLogEntriesInTerm
+            <3>. QED BY <3>6, <3>7, <3>8
         <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
             BY <2>4 DEF OSM!CommitEntry, TypeOK, Ind, UniformLogEntriesInTerm
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
