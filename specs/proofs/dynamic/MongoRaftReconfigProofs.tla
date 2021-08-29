@@ -435,13 +435,12 @@ CommittedEntryIntersectsAnyQuorumOfNewestConfig ==
 \* 
 UniformLogEntriesInTerm ==
     \A s,t \in Server :
-    \A i \in DOMAIN log[s] : 
-    \A j \in DOMAIN log[t] : 
-        (j < i) =>
-            \* If the log entry on server t has the same term, T,
-            \* as the entry on server s, then the log on s in that
-            \* position must also be in term T.
-            ((log[t][j] = log[s][i]) => (log[s][j] = log[s][i]))
+    \A is \in DOMAIN log[s] : 
+    \A it \in DOMAIN log[t] : 
+        \* If the log entry on server t at index 'it' has the same term,
+        \* as the entry on server s at 'is' and is at a lesser log index, 
+        \* then the log on s at position 'it' must also be in term T.
+        (log[s][is] = log[t][it] /\ it < is) => (log[s][it] = log[s][is])
 
 \* It cannot be the case that all nodes are not members of their own configs.
 SomeActiveConfig == \E s \in Server : s \in config[s]
