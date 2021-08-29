@@ -1748,19 +1748,6 @@ PROOF
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
-(*
-UniformLogEntriesInTermAlt ==
-    \A s,t \in Server :
-    \A i \in DOMAIN log[s] :
-        \A j \in DOMAIN log[s] : (j < i /\ log[s][j] # log[s][i]) =>
-            (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)
-
-LEMMA UniformLogEntriesInTermAltEq ==
-ASSUME TypeOK
-PROVE UniformLogEntriesInTerm <=> UniformLogEntriesInTermAlt
-BY DEF TypeOK, UniformLogEntriesInTerm, UniformLogEntriesInTermAlt
-*)
-
 \* began: 8/27
 \* UniformLogEntriesInTerm notes:
 \* DEF boundary == an index i in a server s' log where log[s][i] # log[s][i-1]
@@ -1785,9 +1772,21 @@ PROOF
             <3>4. TAKE t \in Server
             <3>5. TAKE i \in DOMAIN log'[s]
             \* this is unneeded, but it helps me to clearly see the proof goal
+            \* after DeMorgan'ing the 2nd part of the 'implies' we see the local (s) to global (\A t) boundary stipulation
             <3>f. SUFFICES ASSUME TRUE
-                  PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)'
+                  \*PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)'
+                  PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
                   OBVIOUS
+            
+            \* this proof really ought to be cleaned up.  here's a first attempt..
+            (*
+            <3>6. \A u \in Server : (u # p) => log'[u] = log[u] BY <3>1 DEF OSM!ClientRequest, TypeOK
+            <3>7. \A j \in DOMAIN log'[p] : (j < Len(log'[p])) => log[p][j] = log'[p][j] BY <3>1 DEF OSM!ClientRequest, TypeOK
+            <3>8. log'[p][Len(log'[p])] = currentTerm[p] BY <3>1 DEF OSM!ClientRequest, TypeOK
+            <3>9. \A u \in Server : ~\E k \in DOMAIN log[u] : log[u][k] = currentTerm[p] /\ ~InLog(<<k,log[u][k]>>, p)
+                BY <3>1 DEF OSM!ClientRequest, TypeOK, Ind, PrimaryHasEntriesItCreated, InLog
+            <3>. QED BY <3>1, <3>6, <3>7, <3>8, <3>9 DEF OSM!ClientRequest, TypeOK, Ind, UniformLogEntriesInTerm, InLog*)
+            
             <3>6. CASE s = p
                 <4>1. CASE i = Len(log'[p])
                     <5>1. SUFFICES ASSUME (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])',
@@ -1816,50 +1815,70 @@ PROOF
                     <5>. QED BY <3>1, <3>5, <3>6, <4>2, <5>8 DEF OSM!ClientRequest, TypeOK, Ind, UniformLogEntriesInTerm
                 <4>. QED BY <3>1, <3>5, <3>6, <4>1, <4>2 DEF OSM!ClientRequest, TypeOK
             <3>7. CASE t = p
-            <3>8. CASE s # p /\ t # p
-            \* we can easily add an extra case if we want to add /\ s # t to everything later
+                <4>1. SUFFICES ASSUME t # s
+                      PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
+                      BY <3>1, <3>7 DEF OSM!ClientRequest, TypeOK
+                <4>2. log'[s] = log[s] BY <3>1, <3>7, <4>1 DEF OSM!ClientRequest, TypeOK
+                <4>3. \A j \in DOMAIN log'[t] : (j < Len(log'[t])) => log[t][j] = log'[t][j] BY <3>1, <3>7 DEF OSM!ClientRequest, TypeOK
+                <4>4. log'[t][Len(log'[t])] = currentTerm[t] BY <3>1, <3>7 DEF OSM!ClientRequest, TypeOK
+                <4>5. \A u \in Server : ~\E k \in DOMAIN log[u] : log[u][k] = currentTerm[t] /\ ~InLog(<<k,log[u][k]>>, t)
+                    BY <3>1, <3>7, <4>4 DEF OSM!ClientRequest, TypeOK, Ind, PrimaryHasEntriesItCreated, InLog
+                <4>. QED BY <3>1, <3>7, <4>1, <4>2, <4>3, <4>4, <4>5 DEF OSM!ClientRequest, TypeOK, Ind, UniformLogEntriesInTerm, InLog
+            <3>8. CASE s # p /\ t # p BY <3>1, <3>8 DEF OSM!ClientRequest, TypeOK, Ind, UniformLogEntriesInTerm
             <3>. QED BY <3>6, <3>7, <3>8
-            
-            (*<3>2. (\A s \in Server : \A i \in DOMAIN log[s] :
-                    (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) =>
-                        (~\E k \in DOMAIN log[p] : log[p][k] = log[s][i] /\ k < i))'
-                \* yes, a weird strategy.  but it works and i promise makes the proof shorter
-                <4>1. SUFFICES ASSUME \E s \in Server : \E i \in DOMAIN log'[s] : \E j \in DOMAIN log'[s] :
-                        j < i /\ log'[s][j] # log'[s][i] /\ (\E k \in DOMAIN log'[p] : log'[p][k] = log'[s][i] /\ k < i)
-                      PROVE FALSE BY <3>1 DEF OSM!ClientRequest, TypeOK
-                <4>2. SUFFICES ASSUME NEW s \in Server,
-                                      NEW i \in DOMAIN log'[s],
-                                      NEW j \in DOMAIN log'[s],
-                                      j < i, log'[s][j] # log'[s][i],
-                                      NEW k \in DOMAIN log'[p], log'[p][k] = log'[s][i], k < i
-                      PROVE FALSE BY <4>1
-                <4>. QED
-            <3>3. (\A t \in Server : \A i \in DOMAIN log[p] :
-                    (\A j \in DOMAIN log[p] : (j < i) => log[p][j] # log[p][i]) =>
-                        (~\E k \in DOMAIN log[t] : log[t][k] = log[p][i] /\ k < i))'
-                <4>1. SUFFICES ASSUME \E t \in Server : \E i \in DOMAIN log'[p] : \E j \in DOMAIN log'[p] :
-                        j < i /\ log'[p][j] # log'[p][i] /\ (\E k \in DOMAIN log'[t] : log'[t][k] = log'[p][i] /\ k < i)
-                      PROVE FALSE BY <3>1, TypeOKAndNext DEF OSM!ClientRequest, TypeOK
-                <4>2. SUFFICES ASSUME NEW t \in Server,
-                                      NEW i \in DOMAIN log'[p],
-                                      NEW j \in DOMAIN log'[p],
-                                      j < i, log'[p][j] # log'[p][i],
-                                      NEW k \in DOMAIN log'[t], log'[t][k] = log'[p][i], k < i
-                      PROVE FALSE BY <4>1
-                <4>. QED
-            <3>4. (\A s,t \in Server : (s # p /\ t # p) => \A i \in DOMAIN log[s] :
-                    (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) =>
-                        (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i))'
-                BY <3>1 DEF Ind, UniformLogEntriesInTerm, OSM!ClientRequest, TypeOK
-            <3>. QED BY <3>1, <3>2, <3>3, <3>4 DEF Ind, UniformLogEntriesInTerm, OSM!ClientRequest, TypeOK*)
-                
-            (*<3>2. CASE Empty(log[p])
-                \*BY <3>1, <3>2 DEF Ind, PrimaryHasEntriesItCreated, UniformLogEntriesInTerm, Empty, InLog, OSM!ClientRequest, TypeOK
-            <3>3. CASE LastTerm(log[p]) = LastTerm(log'[p])
-                \*BY <3>1 DEF OSM!ClientRequest, Empty, LastTerm, TypeOK, Ind, UniformLogEntriesInTerm
-            <3>4. CASE ~Empty(log[p]) /\ LastTerm(log[p]) # LastTerm(log'[p])
-            <3>. QED BY <3>1, <3>2, <3>3, <3>4*)
         <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
+            <3>1. PICK u, v \in Server : OSM!GetEntries(u, v) BY <2>2
+            <3>.  DEFINE sLastIdx == Len(log'[u])
+            <3>m. log'[u] = SubSeq(log[v], 1, sLastIdx) BY <3>1 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, LogMatching, EqualUpTo
+            <3>2. SUFFICES ASSUME TRUE
+                  PROVE (\A s,t \in Server : \A i \in DOMAIN log[s] :
+                            (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) =>
+                                (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i))'
+                  BY DEF UniformLogEntriesInTerm
+            <3>3. TAKE s \in Server
+            <3>4. TAKE t \in Server
+            <3>5. TAKE i \in DOMAIN log'[s]
+            <3>f. SUFFICES ASSUME TRUE
+                  PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
+                  OBVIOUS
+            <3>6. CASE s = u
+                <4>1. SUFFICES ASSUME s # t
+                      PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
+                      BY <3>1, <3>6 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>2. \A j \in DOMAIN log[v] : (j < i) => (j \in DOMAIN log'[s] /\ log[s][j] = log'[s][j])
+                    BY <3>1, <3>m, <3>6 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>3. (\A j \in DOMAIN log'[s] : (j < i) => log'[s][j] # log'[s][i]) => (\A j \in DOMAIN log[v] : (j < i) => log[v][j] # log[v][i])
+                    \* why do i have to spell this out?  because TLAPS is stupid
+                    <5>1. \A j \in DOMAIN log[v] : (j < i) => (j \in DOMAIN log'[s]) BY <4>2
+                    <5>. QED BY <3>1, <3>m, <3>6, <4>1, <5>1 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>4. (\A j \in DOMAIN log[v] : (j < i) => log[v][j] # log[v][i]) => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[v][i])
+                    BY <3>1, <3>3, <3>4, <3>5, <3>6, <4>2 DEF OSM!GetEntries, OSM!Empty, Ind, UniformLogEntriesInTerm, TypeOK
+                <4>5. (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[v][i]) => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
+                    <5>1. SUFFICES ASSUME \A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[v][i]
+                          PROVE (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])' OBVIOUS
+                    <5>2. log'[t] = log[t] BY <3>1, <3>6, <4>1 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                    <5>3. log'[v] = log[v] BY <3>1 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                    <5>4. log'[v][i] = log'[s][i] BY <3>1, <3>6 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, LogMatching, EqualUpTo
+                    <5>. QED BY <5>1, <5>2, <5>3, <5>4 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>. QED BY <4>3, <4>4, <4>5 DEF TypeOK
+            <3>7. CASE t = u
+                <4>1. SUFFICES ASSUME s # t
+                      PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
+                      BY <3>1, <3>7 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>2. (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])
+                    BY <3>1, <3>5, <3>7, <4>1 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>3. (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])
+                    BY <3>1, <3>5, <3>7, <4>1 DEF Ind, UniformLogEntriesInTerm, OSM!GetEntries, OSM!Empty, TypeOK
+                <4>4. (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i]) => (\A j \in DOMAIN log[t] : (j < i) => log'[t][j] # log'[s][i])
+                    BY <3>1, <3>5, <3>7, <4>1, <4>3 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>.  DEFINE tLastIdx == Len(log'[t])
+                <4>5. log'[t][tLastIdx] = log[v][tLastIdx]
+                    BY <3>1, <3>5, <3>7, <4>1, <4>3 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                <4>6. (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) => (tLastIdx < i => log[v][tLastIdx] # log[s][i])
+                    BY <3>1, <3>5, <3>7, <4>1 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, UniformLogEntriesInTerm
+                <4>. QED BY <3>1, <3>5, <3>7, <4>1, <4>2, <4>3, <4>4, <4>5, <4>6 DEF OSM!GetEntries, OSM!Empty, TypeOK
+            <3>8. CASE s # u /\ t # u BY <3>1, <3>8 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, UniformLogEntriesInTerm
+            <3>. QED BY <3>6, <3>7, <3>8
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
         <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
             BY <2>4 DEF OSM!CommitEntry, TypeOK, Ind, UniformLogEntriesInTerm
