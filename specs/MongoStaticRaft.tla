@@ -136,10 +136,7 @@ BecomeLeader(i, voteQuorum) ==
                     IF s = i THEN Primary
                     ELSE IF s \in voteQuorum THEN Secondary \* All voters should revert to secondary state.
                     ELSE state[s]]
-    \* Allow new leaders to write a no-op on step up if they want to. It is optional, but permissible.
-    /\ \/ log' = [log EXCEPT ![i] = Append(log[i], newTerm)]
-       \/ UNCHANGED log
-    /\ UNCHANGED <<config, committed>>   
+    /\ UNCHANGED <<log, config, committed>>   
             
 \* Primary 'i' commits its latest log entry.
 CommitEntry(i, commitQuorum) ==
