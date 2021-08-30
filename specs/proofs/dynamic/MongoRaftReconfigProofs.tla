@@ -639,6 +639,16 @@ NewerConfigsDisablePrimaryCommitsInOlderTerms ==
     (state[t] = Primary /\ currentTerm[t] < configTerm[s]) =>
         \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] > currentTerm[t]
 
+DeactivatedCommit == 
+    \A s \in Server : \A Q \in Quorums(config[s]) :  ENABLED OSM!CommitEntry(s,Q) => s \in ActiveConfigSet
+
+SimpleOlderConfig(t,s) ==
+    \/ configTerm[t] < configTerm[s]
+    \/ configTerm[t] = configTerm[s] /\ configVersion[t] < configVersion[s]
+
+DeactivatedInOlderConfigs == 
+    \A s,t \in Server : (SimpleOlderConfig(t,s) /\ ~QuorumsOverlap(config[s], config[t])) => (t \notin ActiveConfigSet)
+
 Ind ==
     \*
     \* Establishing election safety under reconfiguration.
