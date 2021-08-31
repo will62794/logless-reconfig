@@ -281,3 +281,23 @@ Examples of states that satisfy `LogMatching /\ TermsOfEntriesGrowMonotonically 
 
 Updating the main spec to use the `ConfigCommittedAlt` definition for `Reconfig` precondition, which is how it is being explained in the paper. Also modifying `MongoStaticRaft` spec to include "prefix committed" entries in the commited set when we commit an entry via a `CommitEntry` action. Note that the prefix commitment change may affect the inductive invariant that was developed. It may need to be modified slightly.
 
+## 2021-08-31
+
+Discovered a minor anomaly that now explains why the version of `OplogCommitment` used to look the way it did. The latest definition was as follows:
+
+```tla
+OplogCommitment(s) == 
+    \* The primary has committed at least one entry in its term.
+    /\ \E c \in committed : (c.term = currentTerm[s])
+    \* All entries committed in the primary's term are committed in its current config.
+    /\ \A c \in committed : (c.term = currentTerm[s]) => IsCommitted(c.entry[1], s)
+```
+The first condition requires that some entry is committed in the term of a primary before it can satisfy `OplogCommitment` and do a reconfig. But, in the case where no log entries have been committed yet (i.e. `committed = {}`), it should be safe to do the reconfiguration even if no entries have been committed in the term of the primary yet. This gives the alternate definition:
+```tla
+OplogCommitment(s) == 
+    \* The primary has committed at least one entry in its term.
+    /\ (committed # {}) => \E c \in committed : (c.term = currentTerm[s])
+    \* All entries committed in the primary's term are committed in its current config.
+    /\ \A c \in committed : (c.term = currentTerm[s]) => IsCommitted(c.entry[1], s)
+```
+This was interacting oddly with models whose state constraint sets `MaxLogLen=0`. It was not allowing reconfigurations to occur unless some log entries were written.
