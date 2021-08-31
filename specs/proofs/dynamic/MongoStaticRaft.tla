@@ -14,10 +14,9 @@ VARIABLE log
 VARIABLE config
 
 \* History variables for stating correctness properties.
-VARIABLE elections
 VARIABLE committed
 
-vars == <<currentTerm, state, log, elections, committed, config>>
+vars == <<currentTerm, state, log, committed, config>>
 
 \*
 \* Helper operators.
@@ -85,7 +84,7 @@ UpdateTermsExpr(i, j) ==
 ClientRequest(i) ==
     /\ state[i] = Primary
     /\ log' = [log EXCEPT ![i] = Append(log[i], currentTerm[i])]
-    /\ UNCHANGED <<currentTerm, state, elections, committed, config>>
+    /\ UNCHANGED <<currentTerm, state, committed, config>>
 
 \* Node 'i' gets a new log entry from node 'j'.
 GetEntries(i, j) ==
@@ -105,7 +104,7 @@ GetEntries(i, j) ==
               newEntry      == log[j][newEntryIndex]
               newLog        == Append(log[i], newEntry) IN
               /\ log' = [log EXCEPT ![i] = newLog]
-    /\ UNCHANGED <<elections, committed, currentTerm, state, config>>
+    /\ UNCHANGED <<committed, currentTerm, state, config>>
 
 \*  Node 'i' rolls back against the log of node 'j'.  
 RollbackEntries(i, j) ==
@@ -113,7 +112,7 @@ RollbackEntries(i, j) ==
     /\ CanRollback(i, j)
     \* Roll back one log entry.
     /\ log' = [log EXCEPT ![i] = SubSeq(log[i], 1, Len(log[i])-1)]
-    /\ UNCHANGED <<elections, committed, currentTerm, state, config>>
+    /\ UNCHANGED <<committed, currentTerm, state, config>>
 
 \* Node 'i' gets elected as a primary.
 BecomeLeader(i, voteQuorum) == 
@@ -127,9 +126,6 @@ BecomeLeader(i, voteQuorum) ==
                     IF s = i THEN Primary
                     ELSE IF s \in voteQuorum THEN Secondary \* All voters should revert to secondary state.
                     ELSE state[s]]
-    /\ elections' = elections \cup 
-        {[ leader  |-> i, 
-            term   |-> newTerm ]}
     /\ UNCHANGED <<log, config, committed>>   
             
 \* Primary 'i' commits its latest log entry.
@@ -152,7 +148,7 @@ CommitEntry(i, commitQuorum) ==
     \* /\ LET committedPrefix == {[ entry |-> <<idx,log[i][idx]>>, 
     \*                              term |-> currentTerm[i]] : idx \in 1..ind} IN
     \*     committed' = committed \cup committedPrefix
-    /\ UNCHANGED <<currentTerm, state, log, config, elections>>
+    /\ UNCHANGED <<currentTerm, state, log, config>>
 
 \* Action that exchanges terms between two nodes and step down the primary if
 \* needed. This can be safely specified as a separate action, rather than
@@ -161,7 +157,7 @@ CommitEntry(i, commitQuorum) ==
 \* strictly necessary for guaranteeing safety.
 UpdateTerms(i, j) == 
     /\ UpdateTermsExpr(i, j)
-    /\ UNCHANGED <<log, config, elections, committed>>
+    /\ UNCHANGED <<log, config, committed>>
 
 Init == 
     /\ currentTerm = [i \in Server |-> 0]
@@ -170,7 +166,6 @@ Init ==
     /\ \E initConfig \in SUBSET Server : 
         /\ initConfig # {} \* configs should be non-empty.
         /\ config = [i \in Server |-> initConfig]
-    /\ elections = {}
     /\ committed = {}
 
 
@@ -278,10 +273,6 @@ AllSecondariesMustNotBeLatest ==
 \*
 \* Correctness properties
 \*
-
-ElectionSafety == 
-    \A e1, e2 \in elections : 
-        (e1.term = e2.term) => (e1.leader = e2.leader)
 
 \* When a node gets elected as primary it contains all entries committed in previous terms.
 LeaderCompleteness == 

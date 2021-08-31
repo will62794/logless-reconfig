@@ -72,7 +72,6 @@ TypeOK ==
     /\ state \in SUBSET [Server -> {Secondary, Primary}]
     /\ log \in SUBSET [Server -> Seq(PositiveNat)]
     /\ config = [i \in Server |-> Server]
-    /\ elections = {}
     /\ committed \in SUBSET CommittedType
 *)
 
@@ -538,8 +537,6 @@ ConfigsWithSameVersionHaveSameMemberSet ==
             \/ (config[s] = config[t])
             \/ ConfigDisabled(t)
 
-ViewNoElections == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
-
 CommittedType == 
     [ entry  : (0..MaxLogLen) \X (0..MaxTerm),
       term   : 0..MaxTerm ]
@@ -574,7 +571,6 @@ TypeOKRandom ==
     /\ configTerm \in RandomSubset(NumRandSubsets, [Server -> 0..MaxTerm])
     \* For checking MongoRaftReconfig with logs.
     /\ committed \in RandomSetOfSubsets(kNumSubsets, nAvgSubsetSize, CommittedType)
-    /\ elections = {}
 
 ConfigsGrowMonotonically == [][\A s \in Server : CSM!NewerOrEqualConfig(CV(s)', CV(s))]_vars
 CurrentTermsGTEConfigTerms == \A s \in Server : currentTerm[s] >= configTerm[s]
@@ -773,7 +769,6 @@ Alias ==
         \* state |-> state,
         \* log |-> log,
         \* config |-> config,
-        \* elections |-> elections,
         \* config |-> config,
         \* reconfigs |-> ReconfigPairsAll,
         \* electionLogIndexes |-> [s \in Server |-> ElectionLogIndex(s)]

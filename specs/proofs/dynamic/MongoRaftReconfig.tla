@@ -17,9 +17,7 @@ VARIABLE config
 VARIABLE configVersion
 VARIABLE configTerm
 
-VARIABLE elections
-
-vars == <<currentTerm, state, log, configVersion, configTerm, config, log, elections, committed>>
+vars == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
 
 \*
 \* Helper operators.
@@ -45,7 +43,7 @@ LogTerm(i, index) == GetTerm(log[i], index)
 -------------------------------------------------------------------------------------------
 
 
-osmVars == <<log, elections, committed>>
+osmVars == <<log, committed>>
 csmVars == <<configVersion, configTerm, config>>
 
 \* The config state machine.
@@ -62,7 +60,6 @@ OSM == INSTANCE MongoStaticRaft
              state <- state,
              log <- log,
              config <- config,
-             elections <- elections,
              committed <- committed
              
 \*
@@ -205,7 +202,6 @@ Spec == Init /\ [][Next]_vars
 \* Correctness properties.
 \*
 
-ElectionSafety == OSM!ElectionSafety
 StateMachineSafety == OSM!StateMachineSafety
 LeaderCompleteness == OSM!LeaderCompleteness
 
