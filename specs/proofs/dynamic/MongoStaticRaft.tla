@@ -130,10 +130,7 @@ BecomeLeader(i, voteQuorum) ==
     /\ elections' = elections \cup 
         {[ leader  |-> i, 
             term   |-> newTerm ]}
-    \* Allow new leaders to write a no-op on step up if they want to. It is optional, but permissible.
-    /\ \/ log' = log \* [log EXCEPT ![i] = Append(log[i], newTerm)]
-       \/ UNCHANGED log
-    /\ UNCHANGED <<config, committed>>   
+    /\ UNCHANGED <<log, config, committed>>   
             
 \* Primary 'i' commits its latest log entry.
 CommitEntry(i, commitQuorum) ==
