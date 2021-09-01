@@ -557,7 +557,9 @@ PROOF
 
 LEMMA QuorumsIdentical ==
 ASSUME TypeOK
-PROVE \A s \in Server : Quorums(config[s]) = CSM!Quorums(config[s])
+PROVE \A s \in Server :
+            /\ Quorums(config[s]) = CSM!Quorums(config[s])
+            /\ Quorums(config[s]) = OSM!Quorums(config[s])
         
 LEMMA QuorumsOverlapIdentical ==
 ASSUME TypeOK
@@ -1749,6 +1751,8 @@ PROOF
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
 \* began: 8/27
+\* finished: 8/29 @ 1am (so basically 8/28...)
+\* this one was terrible and technical.  approx all day for 2 days straight
 \* UniformLogEntriesInTerm notes:
 \* DEF boundary == an index i in a server s' log where log[s][i] # log[s][i-1]
 \* DEF local boundary == a boundary for a single server
@@ -1919,8 +1923,364 @@ PROOF
         BY <1>2 DEF osmVars, Ind, UniformLogEntriesInTerm
     <1>3. CASE JointNext
         <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
+            BY <2>1 DEF OSM!BecomeLeader, TypeOK, Ind, UniformLogEntriesInTerm
         <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
             BY <2>2 DEF OSM!UpdateTerms, TypeOK, Ind, UniformLogEntriesInTerm
+        <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
+    <1>. QED BY <1>1, <1>2, <1>3 DEF Next
+
+\* began: 8/29
+\* finished 8/29
+\* approx 3 min
+LEMMA CommittedEntryIndexesAreNonZeroAndNext ==
+ASSUME TypeOK, Ind, Next
+PROVE CommittedEntryIndexesAreNonZero'
+PROOF
+    <1>1. CASE OSMNext /\ UNCHANGED csmVars
+        <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
+            BY <2>1 DEF OSM!ClientRequest, Ind, CommittedEntryIndexesAreNonZero, TypeOK
+        <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
+            BY <2>2 DEF OSM!GetEntries, Ind, CommittedEntryIndexesAreNonZero, TypeOK
+        <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
+            BY <2>3 DEF OSM!RollbackEntries, Ind, CommittedEntryIndexesAreNonZero, TypeOK
+        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+            BY <2>4 DEF OSM!CommitEntry, Ind, CommittedEntryIndexesAreNonZero, TypeOK
+        <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
+    <1>2. CASE CSMNext /\ UNCHANGED osmVars
+        BY <1>2 DEF osmVars, Ind, CommittedEntryIndexesAreNonZero
+    <1>3. CASE JointNext
+        <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
+            BY <2>1 DEF OSM!BecomeLeader, Ind, CommittedEntryIndexesAreNonZero
+        <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
+            BY <2>2 DEF OSM!UpdateTerms, Ind, CommittedEntryIndexesAreNonZero
+        <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
+    <1>. QED BY <1>1, <1>2, <1>3 DEF Next
+
+\* began: 8/29
+\* finished 8/29
+\* approx 3 min
+LEMMA CommittedTermMatchesEntryAndNext ==
+ASSUME TypeOK, Ind, Next
+PROVE CommittedTermMatchesEntry'
+PROOF
+    <1>1. CASE OSMNext /\ UNCHANGED csmVars
+        <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
+            BY <2>1 DEF OSM!ClientRequest, Ind, CommittedTermMatchesEntry, TypeOK
+        <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
+            BY <2>2 DEF OSM!GetEntries, Ind, CommittedTermMatchesEntry, TypeOK
+        <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
+            BY <2>3 DEF OSM!RollbackEntries, Ind, CommittedTermMatchesEntry, TypeOK
+        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+            BY <2>4 DEF OSM!CommitEntry, Ind, CommittedTermMatchesEntry, TypeOK
+        <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
+    <1>2. CASE CSMNext /\ UNCHANGED osmVars
+        BY <1>2 DEF osmVars, Ind, CommittedTermMatchesEntry
+    <1>3. CASE JointNext
+        <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
+            BY <2>1 DEF OSM!BecomeLeader, Ind, CommittedTermMatchesEntry
+        <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
+            BY <2>2 DEF OSM!UpdateTerms, Ind, CommittedTermMatchesEntry
+        <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
+    <1>. QED BY <1>1, <1>2, <1>3 DEF Next
+
+
+(* Helper lemmas for committed conjuncts *)
+
+LEMMA CommitEntryImpliesInActiveConfigSet ==
+ASSUME TypeOK, Ind,
+       NEW p \in Server,
+       NEW Q \in Quorums(config[p]),
+       OSM!CommitEntry(p, Q)
+PROVE p \in ActiveConfigSet
+PROOF
+    <1>1. SUFFICES ASSUME \A pQ \in Quorums(config[p]) : \E n \in pQ : CSM!NewerConfig(CV(n), CV(p))
+          PROVE FALSE BY DEF ActiveConfigSet, ConfigDisabled
+    <1>2. PICK n \in Q : CSM!NewerConfig(CV(n), CV(p)) BY <1>1
+    <1>3. configTerm[p] < configTerm[n]
+        BY <1>2 DEF OSM!CommitEntry, Ind, OnePrimaryPerTerm, PrimaryInTermContainsNewestConfigOfTerm,
+                    CSM!NewerConfig, CV, Quorums, TypeOK
+    <1>4. state[p] = Primary /\ currentTerm[p] < configTerm[n]
+        BY <1>3 DEF OSM!CommitEntry, Ind, PrimaryConfigTermEqualToCurrentTerm, TypeOK
+    <1>5. \E s \in Q : currentTerm[s] > currentTerm[p]
+        BY <1>2, <1>4 DEF Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, Quorums, TypeOK
+    <1>. QED BY <1>5 DEF OSM!CommitEntry, OSM!ImmediatelyCommitted, TypeOK
+
+LEMMA CommitEntryImpliesCurrentTermGreaterThanConfigTerms ==
+ASSUME TypeOK, Ind,
+       NEW p \in Server,
+       NEW Q \in Quorums(config[p]),
+       OSM!CommitEntry(p, Q)
+PROVE \A s \in Server : currentTerm[p] >= configTerm[s]
+PROOF
+    <1>1. SUFFICES ASSUME NEW s \in Server, currentTerm[p] < configTerm[s]
+          PROVE FALSE BY DEF TypeOK
+    <1>2. \E n \in Q : currentTerm[n] > currentTerm[p] BY <1>1 DEF OSM!CommitEntry, Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms
+    <1>. QED BY <1>2 DEF OSM!CommitEntry, OSM!ImmediatelyCommitted, TypeOK
+
+THEOREM DownwardNatInductionCopy == 
+  ASSUME NEW P(_), NEW m \in Nat, P(m),
+         \A n \in 1 .. m : P(n) => P(n-1)
+  PROVE  P(0)
+<1>. DEFINE Q(i) == (i <= m) => P(m-i)
+<1>1. Q(0)  OBVIOUS
+<1>2. ASSUME NEW n \in Nat, Q(n)
+      PROVE  Q(n+1)
+  BY <1>2
+<1>3. \A n \in Nat : Q(n) BY <1>1, <1>2, NatInduction, Isa
+<1>4. TRUE BY Isa \* guess isabelle doesn't work...
+<1>5. TRUE BY Z3
+<1>. QED  BY <1>3
+
+LEMMA SeqDownwardInduction ==
+ASSUME NEW P(_),
+       NEW len \in Nat,
+       len > 0,
+       P(len),
+       \A n \in 2..len : (P(n) => P(n-1))
+PROVE P(1)
+PROOF
+    <1>. DEFINE Q(i) == (i <= len-1) => P(len-i)
+    <1>1. Q(0) OBVIOUS
+    <1>2. ASSUME NEW n \in Nat, Q(n)
+          PROVE Q(n+1)
+        BY <1>2
+    <1>3. \A n \in Nat : Q(n) BY <1>1, <1>2, NatInduction, Isa
+    <1>. QED BY <1>3
+    
+LEMMA LogDownwardInduction ==
+ASSUME TypeOK,
+       NEW P(_),
+       NEW s \in Server,
+       Len(log[s]) > 0,
+       P(Len(log[s])),
+       \A n \in DOMAIN log[s] : n > 1 => (P(n) => P(n-1))
+PROVE P(1)
+PROOF
+    <1>. DEFINE len == Len(log[s])
+    <1>1. len \in Nat /\ len > 0 BY DEF TypeOK
+    <1>2. P(len) OBVIOUS
+    <1>3. \A n \in 2..len : (n \in DOMAIN log[s] /\ n > 1) BY <1>1 DEF TypeOK
+    <1>4. \A n \in 2..len : (P(n) => P(n-1)) BY <1>3 DEF TypeOK
+    <1>. QED BY <1>1, <1>2, <1>4, SeqDownwardInduction DEF TypeOK
+
+LEMMA DifferentLogEntriesImplyUpperBoundary ==
+ASSUME TypeOK, Ind,
+       NEW s \in Server,
+       NEW upper \in DOMAIN log[s],
+       NEW lower \in DOMAIN log[s],
+       upper > lower,
+       log[s][upper] # log[s][lower]
+PROVE \E i \in DOMAIN log[s] :
+            /\ log[s][i] = log[s][upper]
+            /\ log[s][i-1] < log[s][upper]
+PROOF
+    <1>1. SUFFICES ASSUME \A i \in DOMAIN log[s] : i > 1 =>
+                            \/ log[s][i] # log[s][upper]
+                            \/ log[s][i-1] >= log[s][upper]
+          PROVE FALSE BY DEF TypeOK
+    <1>2. log[s][upper] > log[s][lower] BY DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+    <1>3. \A i \in DOMAIN log[s] : (log[s][i] = log[s][upper]) => i > 1 BY <1>2 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+    <1>4. \A i \in DOMAIN log[s] : (log[s][i] = log[s][upper]) => log[s][i-1] >= log[s][upper] BY <1>1, <1>3 DEF TypeOK
+    <1>5. \A i \in DOMAIN log[s] : (log[s][i] = log[s][upper]) => log[s][i-1] = log[s][upper]
+        BY <1>3, <1>4 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+    <1>.  DEFINE P(idx) == log[s][idx] = log[s][upper]
+    <1>6. \A i \in DOMAIN log[s] : P(i) => P(i-1) BY <1>5
+    <1>7. \A i \in 1..Len(log[s]) : P(i) => P(i-1) BY <1>5
+    <1>8. /\ Len(log[s]) > 0
+          /\ P(Len(log[s]))
+          /\ \A i \in DOMAIN log[s] : (i > 1) => (P(i) => P(i-1))
+        BY <1>2, <1>5 DEF TypeOK
+    <1>9. P(1) BY <1>8, LogDownwardInduction DEF TypeOK
+        \*BY <1>2, <1>3, <1>5, <1>7, <1>8, LogDownwardInduction DEF TypeOK
+    <1>. QED BY <1>2, <1>3, <1>5, <1>8, LogDownwardInduction DEF TypeOK
+    
+    (*
+    <1>5. \A i \in DOMAIN log[s] : (i < upper) => log[s][i] = log[s][upper]
+        <2>1. TAKE i \in DOMAIN log[s]
+        <2>2. SUFFICES ASSUME i < upper
+              PROVE log[s][i] = log[s][upper] OBVIOUS
+        <2>3. i+1 \in DOMAIN log[s] BY <2>2 DEF TypeOK
+        <2>4. log[s][i] = log[s][upper] BY <1>4, <2>1, <2>2, <2>3 DEF TypeOK
+        <2>. QED BY SequencesInductionAppend, <1>4, <2>1, <2>2, <2>3 DEF TypeOK
+    <1>. QED \*BY <1>1, <1>3, <1>4 DEF TypeOK*)
+
+LEMMA DifferentLogEntriesImplyBoundary ==
+ASSUME TypeOK, Ind,
+       NEW s \in Server,
+       NEW upper \in DOMAIN log[s],
+       NEW lower \in DOMAIN log[s],
+       upper > lower,
+       log[s][upper] # log[s][lower]
+PROVE \E i \in DOMAIN log[s] :
+            /\ log[s][i] = log[s][upper]
+            /\ \A j \in DOMAIN log[s] : (j < i) => log[s][j] < log[s][upper]
+PROOF
+    <1>1. log[s][upper] > log[s][lower] BY DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+    <1>2. SUFFICES ASSUME \A i \in DOMAIN log[s] :
+                            \/ log[s][i] # log[s][upper]
+                            \/ \E j \in DOMAIN log[s] : (j < i) => log[s][j] >= log[s][upper]
+          PROVE FALSE BY DEF TypeOK
+    <1>3. SUFFICES ASSUME \A i \in DOMAIN log[s] :
+                             \E j \in DOMAIN log[s] : (j < i) => log[s][j] >= log[s][upper]
+          PROVE FALSE BY DEF TypeOK
+    <1>4. \A j \in DOMAIN log[s] : (j < lower+1) => log[s][j] <= log[s][lower]
+        BY <1>3 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+    <1>5. \E j \in DOMAIN log[s] : (j < lower+1) => (log[s][j] = log[s][upper]) BY <1>3, <1>4 DEF TypeOK
+    <1>6. \A j \in DOMAIN log[s] : (j < lower+1) => (log[s][j] < log[s][upper]) BY <1>1 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+    <1>7. PICK j \in DOMAIN log[s] : j < lower+1 BY DEF TypeOK
+    <1>. QED BY <1>1, <1>5, <1>6 DEF TypeOK
+
+LEMMA LastTermsOfLogImpliesSmallerLastIdxEqual ==
+ASSUME TypeOK, Ind,
+       NEW s \in Server,
+       NEW t \in Server,
+       LastTerm(log[s]) = LastTerm(log[t]),
+       Len(log[s]) >= Len(log[t]),
+       Len(log[t]) > 0
+PROVE LET tLastIdx == Len(log[t])
+      IN  log[s][tLastIdx] = log[t][tLastIdx]
+PROOF
+    <1>.  DEFINE tLastIdx == Len(log[t])
+    <1>.  DEFINE sLastIdx == Len(log[s])
+    <1>1. SUFFICES ASSUME sLastIdx > tLastIdx
+          PROVE log[s][tLastIdx] = log[t][tLastIdx] BY DEF LastTerm, TypeOK
+    <1>2. SUFFICES ASSUME log[s][tLastIdx] # log[t][tLastIdx]
+          PROVE FALSE BY <1>1
+    <1>3. log[s][sLastIdx] # log[s][tLastIdx] BY <1>1, <1>2 DEF LastTerm, TypeOK
+    \*<1>4. PICK i \in DOMAIN log[s] : \A j \in DOMAIN log[s] : (j > i) => (log[s][j] = log[s][sLastIdx] /\ log[s][i] < log[s][sLastIdx])
+    \*    BY <1>1, <1>3 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+    <1>a. sLastIdx > 1
+    <1>4. PICK i \in DOMAIN log[s] :
+                    \*/\ log[s][i] = 
+                    /\ \A j \in DOMAIN log[s] : (j > i) => (log[s][j] = log[s][sLastIdx] /\ log[s][i] < log[s][sLastIdx])
+        BY <1>1, <1>3, <1>a DEF Ind, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+    <1>5. CASE i < sLastIdx
+        <2>.  DEFINE boundary == i+1
+        <2>1. i < sLastIdx BY <1>1, <1>4, <1>5 DEF Ind, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+        <2>2. \A j \in DOMAIN log[s] : (j < boundary) => log[s][j] < log[s][boundary]
+            BY <1>1, <1>4, <2>1 DEF Ind, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+        <2>3. \A j \in DOMAIN log[t] : (j < boundary) => log[t][j] # log[s][boundary]
+            BY <1>1, <1>4, <1>5, <2>1, <2>2 DEF Ind, UniformLogEntriesInTerm, TypeOK
+        <2>4. log[s][boundary] = log[s][sLastIdx] BY <1>4, <2>1
+        <2>. QED BY <1>1, <1>3, <1>4, <1>5, <2>1, <2>3, <2>4 DEF LastTerm, TypeOK
+    <1>6. CASE i = sLastIdx BY <1>1, <1>2, <1>3, <1>4, <1>6 DEF LastTerm, TypeOK
+    <1>. QED BY <1>5, <1>6 DEF TypeOK
+    
+    (*
+    <1>.  DEFINE boundary == i+1
+    <1>5. i < sLastIdx \*BY <1>1, <1>2, <1>3, <1>4 DEF Ind, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+        <2>1. \E j \in DOMAIN log[s] : log[s][j] = log[s][sLastIdx] BY DEF TypeOK
+        <2>2. \A j \in DOMAIN log[s] : (j <= i) => log[s][j] # log[s][sLastIdx] BY <1>4 DEF Ind, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+        <2>3. i # sLastIdx BY <1>1, <1>4, <2>1 DEF LastTerm, TypeOK
+        <2>. QED BY <1>4, <2>3 DEF Ind, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+    <1>6. \A j \in DOMAIN log[s] : (j < boundary) => log[s][j] < log[s][boundary]
+        BY <1>1, <1>4, <1>5 DEF Ind, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+    <1>. QED*)
+    
+    
+    (*<1>4. PICK i \in DOMAIN log[s] : \A j \in DOMAIN log[s] : (j > i) => (log[s][j] > log[s][tLastIdx] /\ log[s][i] = log[s][tLastIdx])
+        BY <1>1, <1>3 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+    \*<1>5. i < sLastIdx => log[s][i] = log[s][tLastIdx] BY <1>4 DEF TypeOK
+    <1>5. CASE i = sLastIdx
+    <1>6. CASE i < sLastIdx
+        <2>1. log[s][i] = log[s][tLastIdx] BY <1>4, <1>6 DEF TypeOK
+        <2>.  DEFINE boundary == i+1
+        <2>2. \A j \in DOMAIN log[s] : (j < boundary) => log[s][j] < log[s][boundary] \*[sLastIdx]
+            BY <1>1, <1>4, <1>6, <2>1 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+        <2>3. \A j \in DOMAIN log[t] : (j < boundary) => log[t][j] # log[s][boundary]
+            BY <1>1, <1>4, <1>6, <2>1, <2>2 DEF Ind, UniformLogEntriesInTerm, TypeOK
+        <2>4. log[s][boundary] >= log[s][tLastIdx] BY <1>4, <1>6 DEF TypeOK \* needed?
+        <2>. QED \*BY <1>1, <1>3, <1>4, <1>6, <2>1, <2>3, <2>4 DEF TypeOK
+    <1>. QED*)
+    
+    
+    \*<1>4. \E i \in DOMAIN log[s] : \A j \in DOMAIN log[s] : (j < i) => log[s][j] < log[s][sLastIdx]
+    \*    BY <1>1, <1>3 DEF LastTerm, TypeOK, Ind, TermsOfEntriesGrowMonotonically
+        
+    \*<1>4. \E i \in DOMAIN log[s] : i > tLastIdx /\ log[s][i] # log[s][tLastIdx]
+    \*    BY <1>1, <1>3 DEF LastTerm, TypeOK
+        (*
+    <1>4. \E i \in DOMAIN log[s] : i >= tLastIdx /\ log[s][i] = log[s][tLastIdx] /\ log[s][i+1] > log[s][tLastIdx]
+        <2>1. SUFFICES ASSUME \A i \in DOMAIN log[s] :
+                                    \/ i < tLastIdx
+                                    \/ log[s][i] # log[s][tLastIdx]
+                                    \/ log[s][i+1] <= log[s][tLastIdx]
+              PROVE FALSE BY <1>1, <1>3 DEF TypeOK
+        <2>2. PICK i \in DOMAIN log[s] : i >= tLastIdx /\ i < sLastIdx BY <1>1 DEF TypeOK
+        <2>3. CASE log[s][i] # log[s][tLastIdx]
+            <3>1. i > tLastIdx BY <2>1, <2>2, <2>3 DEF TypeOK
+            <3>2. log[s][i] > log[s][tLastIdx] BY <2>3, <3>1 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+            <3>3. log[s][sLastIdx] <= log[s][tLastIdx] BY <2>1
+            
+            <3>. QED BY <3>1 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+        <2>4. CASE log[s][i+1] <= log[s][tLastIdx]
+        <2>. QED BY <2>1, <2>2, <2>3, <2>4 DEF TypeOK*)
+        \*BY <1>1, <1>3 DEF Ind, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+    
+    \*<1>4. log[s][sLastIdx] # log[t][tLastIdx]
+    \*    BY <1>1, <1>3 DEF Ind, UniformLogEntriesInTerm, TermsOfEntriesGrowMonotonically, LogMatching, EqualUpTo, LastTerm, TypeOK
+    \*<1>. QED BY <1>4 DEF LastTerm, TypeOK
+
+(*****************************************)
+
+\* began: 8/29
+LEMMA LeaderCompletenessGeneralizedAndNext ==
+ASSUME TypeOK, Ind, Next
+PROVE LeaderCompletenessGeneralized'
+PROOF
+    <1>1. CASE OSMNext /\ UNCHANGED csmVars
+        <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
+            BY <2>1 DEF OSM!ClientRequest, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
+        <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
+            BY <2>2 DEF OSM!GetEntries, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
+        <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
+            BY <2>3, PrimaryAndSecondaryAreDifferent DEF OSM!RollbackEntries, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
+        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+            <3>1. PICK p \in Server : \E Q \in OSM!QuorumsAt(p) : OSM!CommitEntry(p, Q) BY <2>4
+            <3>2. \A s \in Server : currentTerm[p] >= configTerm[s]
+                BY <3>1, QuorumsIdentical, CommitEntryImpliesCurrentTermGreaterThanConfigTerms DEF OSM!QuorumsAt
+            <3>3. \A s \in Server : (state[s] = Primary /\ s # p) => currentTerm[s] < currentTerm[p]
+                BY <3>1, <3>2 DEF OSM!CommitEntry, Ind, OnePrimaryPerTerm, PrimaryConfigTermEqualToCurrentTerm, TypeOK
+            <3>. QED BY <3>1, <3>3 DEF OSM!CommitEntry, Ind, LeaderCompletenessGeneralized, InLog, OnePrimaryPerTerm, TypeOK
+        <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
+    <1>2. CASE CSMNext /\ UNCHANGED osmVars
+        <2>1. CASE \E s \in Server, newConfig \in SUBSET Server : OplogCommitment(s) /\ CSM!Reconfig(s, newConfig)
+            BY <1>2, <2>1 DEF osmVars, CSM!Reconfig, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
+        <2>2. CASE \E s,t \in Server : CSM!SendConfig(s, t)
+            BY <1>2, <2>2 DEF osmVars, CSM!SendConfig, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
+        <2>. QED BY <1>2, <2>1, <2>2 DEF CSMNext
+    <1>3. CASE JointNext
+        <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
+            <3>1. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!BecomeLeader(p, Q) /\ CSM!BecomeLeader(p, Q) BY <2>1
+            <3>2. PICK Q \in Quorums(config[p]) : OSM!BecomeLeader(p, Q) /\ CSM!BecomeLeader(p, Q) BY <3>1
+            <3>3. \A c \in committed : \E n \in Q : InLog(c.entry, n)
+                BY <3>1, <3>2, ElectedLeadersInActiveConfigSet DEF Ind, ActiveConfigsOverlapWithCommittedEntry
+            <3>4. \A c \in committed : InLog(c.entry, p)
+                <4>1. TAKE c \in committed
+                <4>2. PICK n \in Q : InLog(c.entry, n) BY <3>3
+                \* at this point (after <4>2) it should suffices to assum that Len(log[n]) > 0
+                <4>3. CASE LastTerm(log[p]) = LastTerm(log[n]) /\ Len(log[p]) >= Len(log[n])
+                    <5>.  DEFINE nLen == Len(log[n])
+                    <5>1. log[p][nLen] = log[n][nLen] \*BY <3>1, <3>2, <4>2, <4>3 DEF OSM!LastTerm, Ind, UniformLogEntriesInTerm, Quorums, TypeOK
+                    <5>. QED
+                    (*BY <3>1, <4>1, <4>2 DEF OSM!BecomeLeader, OSM!LastTerm, Ind, UniformLogEntriesInTerm,
+                        CommittedTermMatchesEntry, LogMatching, EqualUpTo, InLog, TypeOK*)
+                <4>4. CASE LastTerm(log[p]) > LastTerm(log[n])
+                <4>. QED BY <3>1, <3>2, <4>2, <4>3, <4>4 DEF OSM!BecomeLeader, OSM!CanVoteForOplog, OSM!LastTerm, LastTerm, Quorums, TypeOK
+            
+                \*BY <3>1, <3>2, <3>3 DEF OSM!BecomeLeader, OSM!CanVoteForOplog, OSM!LastTerm, InLog, Quorums, TypeOK,
+                \*    Ind, CommittedTermMatchesEntry, CommittedEntryIndexesAreNonZero
+            <3>. QED BY <3>1, <3>4 DEF OSM!BecomeLeader, InLog, Ind, LeaderCompletenessGeneralized, TypeOK
+            
+            (*<3>2. \A s \in Server : currentTerm[p] >= configTerm[s]
+                BY <3>1, QuorumsIdentical, ElectedLeadersCurrentTermGreaterThanConfigTerms DEF OSM!QuorumsAt
+            \*<3>3. \A s \in Server : (state[s] = Primary /\ s # p) => currentTerm[s] <= currentTerm[p]
+            \*    BY <3>1, <3>2 DEF OSM!BecomeLeader, Ind, PrimaryConfigTermEqualToCurrentTerm, TypeOK
+            <3>. QED*)
+            \*BY <2>1, ElectedLeadersInActiveConfigSet DEF OSM!BecomeLeader, CSM!BecomeLeader, Quorums, CommittedEntryIndexesAreNonZero,
+            \*    Ind, LeaderCompletenessGeneralized, ActiveConfigsOverlapWithCommittedEntry, CommittedTermMatchesEntry, InLog, TypeOK
+        <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
+            BY <2>2, PrimaryAndSecondaryAreDifferent DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
@@ -1961,9 +2321,9 @@ PROOF
     <1>10. CurrentTermAtLeastAsLargeAsLogTermsForPrimary' BY CurrentTermAtLeastAsLargeAsLogTermsForPrimaryAndNext
     <1>11. LogEntryInTermImpliesConfigInTerm' BY LogEntryInTermImpliesConfigInTermAndNext
     <1>12. UniformLogEntriesInTerm' BY UniformLogEntriesInTermAndNext
-    <1>13. CommittedEntryIndexesAreNonZero'
-    <1>14. CommittedTermMatchesEntry'
-    <1>15. LeaderCompletenessGeneralized'
+    <1>13. CommittedEntryIndexesAreNonZero' BY CommittedEntryIndexesAreNonZeroAndNext
+    <1>14. CommittedTermMatchesEntry' BY CommittedTermMatchesEntryAndNext
+    <1>15. LeaderCompletenessGeneralized' BY LeaderCompletenessGeneralizedAndNext
     <1>16. LogsLaterThanCommittedMustHaveCommitted'
     <1>17. ActiveConfigsOverlapWithCommittedEntry'
     <1>18. NewerConfigsDisablePrimaryCommitsInOlderTerms'
