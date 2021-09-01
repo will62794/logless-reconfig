@@ -116,5 +116,34 @@ PROOF
         <2>. QED BY <2>1 DEF Ind, UniformLogEntriesInTerm, TypeOK
     <1>. QED BY <1>3, <1>4, <1>5 DEF LastTerm, TypeOK
 
+LEMMA ElectedLeadersHaveAllCommits ==
+ASSUME TypeOK, Ind,
+       NEW p \in Server,
+       NEW Q \in Quorums(config[p]),
+       OSM!BecomeLeader(p, Q),
+       CSM!BecomeLeader(p, Q)
+PROVE \A c \in committed : InLog(c.entry, p)
+    <1>1. TAKE c \in committed
+    <1>2. PICK n \in Q : InLog(c.entry, n) BY ElectedLeadersInActiveConfigSet DEF Ind, ActiveConfigsOverlapWithCommittedEntry
+    <1>n. n \in Server BY <1>2 DEF Quorums, TypeOK
+    <1>3. CASE LastTerm(log[p]) > LastTerm(log[n])
+        <2>1. \E i \in DOMAIN log[n] : log[n][i] = c.term BY <1>2 DEF Ind, CommittedTermMatchesEntry, InLog, TypeOK
+        <2>2. LastTerm(log[n]) >= c.term BY <1>n, <1>1, <1>3, <2>1 DEF Ind, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+        <2>3. LastTerm(log[p]) > c.term BY <1>n, <1>1, <1>3, <2>2 DEF LastTerm, TypeOK
+        <2>4. Len(log[p]) >= c.entry[1] /\ log[p][c.entry[1]] = c.term
+            <3>1. p \in Server /\ c \in committed BY <1>1
+            <3>2. \E i \in DOMAIN log[p] : log[p][i] > c.term BY <2>3 DEF LastTerm, TypeOK
+            <3>. QED BY <3>1, <3>2 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
+        <2>. QED BY <1>1, <2>4 DEF Ind, CommittedTermMatchesEntry, CommittedEntryIndexesAreNonZero, InLog, TypeOK
+    <1>4. CASE LastTerm(log[p]) = LastTerm(log[n]) /\ Len(log[p]) >= Len(log[n])
+        <2>.  DEFINE nLen == Len(log[n])
+        <2>1. nLen > 0 BY <1>2 DEF InLog, TypeOK
+        <2>2. log[p][nLen] = log[n][nLen] BY <1>n, <1>4, <2>1, EqualLastTermImpliesEqualAtIdx DEF TypeOK
+        <2>3. \A i \in DOMAIN log[n] : log[n][i] = log[p][i]
+            <3>1. \A i \in DOMAIN log[n] : \A j \in Nat : (j > 0 /\ j < nLen) => log[p][j] = log[n][j]
+                BY <1>n, <1>4, <2>1, <2>2 DEF Ind, LogMatching, EqualUpTo, TypeOK
+            <3>. QED BY <1>n, <1>4, <2>1, <2>2, <3>1 DEF TypeOK
+        <2>. QED BY <1>1, <1>n, <1>2, <1>4, <2>3 DEF InLog, TypeOK
+    <1>. QED BY <1>3, <1>4 DEF OSM!BecomeLeader, OSM!CanVoteForOplog, OSM!LastTerm, LastTerm
 
 =============================================================================
