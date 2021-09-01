@@ -21,7 +21,7 @@ For example, to verify safety properties of `MongoRaftReconfig` and `MongoLogles
 
 ```bash
 ./checkmodel.sh models/MCMongoRaftReconfig_4Servers-L2-T2-CV3.cfg MCMongoRaftReconfig 1
-./checkmodel.sh models/MCMongoLoglessDynamicRaftAux-4Servers-T4-CV4.cfg MCMongoLoglessDynamicRaftAux 1
+./checkmodel.sh models/MCMongoLoglessDynamicRaft-4Servers-T4-CV4.cfg MCMongoLoglessDynamicRaft 1
 ```
 These models impose state constraints on both protocols to make the reachable state space finite. Complete verification time, however, will vary depending on the speed of your machine.
 
