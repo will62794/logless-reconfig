@@ -295,12 +295,13 @@ ASSUME NEW P(_),
 PROVE P(1)
 PROOF
     <1>. DEFINE Q(i) == (i <= len-1) => P(len-i)
-    <1>1. Q(0) OBVIOUS
+    <1>. HIDE DEF Q
+    <1>1. Q(0) BY DEF Q
     <1>2. ASSUME NEW n \in Nat, Q(n)
           PROVE Q(n+1)
-        BY <1>2
+        BY <1>2 DEF Q
     <1>3. \A n \in Nat : Q(n) BY <1>1, <1>2, NatInduction, Isa
-    <1>. QED BY <1>3
+    <1>. QED BY <1>3 DEF Q
 
 LEMMA DifferentLogEntriesImplyUpperBoundary ==
 ASSUME TypeOK, Ind,
@@ -322,25 +323,51 @@ PROOF
     <1>2. log[s][upper] > log[s][lower] BY DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
     <1>3. upper > 1 BY DEF TypeOK
     <1>.  DEFINE P(idx) == log[s][idx] = log[s][upper]
+    <1>.  HIDE DEF P
     <1>4. \A i \in DOMAIN log[s] : P(i) => P(i-1)
         <2>1. \A i \in DOMAIN log[s] : (log[s][i] = log[s][upper]) => i > 1 BY <1>2 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
         <2>2. \A i \in DOMAIN log[s] : (log[s][i] = log[s][upper]) => log[s][i-1] >= log[s][upper] BY <1>1, <2>1 DEF TypeOK
         <2>3. \A i \in DOMAIN log[s] : (log[s][i] = log[s][upper]) => log[s][i-1] = log[s][upper]
             BY <2>1, <2>2 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
-        <2>. QED BY <2>3
-    <1>5. \A i \in 1..Len(log[s]) : P(i) => P(i-1) BY <1>4
-    <1>6. P(upper) OBVIOUS
+        <2>. QED BY <2>3 DEF P
+    <1>5. \A i \in 1..Len(log[s]) : P(i) => P(i-1) BY <1>4 DEF P
+    <1>6. P(upper) BY DEF P
     <1>7. P(1)
         <2>1. /\ upper \in Nat
               /\ upper > 0
               /\ P(upper)
               /\ \A n \in 2..upper : (P(n) => P(n-1))
             BY <1>3, <1>5, <1>6 DEF TypeOK
-        <2>. HIDE DEF P
         <2>. QED BY <2>1, SeqDownwardInduction, Isa DEF TypeOK
-    <1>8. log[s][1] = log[s][upper] BY <1>7
+    <1>8. log[s][1] = log[s][upper] BY <1>7 DEF P
     <1>. QED BY <1>2, <1>3, <1>8 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
-    
+
+LEMMA EqualLastTermImpliesEqualAtIdx ==
+ASSUME TypeOK, Ind,
+       NEW s \in Server,
+       NEW t \in Server,
+       LastTerm(log[s]) = LastTerm(log[t]),
+       Len(log[s]) >= Len(log[t]),
+       Len(log[t]) > 0
+PROVE LET tLastIdx == Len(log[t])
+      IN  log[s][tLastIdx] = log[t][tLastIdx]
+PROOF
+    <1>.  DEFINE tLastIdx == Len(log[t])
+    <1>.  DEFINE sLastIdx == Len(log[s])
+    <1>1. SUFFICES ASSUME sLastIdx > tLastIdx,
+                          log[s][tLastIdx] # log[t][tLastIdx]
+          PROVE FALSE BY DEF LastTerm, TypeOK
+    <1>2. log[s][tLastIdx] < log[s][sLastIdx] BY <1>1 DEF Ind, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+    <1>3. PICK i \in DOMAIN log[s] :
+                    /\ i > 1
+                    /\ log[s][i] = log[s][sLastIdx]
+                    /\ log[s][i-1] < log[s][sLastIdx]
+        BY <1>1, DifferentLogEntriesImplyUpperBoundary DEF LastTerm
+    <1>4. i > tLastIdx BY <1>1, <1>3 DEF Ind, TermsOfEntriesGrowMonotonically, LastTerm, TypeOK
+    <1>5. \A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i]
+        <2>1. \A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i] BY <1>3 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+        <2>. QED BY <2>1 DEF Ind, UniformLogEntriesInTerm, TypeOK
+    <1>. QED BY <1>3, <1>4, <1>5 DEF LastTerm, TypeOK
 
 =============================================================================
 
