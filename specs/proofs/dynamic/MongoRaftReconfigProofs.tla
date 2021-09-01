@@ -642,6 +642,12 @@ SimpleOlderConfig(t,s) ==
     \/ configTerm[t] < configTerm[s]
     \/ configTerm[t] = configTerm[s] /\ configVersion[t] < configVersion[s]
 
+RollbackCommitted == 
+    ~(\E i,j \in Server : 
+      \E c \in committed :
+        /\ ENABLED OSM!RollbackEntries(i,j) 
+        /\ Len(log[i]) = c.entry[1] /\ log[i][c.entry[1]] = c.entry[2])
+
 DeactivatedInOlderConfigs == 
     \A s,t \in Server : (SimpleOlderConfig(t,s) /\ ~QuorumsOverlap(config[s], config[t])) => (t \notin ActiveConfigSet)
 
