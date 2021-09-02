@@ -41,6 +41,7 @@ QuorumsAt(i) == Quorums(config[i])
 
 \* Is it possible for log 'i' to roll back against log 'j'. 
 \* If this is true, it implies that log 'i' should remove entries from the end of its log.
+(*
 CanRollback(i, j) ==
     /\ Len(log[i]) > 0
     /\ \* The log with later term is more up-to-date.
@@ -49,6 +50,20 @@ CanRollback(i, j) ==
        \* There seems no short-cut of OR clauses, so we specify the negative case.
        \/ /\ Len(log[i]) <= Len(log[j])
           /\ LastTerm(log[i]) /= LogTerm(j, Len(log[i]))
+*)
+
+IsPrefix(s, t) ==
+  (**************************************************************************)
+  (* TRUE iff the sequence s is a prefix of the sequence t, s.t.            *)
+  (* \E u \in Seq(Range(t)) : t = s \o u. In other words, there exists      *)
+  (* a suffix u that with s prepended equals t.                             *)
+  (**************************************************************************)
+  Len(s) <= Len(t) /\ SubSeq(s, 1, Len(s)) = SubSeq(t, 1, Len(s))
+
+CanRollback(i, j) ==
+    \*/\ Len(log[i]) > 0
+    /\ LastTerm(log[i]) < LastTerm(log[j])
+    /\ ~IsPrefix(log[i],log[j])
 
 \* Can node 'i' currently cast a vote for node 'j' in term 'term'.
 CanVoteForOplog(i, j, term) ==
