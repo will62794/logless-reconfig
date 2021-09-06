@@ -651,6 +651,13 @@ RollbackCommitted ==
 DeactivatedInOlderConfigs == 
     \A s,t \in Server : (SimpleOlderConfig(t,s) /\ ~QuorumsOverlap(config[s], config[t])) => (t \notin ActiveConfigSet)
 
+\* If a primary can commit a log entry, then this implies it has the newest configuration
+\* in existence.
+PrimaryCanCommitImpliesNewestConfig == 
+    \A s,t \in Server : 
+    (state[s] = Primary /\ \E Q \in Quorums(config[s]) : ENABLED OSM!CommitEntry(s,Q)) =>
+    CSM!NewerOrEqualConfig(CV(s), CV(t))
+
 Ind ==
     \*
     \* Establishing election safety under reconfiguration.
