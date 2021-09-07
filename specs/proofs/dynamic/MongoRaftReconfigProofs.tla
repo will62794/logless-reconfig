@@ -658,6 +658,13 @@ PrimaryCanCommitImpliesNewestConfig ==
     (state[s] = Primary /\ \E Q \in Quorums(config[s]) : ENABLED OSM!CommitEntry(s,Q)) =>
     CSM!NewerOrEqualConfig(CV(s), CV(t))
 
+\* If a primary can commit a log entry, then its config is active. Should be able to show
+\* this by arguing that a primary that can commit a write has the newest configuration
+\* in existence (see above).
+PrimaryCanCommitImpliesActive == 
+    \A s \in Server : \A Q \in Quorums(config[s]) : ENABLED OSM!CommitEntry(s,Q) => s \in ActiveConfigSet
+
+
 Ind ==
     \*
     \* Establishing election safety under reconfiguration.
