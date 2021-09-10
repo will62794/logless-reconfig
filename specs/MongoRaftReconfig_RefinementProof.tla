@@ -39,8 +39,8 @@ THEOREM MRRNextRefinesMLDRNext == [Next]_vars => [IMLDR!Next]_IMLDR!vars
             <3>1. CASE \E s \in Server, newConfig \in SUBSET Server : 
                     OplogCommitment(s) /\ CSM!Reconfig(s, newConfig) /\ UNCHANGED osmVars
                     BY <3>1 
-                    DEF CSM!Reconfig, IMLDR!Reconfig, CSM!ConfigIsCommitted, CSM!QuorumsOverlap,
-                        IMLDR!ConfigIsCommitted, IMLDR!QuorumsOverlap, CSM!Quorums, IMLDR!Quorums, 
+                    DEF CSM!Reconfig, IMLDR!Reconfig, CSM!ConfigQuorumCheck, CSM!TermQuorumCheck, CSM!QuorumsOverlap,
+                        IMLDR!ConfigQuorumCheck, IMLDR!TermQuorumCheck, IMLDR!QuorumsOverlap, CSM!Quorums, IMLDR!Quorums, 
                         Quorums, IMLDR!QuorumsAt, CSM!QuorumsAt, IsCommitted, osmVars, CSM!Cardinality, IMLDR!Cardinality
             <3>2. CASE \E s,t \in Server : CSM!SendConfig(s, t) /\ UNCHANGED osmVars
                     BY <3>2 DEF CSM!SendConfig, IMLDR!SendConfig, IMLDR!IsNewerConfig, CSM!IsNewerConfig                    

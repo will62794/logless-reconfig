@@ -98,18 +98,21 @@ BecomeLeader(i, voteQuorum) ==
     /\ configTerm' = [configTerm EXCEPT ![i] = newTerm]
     /\ UNCHANGED <<config, configVersion>>       
 
-ConfigChecks(i) ==
-    \* Config Quorum Check.
-    /\ \E Q \in Quorums(config[i]) : \A t \in Q : 
+\* A quorum of servers in the config of server i have i's config.
+ConfigQuorumCheck(i) ==
+    \E Q \in Quorums(config[i]) : \A t \in Q : 
         /\ configVersion[t] = configVersion[i]
         /\ configTerm[t] = configTerm[i]
-    \* Term Quorum Check
-    /\ \E Q \in Quorums(config[i]) : \A t \in Q : currentTerm[t] = currentTerm[i]  
+
+\* A quorum of servers in the config of server i have the term of i.
+TermQuorumCheck(i) ==
+    \E Q \in Quorums(config[i]) : \A t \in Q : currentTerm[t] = currentTerm[i]   
 
 \* A reconfig occurs on node i. The node must currently be a leader.
 Reconfig(i, newConfig) ==
     /\ state[i] = Primary
-    /\ ConfigChecks(i)
+    /\ ConfigQuorumCheck(i)
+    /\ TermQuorumCheck(i)
     /\ QuorumsOverlap(config[i], newConfig)
     /\ i \in newConfig
     /\ configTerm' = [configTerm EXCEPT ![i] = currentTerm[i]]
