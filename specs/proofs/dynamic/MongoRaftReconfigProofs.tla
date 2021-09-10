@@ -570,7 +570,8 @@ TypeOKRandom ==
     /\ configVersion \in RandomSubset(NumRandSubsets, [Server -> 0..MaxConfigVersion])
     /\ configTerm \in RandomSubset(NumRandSubsets, [Server -> 0..MaxTerm])
     \* For checking MongoRaftReconfig with logs.
-    /\ committed \in RandomSetOfSubsets(kNumSubsets, nAvgSubsetSize, CommittedType)
+    \* /\ committed \in RandomSetOfSubsets(kNumSubsets, nAvgSubsetSize, CommittedType)
+    /\ committed = {} \*\in RandomSetOfSubsets(kNumSubsets, nAvgSubsetSize, CommittedType)
 
 ConfigsGrowMonotonically == [][\A s \in Server : CSM!NewerOrEqualConfig(CV(s)', CV(s))]_vars
 CurrentTermsGTEConfigTerms == \A s \in Server : currentTerm[s] >= configTerm[s]
@@ -767,6 +768,51 @@ INextAlt == NextVerbose
 \* Must check that the initial states satisfy the inductive invariant.
 Initiation == (Init => Ind)
 
+----------------------------------------------------------------
+
+PrimaryServers == {s \in Server : state[s] = Primary}
+NewestTerm == Max({currentTerm[s] : s \in PrimaryServers})
+
+OnlyPrimaryInNewestTermCanExecuteReconfig == 
+    \A s \in Server : 
+    \A cfg \in SUBSET Server :
+        (state[s] = Primary /\ ENABLED CSM!Reconfig(s, cfg)) => (currentTerm[s] = NewestTerm)
+
+ReconfigAllowedImpliesActiveConfigsHaveSameMemberSet == 
+    \A s \in Server :
+    \A cfg \in SUBSET Server :
+        (state[s] = Primary /\  ENABLED CSM!Reconfig(s, cfg)) => 
+        (\A ni,nj \in ActiveConfigSet : config[ni] = config[nj])
+
+TermsOfElectableServersGreaterThanCurrentConfigTerm == 
+    \A s \in Server : 
+    \A Q \in Quorums(config[s]) :
+    \* Electable server must get elected in a term > than its current config term.
+    (ENABLED JointBecomeLeader(s, Q)) => (currentTerm[s] + 1) > configTerm[s]
+
+IndAlt2 ==
+    \* /\ OnePrimaryPerTerm
+    \* /\ ActiveConfigsSafeAtTerms
+    \* /\ PrimaryConfigTermEqualToCurrentTerm
+    \* /\ OnlyPrimaryInNewestTermCanExecuteReconfig
+    \* /\ ActiveConfigsOverlap
+    /\ ReconfigAllowedImpliesActiveConfigsHaveSameMemberSet
+    \* /\ PrimaryConfigTermEqualToCurrentTerm
+    \* /\ TermsOfElectableServersGreaterThanCurrentConfigTerm
+
+\* For checking 1-step induction counterexamples.
+VARIABLE depth
+
+IInitAlt2 ==     
+    /\ TypeOKRandom
+    /\ depth = 1
+    /\ IndAlt2
+
+INextAlt2 ==
+    /\ NextVerbose
+    /\ depth = 1
+    /\ depth' = depth + 1
+
 --------------------------------------------------------------------------------
 
 \*
@@ -791,6 +837,7 @@ Alias ==
         \* config |-> config,
         \* config |-> config,
         \* reconfigs |-> ReconfigPairsAll,
+        depth |-> depth,
         \* electionLogIndexes |-> [s \in Server |-> ElectionLogIndex(s)]
         \* latestBeforeTerm |-> [s \in Server |-> [ i \in ((DOMAIN log[s]) \{1}) |-> LatestEntryBeforeTerm(s, log[s][i])]]
         nodes |-> [i \in Server \cup {Nil} |-> ServerStr(i)],
