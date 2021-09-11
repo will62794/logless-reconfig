@@ -146,4 +146,188 @@ PROVE \A c \in committed : InLog(c.entry, p)
         <2>. QED BY <1>1, <1>n, <1>2, <1>4, <2>3 DEF InLog, TypeOK
     <1>. QED BY <1>3, <1>4 DEF OSM!BecomeLeader, OSM!CanVoteForOplog, OSM!LastTerm, LastTerm
 
+LEMMA CommitImpliesInActiveConfigSet ==
+ASSUME TypeOK, Ind,
+       NEW p \in Server,
+       NEW pQ \in Quorums(config[p]),
+       OSM!CommitEntry(p, pQ)
+PROVE p \in ActiveConfigSet
+PROOF
+    <1>1. SUFFICES ASSUME \A Q \in Quorums(config[p]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(p))
+          PROVE FALSE BY DEF ActiveConfigSet, ConfigDisabled
+    <1>2. PICK n \in pQ : CSM!NewerConfig(CV(n), CV(p)) BY <1>1
+    <1>n. n \in Server BY <1>2 DEF Quorums, TypeOK
+    <1>3. state[p] = Primary BY DEF OSM!CommitEntry
+    <1>4. n # p BY <1>2 DEF CSM!NewerConfig, CV, TypeOK
+    <1>5. currentTerm[n] = currentTerm[p] \*Len(log[n]) >= ind /\ log[n][ind] = currentTerm[p] /\ 
+        <2>1. OSM!ImmediatelyCommitted(<<Len(log[p]),currentTerm[p]>>, pQ) BY DEF OSM!CommitEntry, TypeOK
+        <2>. QED BY <2>1 DEF OSM!ImmediatelyCommitted, OSM!InLog, TypeOK
+    <1>6. configTerm[n] > currentTerm[p]
+        <2>1. state[n] # Primary BY <1>n, <1>3, <1>4, <1>5 DEF Ind, OnePrimaryPerTerm
+        <2>2. configTerm[n] >= configTerm[p] BY <1>2 DEF CSM!NewerConfig, CV, TypeOK
+        <2>3. (configTerm[n] = configTerm[p]) => (configVersion[n] <= configVersion[p])
+            BY <1>n, <1>3, <2>1, <2>2 DEF Ind, PrimaryInTermContainsNewestConfigOfTerm, TypeOK
+        <2>4. configTerm[n] > configTerm[p] BY <1>n, <1>2, <2>2, <2>3 DEF CSM!NewerConfig, CV, TypeOK
+        <2>. QED BY <1>3, <2>4 DEF Ind, PrimaryConfigTermEqualToCurrentTerm
+    <1>7. \E t \in pQ : currentTerm[t] > currentTerm[p]
+        BY <1>3, <1>6 DEF Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, Quorums, TypeOK
+    <1>. QED BY <1>7 DEF OSM!CommitEntry, OSM!ImmediatelyCommitted, TypeOK
+
+LEMMA ReconfigImpliesCommitTermsSmallerOrEqual ==
+ASSUME TypeOK, Ind,
+       NEW p \in Server,
+       NEW newConfig \in SUBSET Server,
+       OplogCommitment(p),
+       CSM!Reconfig(p, newConfig)
+PROVE \A c \in committed : currentTerm[p] >= c.term
+PROOF
+    <1>1. TAKE c \in committed
+    <1>2. SUFFICES ASSUME c.term > currentTerm[p]
+          PROVE FALSE BY DEF TypeOK
+    <1>3. PICK d \in committed : d.term = currentTerm[p] BY DEF OplogCommitment
+    <1>.  DEFINE k == d.entry[1]
+    <1>4. PICK Q \in Quorums(config[p]) : \A s \in Q : (log[s][k] = log[p][k] /\ currentTerm[s] = currentTerm[p])
+        BY <1>3 DEF OplogCommitment, IsCommitted, TypeOK, Ind, CommittedEntryIndexesAreNonZero
+    <1>5. \E n \in Q : InLog(c.entry, n) BY <1>4, ReconfigImpliesInActiveConfigSet DEF Ind, ActiveConfigsOverlapWithCommittedEntry
+    <1>6. PICK s \in Server : configTerm[s] >= c.term
+        BY <1>4, <1>5 DEF Ind, LogEntryInTermImpliesConfigInTerm, CommittedTermMatchesEntry, Quorums, InLog, TypeOK
+    <1>7. currentTerm[p] < configTerm[s] BY <1>2, <1>6 DEF TypeOK
+    <1>8. \E n \in Q : currentTerm[n] > currentTerm[p] BY <1>7 DEF CSM!Reconfig, Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms
+    <1>. QED BY <1>4, <1>8 DEF TypeOK
+
+COROLLARY ReconfigImpliesHasAllCommits ==
+ASSUME TypeOK, Ind,
+       NEW p \in Server,
+       NEW newConfig \in SUBSET Server,
+       OplogCommitment(p),
+       CSM!Reconfig(p, newConfig)
+PROVE \A c \in committed : InLog(c.entry, p)
+BY ReconfigImpliesCommitTermsSmallerOrEqual DEF CSM!Reconfig,
+    Ind, LeaderCompletenessGeneralized, CommittedTermMatchesEntry, InLog, TypeOK
+
+LEMMA ReconfigImpliesHasQuorumWithAllCommits ==
+ASSUME TypeOK, Ind,
+       NEW p \in Server,
+       NEW newConfig \in SUBSET Server,
+       OplogCommitment(p),
+       CSM!Reconfig(p, newConfig)
+PROVE \A c \in committed : \A Q \in Quorums(newConfig) : \E n \in Q : InLog(c.entry, n)
+    <1>1. TAKE c \in committed
+    <1>2. CASE c.term = currentTerm[p]
+        <2>.  DEFINE k == c.entry[1]
+        <2>1. PICK Q \in Quorums(config[p]) : \A s \in Q : (k \in DOMAIN log[s] /\ log[s][k] = currentTerm[p] /\ currentTerm[s] = currentTerm[p])
+            <3>1. \E Q \in Quorums(config[p]) : \A s \in Q : (k \in DOMAIN log[s] /\ log[s][k] = log[p][k] /\ currentTerm[s] = currentTerm[p])
+                BY <1>2 DEF OplogCommitment, IsCommitted, LogTerm, TypeOK, Ind, CommittedEntryIndexesAreNonZero
+            <3>2. LogTerm(p, k) = currentTerm[p] BY <1>2 DEF OplogCommitment, IsCommitted
+            <3>3. k > 0 BY DEF Ind, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry, TypeOK
+            <3>. QED BY <3>1, <3>2, <3>3 DEF LogTerm, GetTerm, TypeOK
+        <2>2. \A pQ \in Quorums(newConfig) : \E s \in pQ : InLog(c.entry, s)
+            <3>1. \A pQ \in Quorums(newConfig) : pQ \cap Q # {}
+                <4>1. QuorumsOverlap(config[p], newConfig) BY QuorumsOverlapIdentical DEF CSM!Reconfig, TypeOK
+                <4>. QED BY <2>1, <4>1, QuorumsOverlapIsCommutative DEF QuorumsOverlap, Quorums, TypeOK
+            <3>2. \A pQ \in Quorums(newConfig) : \E s \in pQ : (k \in DOMAIN log[s] /\ log[s][k] = c.term)
+                BY <1>1, <1>2, <2>1, <3>1 DEF InLog, TypeOK, Ind, CommittedTermMatchesEntry, CommittedEntryIndexesAreNonZero
+            <3>3. \A pQ \in Quorums(newConfig) : \E s \in pQ : (k \in DOMAIN log[s] /\ log[s][k] = c.entry[2])
+                BY <1>1, <3>2 DEF TypeOK, Ind, CommittedTermMatchesEntry, CommittedEntryIndexesAreNonZero
+            <3>. QED BY <1>1, <3>3 DEF InLog, TypeOK
+        <2>. QED BY <2>2
+    <1>3. CASE c.term < currentTerm[p]
+        <2>1. PICK d \in committed : d.term = currentTerm[p] BY DEF OplogCommitment
+        <2>.  DEFINE k == d.entry[1]
+        <2>.  DEFINE l == c.entry[1]
+        <2>2. log[p][k] = d.term /\ k \in DOMAIN log[p]
+            <3>1. LogTerm(p, k) = d.term BY <2>1 DEF OplogCommitment, IsCommitted, LogTerm, TypeOK
+            <3>2. k \in DOMAIN log[p] BY <2>1 DEF OplogCommitment, IsCommitted, LogTerm, TypeOK, Ind, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry
+            <3>. QED BY <3>1, <3>2 DEF LogTerm, GetTerm, TypeOK
+        <2>3. InLog(c.entry, p)
+            <3>1. \E i \in DOMAIN log[p] : log[p][i] > c.term BY <1>3, <2>1, <2>2 DEF TypeOK
+            <3>2. Len(log[p]) >= c.entry[1] /\ log[p][c.entry[1]] = c.term BY <1>1, <2>1, <3>1, Z3 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
+            <3>. QED BY <1>1, <3>2 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry, InLog, TypeOK
+        <2>4. PICK pQ \in Quorums(config[p]) : \A s \in pQ : InLog(c.entry, s)
+            <3>1. PICK pQ \in Quorums(config[p]) : \A s \in pQ : (log[s][k] = log[p][k] /\ k \in DOMAIN log[s])
+                BY <1>1, <2>1, <2>2, <2>3 DEF OplogCommitment, IsCommitted, InLog, TypeOK
+            <3>2. c.term < d.term BY <1>1, <1>3, <2>1 DEF TypeOK
+            <3>3. log[p][l] = c.term /\ l \in DOMAIN log[p] BY <1>1, <2>3 DEF InLog, Ind, CommittedTermMatchesEntry, TypeOK
+            <3>4. l < k
+                <4>1. SUFFICES ASSUME l >= k
+                      PROVE FALSE BY DEF TypeOK
+                <4>2. log[p][l] >= log[p][k] BY <2>2, <3>3, <4>1 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+                <4>. QED BY <1>1, <2>1, <2>2, <3>2, <3>3, <4>2 DEF Ind, CommittedTermMatchesEntry, TypeOK
+            <3>5. \A s \in pQ : \A i \in DOMAIN log[s] :
+                    (i <= k) => (log[s][i] = log[p][i] /\ i \in (DOMAIN log[s] \cap DOMAIN log[p]))
+                BY <1>1, <2>1, <2>2, <3>1 DEF Ind, LogMatching, EqualUpTo, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry, Quorums, TypeOK
+            <3>6. \A s \in pQ : (l \in DOMAIN log[s] /\ l <= k)
+                BY <1>1, <2>1, <2>2, <3>1, <3>3, <3>4, <3>5 DEF Ind, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry, Quorums, TypeOK
+            <3>7. \A s \in pQ : (l \in DOMAIN log[s] /\ l <= k => log[s][l] = log[p][l])
+                BY <1>1, <2>1, <3>5, <3>6 DEF TypeOK
+            <3>8. \A s \in pQ : (log[s][l] = log[p][l]) BY <3>6, <3>7
+            <3>. QED BY <1>1, <3>3, <3>6, <3>8 DEF Ind, CommittedTermMatchesEntry, InLog, TypeOK
+        <2>5. \A Q \in Quorums(newConfig) : Q \cap pQ # {}
+            BY <2>4, QuorumsOverlapIdentical, QuorumsOverlapIsCommutative DEF CSM!Reconfig, QuorumsOverlap, TypeOK
+        <2>. QED BY <1>1, <2>3, <2>4, <2>5 DEF InLog, TypeOK
+    <1>. QED BY <1>2, <1>3, ReconfigImpliesCommitTermsSmallerOrEqual DEF TypeOK
+
+\* likely won't be used
+LEMMA ReconfigImpliesHasQuorumWithAllCommitsInCurrentConfig ==
+ASSUME TypeOK, Ind,
+       NEW p \in Server,
+       NEW newConfig \in SUBSET Server,
+       OplogCommitment(p),
+       CSM!Reconfig(p, newConfig)
+PROVE \A c \in committed : \A Q \in Quorums(config[p]) : \E n \in Q : InLog(c.entry, n)
+    <1>1. TAKE c \in committed
+    <1>2. CASE c.term = currentTerm[p]
+        <2>.  DEFINE k == c.entry[1]
+        <2>1. PICK Q \in Quorums(config[p]) : \A s \in Q : (k \in DOMAIN log[s] /\ log[s][k] = currentTerm[p] /\ currentTerm[s] = currentTerm[p])
+            <3>1. \E Q \in Quorums(config[p]) : \A s \in Q : (k \in DOMAIN log[s] /\ log[s][k] = log[p][k] /\ currentTerm[s] = currentTerm[p])
+                BY <1>2 DEF OplogCommitment, IsCommitted, LogTerm, TypeOK, Ind, CommittedEntryIndexesAreNonZero
+            <3>2. LogTerm(p, k) = currentTerm[p] BY <1>2 DEF OplogCommitment, IsCommitted
+            <3>3. k > 0 BY DEF Ind, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry, TypeOK
+            <3>. QED BY <3>1, <3>2, <3>3 DEF LogTerm, GetTerm, TypeOK
+        <2>2. \A pQ \in Quorums(config[p]) : \E s \in pQ : InLog(c.entry, s)
+            <3>1. \A pQ \in Quorums(config[p]) : \E s \in pQ : s \in Q BY <2>1, StaticQuorumsOverlap DEF QuorumsOverlap, TypeOK
+            <3>2. \A pQ \in Quorums(config[p]) : \E s \in pQ : (k \in DOMAIN log[s] /\ log[s][k] = c.term)
+                BY <1>1, <1>2, <2>1, <3>1 DEF InLog, TypeOK, Ind, CommittedTermMatchesEntry, CommittedEntryIndexesAreNonZero
+            <3>3. \A pQ \in Quorums(config[p]) : \E s \in pQ : (k \in DOMAIN log[s] /\ log[s][k] = c.entry[2])
+                BY <1>1, <3>2 DEF TypeOK, Ind, CommittedTermMatchesEntry, CommittedEntryIndexesAreNonZero
+            <3>. QED BY <1>1, <3>3 DEF InLog, TypeOK
+        <2>. QED BY <2>2
+    <1>3. CASE c.term < currentTerm[p]
+        <2>1. PICK d \in committed : d.term = currentTerm[p] BY DEF OplogCommitment
+        <2>.  DEFINE k == d.entry[1]
+        <2>.  DEFINE l == c.entry[1]
+        <2>2. log[p][k] = d.term /\ k \in DOMAIN log[p]
+            <3>1. LogTerm(p, k) = d.term BY <2>1 DEF OplogCommitment, IsCommitted, LogTerm, TypeOK
+            <3>2. k \in DOMAIN log[p] BY <2>1 DEF OplogCommitment, IsCommitted, LogTerm, TypeOK, Ind, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry
+            <3>. QED BY <3>1, <3>2 DEF LogTerm, GetTerm, TypeOK
+        <2>3. InLog(c.entry, p)
+            <3>1. \E i \in DOMAIN log[p] : log[p][i] > c.term BY <1>3, <2>1, <2>2 DEF TypeOK
+            <3>2. Len(log[p]) >= c.entry[1] /\ log[p][c.entry[1]] = c.term BY <1>1, <2>1, <3>1, Z3 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
+            <3>. QED BY <1>1, <3>2 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry, InLog, TypeOK
+        <2>4. PICK pQ \in Quorums(config[p]) : \A s \in pQ : InLog(c.entry, s)
+            <3>1. PICK pQ \in Quorums(config[p]) : \A s \in pQ : (log[s][k] = log[p][k] /\ k \in DOMAIN log[s])
+                BY <1>1, <2>1, <2>2, <2>3 DEF OplogCommitment, IsCommitted, InLog, TypeOK
+            <3>2. c.term < d.term BY <1>1, <1>3, <2>1 DEF TypeOK
+            <3>3. log[p][l] = c.term /\ l \in DOMAIN log[p] BY <1>1, <2>3 DEF InLog, Ind, CommittedTermMatchesEntry, TypeOK
+            <3>4. l < k
+                <4>1. SUFFICES ASSUME l >= k
+                      PROVE FALSE BY DEF TypeOK
+                <4>2. log[p][l] >= log[p][k] BY <2>2, <3>3, <4>1 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+                <4>. QED BY <1>1, <2>1, <2>2, <3>2, <3>3, <4>2 DEF Ind, CommittedTermMatchesEntry, TypeOK
+            <3>5. \A s \in pQ : \A i \in DOMAIN log[s] :
+                    (i <= k) => (log[s][i] = log[p][i] /\ i \in (DOMAIN log[s] \cap DOMAIN log[p]))
+                BY <1>1, <2>1, <2>2, <3>1 DEF Ind, LogMatching, EqualUpTo, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry, Quorums, TypeOK
+            <3>6. \A s \in pQ : (l \in DOMAIN log[s] /\ l <= k)
+                BY <1>1, <2>1, <2>2, <3>1, <3>3, <3>4, <3>5 DEF Ind, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry, Quorums, TypeOK
+            <3>7. \A s \in pQ : (l \in DOMAIN log[s] /\ l <= k => log[s][l] = log[p][l])
+                BY <1>1, <2>1, <3>5, <3>6 DEF TypeOK
+            <3>8. \A s \in pQ : (log[s][l] = log[p][l]) BY <3>6, <3>7
+            <3>. QED BY <1>1, <3>3, <3>6, <3>8 DEF Ind, CommittedTermMatchesEntry, InLog, TypeOK
+        <2>5. \A Q \in Quorums(config[p]) : Q \cap pQ # {}
+            BY <2>4, ReconfigImpliesInActiveConfigSet DEF Ind, ActiveConfigsOverlap, QuorumsOverlap, TypeOK
+        <2>. QED BY <1>1, <2>3, <2>4, <2>5 DEF InLog, TypeOK
+    <1>. QED BY <1>2, <1>3, ReconfigImpliesCommitTermsSmallerOrEqual DEF TypeOK
+
 =============================================================================
+
+

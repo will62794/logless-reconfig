@@ -207,6 +207,7 @@ PROOF
     <1>2. currentTerm[s] >= currentTerm[n] BY <1>1 DEF CSM!BecomeLeader, CSM!CanVoteForConfig, Quorums, TypeOK
     <1>. QED BY <1>1, <1>2 DEF Quorums, TypeOK
 
+
 LEMMA ReconfigImpliesInActiveConfigSet ==
 ASSUME TypeOK,
        NEW s \in Server,
@@ -397,5 +398,14 @@ ASSUME TypeOK,
        \*NEW lg \in [Server -> Seq(Nat)]
 PROVE Empty(log[s]) <=> OSM!Empty(log[s])
 BY DEF OSM!Empty, Empty, TypeOK
+
+LEMMA ConfigNewerThanPrimaryImpliesConfigTermIsNewer ==
+ASSUME TypeOK, Ind,
+       NEW s \in Server,
+       NEW p \in Server,
+       state[p] = Primary,
+       CSM!NewerConfig(CV(s), CV(p))
+PROVE configTerm[s] > configTerm[p]
+BY DEF Ind, OnePrimaryPerTerm, PrimaryInTermContainsNewestConfigOfTerm, CSM!NewerConfig, CV, TypeOK
 
 =============================================================================
