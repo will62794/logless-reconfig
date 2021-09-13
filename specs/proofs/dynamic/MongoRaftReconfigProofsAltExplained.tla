@@ -36,14 +36,34 @@ ElectableServerRequiresAllActiveConfigsHaveSameMemberSet ==
     (ENABLED JointBecomeLeader(s, Q)) =>
     (\A ni,nj \in ActiveConfigSet : config[ni] = config[nj])
 
+PrimaryCanReconfigImpliesAllOlderConfigsDisabled == 
+    \A s,t \in Server :
+    \A cfg \in SUBSET Server :
+        ( /\ state[s] = Primary 
+          /\ ENABLED CSM!Reconfig(s, cfg)
+          /\ OlderConfig(CV(t), CV(s))) => 
+            ConfigDisabled(t)
+
+PrimaryCanReconfigImpliesItsInNewestConfig == 
+    \A s \in Server :
+    state[s] = Primary => (s \in ServersInNewestConfig)
+
 IndAlt2 ==
     \* /\ OnePrimaryPerTerm
     \* /\ ActiveConfigsSafeAtTerms
     \* /\ PrimaryConfigTermEqualToCurrentTerm
+    /\ OnePrimaryPerTerm
+    /\ ActiveConfigsSafeAtTerms
+    /\ PrimaryConfigTermEqualToCurrentTerm
     \* /\ OnlyPrimaryInNewestTermCanExecuteReconfig
+    \* /\ PrimaryCanReconfigImpliesItsInNewestConfig
     \* /\ ActiveConfigsOverlap
-    /\ ReconfigAllowedImpliesActiveConfigsHaveSameMemberSet
-    /\ ReconfigAllowedOnPrimaryImpliesAllOtherPrimariesCannotReconfig
+    \* /\ ReconfigAllowedImpliesActiveConfigsHaveSameMemberSet
+    \* /\ PrimaryCanReconfigImpliesAllOlderConfigsDisabled
+    /\ PrimaryInTermContainsNewestConfigOfTerm
+    \* /\ ConfigVersionAndTermUnique
+    \* /\ OnePrimaryPerTerm
+    \* /\ ReconfigAllowedOnPrimaryImpliesAllOtherPrimariesCannotReconfig
     \* /\ ElectableServerRequiresAllActiveConfigsHaveSameMemberSet
     \* /\ TermsOfElectableServersGreaterThanCurrentConfigTerm
 
