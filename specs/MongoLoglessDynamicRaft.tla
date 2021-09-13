@@ -7,7 +7,7 @@
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
 
 CONSTANTS Server
-CONSTANTS Secondary, Primary, Nil
+CONSTANTS Secondary, Primary, Candidate, Nil
 
 VARIABLE currentTerm
 VARIABLE state
@@ -15,7 +15,9 @@ VARIABLE configVersion
 VARIABLE configTerm
 VARIABLE config
 
-vars == <<currentTerm, state, configVersion, configTerm, config>>
+VARIABLE votes
+
+vars == <<currentTerm, state, configVersion, configTerm, config, votes>>
 
 \*
 \* Helper operators.
@@ -90,22 +92,39 @@ UpdateTermsExpr(i, j) ==
 
 UpdateTerms(i, j) == 
     /\ UpdateTermsExpr(i, j)
-    /\ UNCHANGED <<configVersion, configTerm, config>>
+    /\ UNCHANGED <<configVersion, configTerm, config, votes>>
+
+StartElection(i) ==
+    /\ state[i] = Secondary
+    /\ state' = [state EXCEPT ![i] = Candidate]
+    /\ currentTerm' = [currentTerm EXCEPT ![i] = currentTerm[i] + 1]
+    /\ i \in config[i]
+    /\ votes' = [votes EXCEPT ![i] = {i}]
+    /\ UNCHANGED <<config, configVersion, configTerm>>    
+
+\* Server i garners a vote from server j.
+GetVote(i, j) ==
+    LET newTerm == currentTerm[i] + 1 IN
+    /\ state[i] = Candidate
+    /\ j \in config[i]
+    /\ CanVoteForConfig(j, i, newTerm)    
+    /\ currentTerm' = [currentTerm EXCEPT![j] = newTerm]
+    /\ state' = [state EXCEPT ![j] = Secondary]
+    /\ votes' = [votes EXCEPT ![i] = votes[i] \cup {j}]
+    /\ UNCHANGED <<config, configVersion, configTerm>>
 
 BecomeLeader(i, voteQuorum) == 
     \* Primaries make decisions based on their current configuration.
     LET newTerm == currentTerm[i] + 1 IN
-    /\ i \in config[i]
+    /\ state[i] = Candidate
     /\ i \in voteQuorum
-    /\ \A v \in voteQuorum : CanVoteForConfig(v, i, newTerm)
+    /\ votes[i] = voteQuorum
     \* Update the terms of each voter.
-    /\ currentTerm' = [s \in Server |-> IF s \in voteQuorum THEN newTerm ELSE currentTerm[s]]
-    /\ state' = [s \in Server |->
-                    IF s = i THEN Primary
-                    ELSE IF s \in voteQuorum THEN Secondary \* All voters should revert to secondary state.
-                    ELSE state[s]]
+    /\ currentTerm' = [currentTerm EXCEPT ![i] = newTerm]
+    /\ state' = [state EXCEPT ![i] = Primary]
     \* Update config's term on step-up.
     /\ configTerm' = [configTerm EXCEPT ![i] = newTerm]
+    /\ votes' = [votes EXCEPT ![i] = {}]
     /\ UNCHANGED <<config, configVersion>>    
 
 \* A reconfig occurs on node i. The node must currently be a leader.
@@ -118,7 +137,7 @@ Reconfig(i, newConfig) ==
     /\ configTerm' = [configTerm EXCEPT ![i] = currentTerm[i]]
     /\ configVersion' = [configVersion EXCEPT ![i] = configVersion[i] + 1]
     /\ config' = [config EXCEPT ![i] = newConfig]
-    /\ UNCHANGED <<currentTerm, state>>
+    /\ UNCHANGED <<currentTerm, state, votes>>
 
 \* Node i sends its current config to node j.
 SendConfig(i, j) ==
@@ -127,7 +146,7 @@ SendConfig(i, j) ==
     /\ configVersion' = [configVersion EXCEPT ![j] = configVersion[i]]
     /\ configTerm' = [configTerm EXCEPT ![j] = configTerm[i]]
     /\ config' = [config EXCEPT ![j] = config[i]]
-    /\ UNCHANGED <<currentTerm, state>>
+    /\ UNCHANGED <<currentTerm, state, votes>>
 
 Init == 
     /\ currentTerm = [i \in Server |-> 0]
@@ -137,12 +156,15 @@ Init ==
     /\ \E initConfig \in SUBSET Server :
         /\ initConfig # {}
         /\ config = [i \in Server |-> initConfig]
+    /\ votes =  [i \in Server |-> {}]
 
 Next ==
     \/ \E s \in Server, newConfig \in SUBSET Server : Reconfig(s, newConfig)
     \/ \E s,t \in Server : SendConfig(s, t)
     \/ \E i \in Server : \E Q \in Quorums(config[i]) :  BecomeLeader(i, Q)
     \/ \E s,t \in Server : UpdateTerms(s,t)
+    \/ \E s,t \in Server : GetVote(s,t)
+    \/ \E s \in Server : StartElection(s)
 
 Spec == Init /\ [][Next]_vars
 
