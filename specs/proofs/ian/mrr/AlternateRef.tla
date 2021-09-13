@@ -97,9 +97,6 @@ LastEntry(xlog) == <<Len(xlog),xlog[Len(xlog)]>>
 
 ActiveConfigSet == {s \in Server : ~ConfigDisabled(s)}
 
-EqualUpTo(log1, log2, i) ==
-    \A j \in 1..i : log1[j] = log2[j]
-
 
 
 \*
@@ -139,6 +136,10 @@ ActiveConfigsSafeAtTerms ==
 \*
 \* Establishing log invariants.
 \*
+
+EqualUpTo(log1, log2, i) ==
+    \*\A j \in 1..i : log1[j] = log2[j]
+    \A j \in Nat : (j > 0 /\ j <= i) => log1[j] = log2[j]
 
 \* This is a core property of Raft, but MongoStaticRaft does not satisfy this
 LogMatching ==
@@ -182,7 +183,9 @@ UniformLogEntriesInTerm ==
     \A s,t \in Server :
     \A i \in DOMAIN log[s] : 
         (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) => 
-            (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)
+            (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])
+
+            \*(~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)
     
 
 \*

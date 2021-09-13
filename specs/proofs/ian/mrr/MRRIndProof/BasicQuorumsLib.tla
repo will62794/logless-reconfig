@@ -7,16 +7,6 @@ ASSUME NEW S, IsFiniteSet(S), S # {}
 PROVE Quorums(S) # {}
 PROOF BY FS_EmptySet, FS_CardinalityType DEF Quorums
 
-\* this isn't true unless we add it to the II
-LEMMA ConfigsAreNonempty ==
-ASSUME TRUE
-PROVE \A s \in Server : config[s] # {} /\ IsFiniteSet(config[s])
-
-COROLLARY QuorumsExistsForServer ==
-ASSUME NEW s \in Server
-PROVE Quorums(config[s]) # {}
-PROOF BY QuorumsExistForNonEmptySets, ConfigsAreNonempty
-
 LEMMA QuorumsAreServerSubsets ==
 ASSUME TypeOK, NEW s \in Server
 PROVE QuorumsAt(s) \subseteq SUBSET Server
@@ -30,7 +20,7 @@ ASSUME \*TypeOK,
 PROVE Q1 \cap Q2 # {}
 PROOF
     <1>. IsFiniteSet(cfg)
-        BY FS_Subset, ServerIsFinite, ConfigsAreNonempty\* DEF TypeOK
+        BY FS_Subset, ServerIsFinite, ConfigsAreFinite\* DEF TypeOK
     <1>. IsFiniteSet(Q1) /\ IsFiniteSet(Q2)
         BY QuorumsAreServerSubsets, ServerIsFinite, FS_Subset DEF Quorums
     <1>. IsFiniteSet(Q1 \cap Q2)

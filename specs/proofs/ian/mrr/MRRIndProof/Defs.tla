@@ -233,7 +233,7 @@ NewerConfigsDisablePrimaryCommitsInOlderTerms ==
 --------------------------------------------------------------------------------
 
 \*IndAlt == 
-Ind == 
+Ind ==
     \*
     \* Establishing election safety under reconfiguration.
     \*

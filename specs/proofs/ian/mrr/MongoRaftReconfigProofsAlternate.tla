@@ -618,6 +618,13 @@ NewerConfigsDisablePrimaryCommitsInOlderTerms ==
     (state[t] = Primary /\ currentTerm[t] < configTerm[s]) =>
         \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] > currentTerm[t]
 
+
+\* also...
+NewerConfigsDeactivateOlderNonoverlappingConfigs ==
+    \A s,t \in Server :
+        (CSM!NewerConfig(CV(s), CV(t)) /\ ~QuorumsOverlap(config[s], config[t]))
+            => ConfigDisabled(t)
+
 \* Alternate, smaller inductive invariant.
 \*IndAlt == 
 Ind == 
@@ -655,6 +662,9 @@ Ind ==
     /\ ActiveConfigsOverlapWithCommittedEntry
     /\ NewerConfigsDisablePrimaryCommitsInOlderTerms    
 
+    \* also...
+    \*/\ NewerConfigsDeactivateOlderNonoverlappingConfigs
+
 
 \* SMS_LC_II
 \* 
@@ -690,6 +700,12 @@ ElectedLeadersHaveLatestTerm ==
     \A p \in Server :
         (\E Q \in QuorumsAt(p) : ENABLED OSM!BecomeLeader(p, Q) /\ ENABLED CSM!BecomeLeader(p, Q))
             => \A s \in Server : currentTerm[p] >= currentTerm[s]
+
+UniformLogEntriesInTermAlt ==
+    \A s,t \in Server :
+        \A i \in DOMAIN log[s] :
+            \A j \in DOMAIN log[t] :
+                (log[t][j] = log[s][i] /\ j \in DOMAIN log[s]) => (log[s][j] = log[s][i])
 
 \*
 \* DEBUGGING
