@@ -12,25 +12,19 @@ and communicating the essential behaviors and safety characteristics of the prot
 also serving to make automated verification via model checking more feasible.
 
 
-## Checking Properties with TLC
+## Model Checking
 
-Correctness properties of the protocol can be verified with the TLC model checker. In order to download TLC to run model checking, you can run the following:
-
+Safety properties of finite instances of *MongoRaftReconfig* can be verified using the TLC model checker. To check a model, you can execute the following:
 ```
-cd specs
-./download_tlc.sh
+./modelcheck.sh <config_file> <spec_name> <tlc_worker_count>
 ```
-which will download a pinned version of `tla2tools.jar` to the current directory. To check a model, you can execute the following from inside the `specs` directory:
-```
-./checkmodel.sh <config_file> <spec_name> <worker_count>
-```
-This will run the specification `<spec_name>.tla` with TLC configuration file `<config_file>` and `<worker_count>` TLC worker threads. It will save the results of the execution, along with auxiliary information about the run, into a timestamped file in `specs/tlc-results`. 
-
-For example, to verify safety properties of `MongoRaftReconfig` and `MongoLoglessDynamicRaft` using a single TLC worker, you can run the following from inside the `specs` directory:
+This will save the results of the execution, along with auxiliary information about the run, into a timestamped file in `tlc-results`. For example, to verify safety properties of `MongoRaftReconfig` and `MongoLoglessDynamicRaft` with 4 TLC workers, you can run the following commands:
 
 ```bash
-./checkmodel.sh models/MCMongoRaftReconfig_4Servers-L2-T2-CV3.cfg MCMongoRaftReconfig 1
-./checkmodel.sh models/MCMongoLoglessDynamicRaft-4Servers-T4-CV4.cfg MCMongoLoglessDynamicRaft 1
+# Check MongoRaftReconfig.
+./modelcheck.sh models/MCMongoRaftReconfig_4Servers-L2-T2-CV3.cfg MCMongoRaftReconfig 4
+# Check MongoLoglessDynamicRaft.
+./modelcheck.sh models/MCMongoLoglessDynamicRaft-4Servers-T4-CV4.cfg MCMongoLoglessDynamicRaft 4
 ```
 These models impose state constraints on both protocols to make the reachable state space finite. Complete verification time, however, will vary depending on the speed of your machine.
 
