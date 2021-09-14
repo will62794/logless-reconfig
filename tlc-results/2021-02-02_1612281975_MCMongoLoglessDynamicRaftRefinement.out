@@ -1,0 +1,92 @@
+Git Revision: 8cb0b6f
+Platform: Linux login-faculty.ccs.neu.edu 3.10.0-1127.19.1.el7.x86_64 #1 SMP Tue Aug 25 17:23:54 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+CPU Info Linux: model name	: Intel(R) Xeon(R) Gold 5118 CPU @ 2.30GHz
+CPU Cores Linux: 48
+CPU Info Mac: 
+CPU Cores Mac: 
+Spec: MCMongoLoglessDynamicRaftRefinement.tla
+Config: models/MCMongoLoglessDynamicRaftRefinement-5Servers-T2-CV3.cfg
+----
+INIT InitAux
+NEXT NextAux
+CONSTANTS 
+Nil = Nil
+Server = {n1, n2, n3, n4, n5}
+Secondary = Secondary
+Primary = Primary
+MaxTerm = 2
+MaxConfigVersion = 3
+CONSTRAINT StateConstraint
+INVARIANT StateMachineSafety
+VIEW ViewRemoveElectionsAndLogVars
+SYMMETRY ServerSymmetry
+ALIAS Alias
+----
+
+TLC2 Version 2.15 of Day Month 20?? (rev: adc67eb)
+Running breadth-first search Model-Checking with fp 42 and seed 6173678064344614669 with 1 worker on 48 cores with 27305MB heap and 4096MB offheap memory (Linux 3.10.0-1127.19.1.el7.x86_64 amd64, Oracle Corporation 1.8.0_262 x86_64, OffHeapDiskFPSet, DiskStateQueue).
+Parsing file /proj/will-fm/logless-reconfig/refinement/MCMongoLoglessDynamicRaftRefinement.tla
+Parsing file /tmp/TLC.tla
+Parsing file /proj/will-fm/logless-reconfig/refinement/MongoLoglessDynamicRaftRefinement.tla
+Parsing file /proj/will-fm/logless-reconfig/refinement/MongoLoglessDynamicRaft.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/Integers.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Parsing file /proj/will-fm/logless-reconfig/refinement/MongoSafeWeakRaft.tla
+Parsing file /proj/will-fm/logless-reconfig/refinement/MongoWeakRaft.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module MongoLoglessDynamicRaft
+Semantic processing of module MongoWeakRaft
+Semantic processing of module MongoSafeWeakRaft
+Semantic processing of module MongoLoglessDynamicRaftRefinement
+Semantic processing of module MCMongoLoglessDynamicRaftRefinement
+Starting... (2021-02-02 11:06:16)
+Computing initial states...
+Computed 2 initial states...
+Computed 4 initial states...
+Computed 8 initial states...
+Computed 16 initial states...
+Finished computing initial states: 31 states generated, with 5 of them distinct at 2021-02-02 11:06:17.
+Progress(7) at 2021-02-02 11:06:20: 22,219 states generated (22,219 s/min), 5,465 distinct states found (5,465 ds/min), 3,839 states left on queue.
+Progress(10) at 2021-02-02 11:07:20: 702,953 states generated (680,734 s/min), 125,696 distinct states found (120,231 ds/min), 74,597 states left on queue.
+Progress(11) at 2021-02-02 11:08:20: 1,439,464 states generated (736,511 s/min), 216,469 distinct states found (90,773 ds/min), 113,898 states left on queue.
+Progress(11) at 2021-02-02 11:09:20: 2,144,563 states generated (705,099 s/min), 311,494 distinct states found (95,025 ds/min), 161,630 states left on queue.
+Progress(12) at 2021-02-02 11:10:20: 2,908,068 states generated (763,505 s/min), 372,656 distinct states found (61,162 ds/min), 171,102 states left on queue.
+Progress(12) at 2021-02-02 11:11:20: 3,684,803 states generated (776,735 s/min), 436,240 distinct states found (63,584 ds/min), 181,472 states left on queue.
+Progress(12) at 2021-02-02 11:12:20: 4,406,174 states generated (721,371 s/min), 505,930 distinct states found (69,690 ds/min), 204,933 states left on queue.
+Progress(13) at 2021-02-02 11:13:20: 5,105,990 states generated (699,816 s/min), 556,685 distinct states found (50,755 ds/min), 213,265 states left on queue.
+Progress(13) at 2021-02-02 11:14:20: 5,934,451 states generated (828,461 s/min), 602,716 distinct states found (46,031 ds/min), 203,435 states left on queue.
+Progress(13) at 2021-02-02 11:15:20: 6,691,121 states generated (756,670 s/min), 652,070 distinct states found (49,354 ds/min), 206,135 states left on queue.
+Progress(13) at 2021-02-02 11:16:20: 7,451,040 states generated (759,919 s/min), 708,874 distinct states found (56,804 ds/min), 214,342 states left on queue.
+Progress(13) at 2021-02-02 11:17:20: 8,149,300 states generated (698,260 s/min), 754,389 distinct states found (45,515 ds/min), 219,597 states left on queue.
+Progress(14) at 2021-02-02 11:18:20: 8,937,265 states generated (787,965 s/min), 787,324 distinct states found (32,935 ds/min), 204,606 states left on queue.
+Progress(14) at 2021-02-02 11:19:20: 9,744,622 states generated (807,357 s/min), 827,900 distinct states found (40,576 ds/min), 193,893 states left on queue.
+Progress(14) at 2021-02-02 11:20:20: 10,481,153 states generated (736,531 s/min), 876,535 distinct states found (48,635 ds/min), 197,046 states left on queue.
+Progress(14) at 2021-02-02 11:21:20: 11,265,189 states generated (784,036 s/min), 919,912 distinct states found (43,377 ds/min), 195,153 states left on queue.
+Progress(14) at 2021-02-02 11:22:20: 11,962,903 states generated (697,714 s/min), 960,424 distinct states found (40,512 ds/min), 198,429 states left on queue.
+Progress(15) at 2021-02-02 11:23:20: 12,791,704 states generated (828,801 s/min), 986,139 distinct states found (25,715 ds/min), 176,180 states left on queue.
+Progress(15) at 2021-02-02 11:24:20: 13,528,526 states generated (736,822 s/min), 1,021,547 distinct states found (35,408 ds/min), 165,972 states left on queue.
+Progress(15) at 2021-02-02 11:25:20: 14,292,631 states generated (764,105 s/min), 1,066,666 distinct states found (45,119 ds/min), 164,407 states left on queue.
+Progress(15) at 2021-02-02 11:26:20: 15,021,512 states generated (728,881 s/min), 1,104,756 distinct states found (38,090 ds/min), 161,382 states left on queue.
+Progress(16) at 2021-02-02 11:27:20: 15,793,486 states generated (771,974 s/min), 1,129,475 distinct states found (24,719 ds/min), 146,663 states left on queue.
+Progress(16) at 2021-02-02 11:28:20: 16,554,082 states generated (760,596 s/min), 1,155,761 distinct states found (26,286 ds/min), 128,367 states left on queue.
+Progress(16) at 2021-02-02 11:29:20: 17,322,511 states generated (768,429 s/min), 1,187,801 distinct states found (32,040 ds/min), 114,072 states left on queue.
+Progress(16) at 2021-02-02 11:30:20: 18,031,832 states generated (709,321 s/min), 1,217,547 distinct states found (29,746 ds/min), 104,614 states left on queue.
+Progress(17) at 2021-02-02 11:31:20: 18,838,418 states generated (806,586 s/min), 1,234,111 distinct states found (16,564 ds/min), 82,491 states left on queue.
+Progress(17) at 2021-02-02 11:32:20: 19,636,813 states generated (798,395 s/min), 1,254,441 distinct states found (20,330 ds/min), 59,626 states left on queue.
+Progress(18) at 2021-02-02 11:33:20: 20,402,092 states generated (765,279 s/min), 1,271,704 distinct states found (17,263 ds/min), 41,276 states left on queue.
+Progress(18) at 2021-02-02 11:34:20: 21,215,629 states generated (813,537 s/min), 1,283,673 distinct states found (11,969 ds/min), 16,959 states left on queue.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 1.4E-6
+  based on the actual fingerprints:  val = 6.9E-8
+21778495 states generated, 1286650 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 19.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 26 and the 95th percentile is 3).
+Finished in 28min 55s at (2021-02-02 11:35:11)

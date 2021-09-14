@@ -1,0 +1,180 @@
+Git Revision: 10cf4d5
+Platform: Linux login-faculty.ccs.neu.edu 3.10.0-1127.19.1.el7.x86_64 #1 SMP Tue Aug 25 17:23:54 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+CPU Info Linux: model name	: Intel(R) Xeon(R) Gold 5118 CPU @ 2.30GHz
+CPU Cores Linux: 48
+CPU Info Mac: 
+CPU Cores Mac: 
+Spec: MCMongoRaftReconfig.tla
+Config: models/MCMongoRaftReconfig_4Servers-L2-T3-CV3.cfg
+----
+SPECIFICATION Spec
+CONSTANTS 
+Nil = Nil
+Server = {n1, n2, n3, n4}
+Secondary = Secondary
+Primary = Primary
+MaxLogLen = 2
+MaxTerm = 3
+MaxConfigVersion = 3
+CONSTRAINT StateConstraint
+INVARIANT StateMachineSafety
+SYMMETRY ServerSymmetry
+VIEW viewNoElections
+----
+
+TLC2 Version 2.15 of Day Month 20?? (rev: adc67eb)
+Running breadth-first search Model-Checking with fp 91 and seed -2252438689368316427 with 20 workers on 48 cores with 27305MB heap and 4096MB offheap memory (Linux 3.10.0-1127.19.1.el7.x86_64 amd64, Oracle Corporation 1.8.0_262 x86_64, OffHeapDiskFPSet, DiskStateQueue).
+Parsing file /home/williamjschultz/logless-reconfig/refinement/MCMongoRaftReconfig.tla
+Parsing file /tmp/TLC.tla
+Parsing file /home/williamjschultz/logless-reconfig/refinement/MongoRaftReconfig.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/Integers.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Parsing file /home/williamjschultz/logless-reconfig/refinement/MongoLoglessDynamicRaft.tla
+Parsing file /home/williamjschultz/logless-reconfig/refinement/MongoStaticRaft.tla
+Parsing file /home/williamjschultz/logless-reconfig/refinement/MongoWeakRaft.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module MongoLoglessDynamicRaft
+Semantic processing of module MongoWeakRaft
+Semantic processing of module MongoStaticRaft
+Semantic processing of module MongoRaftReconfig
+Semantic processing of module MCMongoRaftReconfig
+Starting... (2021-01-30 15:21:11)
+Computing initial states...
+Computed 2 initial states...
+Computed 4 initial states...
+Computed 8 initial states...
+Finished computing initial states: 15 states generated, with 4 of them distinct at 2021-01-30 15:21:12.
+Progress(9) at 2021-01-30 15:21:15: 234,267 states generated (234,267 s/min), 60,673 distinct states found (60,673 ds/min), 48,549 states left on queue.
+Progress(11) at 2021-01-30 15:22:15: 11,462,466 states generated (11,228,199 s/min), 2,032,116 distinct states found (1,971,443 ds/min), 1,446,444 states left on queue.
+Progress(12) at 2021-01-30 15:23:15: 22,741,695 states generated (11,279,229 s/min), 3,666,990 distinct states found (1,634,874 ds/min), 2,519,391 states left on queue.
+Progress(12) at 2021-01-30 15:24:15: 34,491,991 states generated (11,750,296 s/min), 5,345,166 distinct states found (1,678,176 ds/min), 3,586,795 states left on queue.
+Progress(13) at 2021-01-30 15:25:15: 45,749,632 states generated (11,257,641 s/min), 6,800,528 distinct states found (1,455,362 ds/min), 4,475,582 states left on queue.
+Progress(13) at 2021-01-30 15:26:15: 57,395,173 states generated (11,645,541 s/min), 8,290,936 distinct states found (1,490,408 ds/min), 5,381,242 states left on queue.
+Error: Invariant StateMachineSafety is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ config = (n1 :> {n1} @@ n2 :> {n1} @@ n3 :> {n1} @@ n4 :> {n1})
+/\ configTerm = (n1 :> 0 @@ n2 :> 0 @@ n3 :> 0 @@ n4 :> 0)
+/\ configVersion = (n1 :> 1 @@ n2 :> 1 @@ n3 :> 1 @@ n4 :> 1)
+/\ currentTerm = (n1 :> 0 @@ n2 :> 0 @@ n3 :> 0 @@ n4 :> 0)
+/\ committed = {}
+/\ elections = {}
+/\ state = (n1 :> Secondary @@ n2 :> Secondary @@ n3 :> Secondary @@ n4 :> Secondary)
+/\ log = (n1 :> <<>> @@ n2 :> <<>> @@ n3 :> <<>> @@ n4 :> <<>>)
+
+State 2: <JointNext line 117, col 26 to line 119, col 33 of module MongoRaftReconfig>
+/\ config = (n1 :> {n1} @@ n2 :> {n1} @@ n3 :> {n1} @@ n4 :> {n1})
+/\ configTerm = (n1 :> 1 @@ n2 :> 0 @@ n3 :> 0 @@ n4 :> 0)
+/\ configVersion = (n1 :> 1 @@ n2 :> 1 @@ n3 :> 1 @@ n4 :> 1)
+/\ currentTerm = (n1 :> 1 @@ n2 :> 0 @@ n3 :> 0 @@ n4 :> 0)
+/\ committed = {}
+/\ elections = {[term |-> 1, leader |-> n1]}
+/\ state = (n1 :> Primary @@ n2 :> Secondary @@ n3 :> Secondary @@ n4 :> Secondary)
+/\ log = (n1 :> <<1>> @@ n2 :> <<>> @@ n3 :> <<>> @@ n4 :> <<>>)
+
+State 3: <Next line 128, col 8 to line 128, col 35 of module MongoRaftReconfig>
+/\ config = (n1 :> {n1} @@ n2 :> {n1} @@ n3 :> {n1} @@ n4 :> {n1})
+/\ configTerm = (n1 :> 1 @@ n2 :> 0 @@ n3 :> 0 @@ n4 :> 0)
+/\ configVersion = (n1 :> 1 @@ n2 :> 1 @@ n3 :> 1 @@ n4 :> 1)
+/\ currentTerm = (n1 :> 1 @@ n2 :> 0 @@ n3 :> 0 @@ n4 :> 0)
+/\ committed = {[term |-> 1, entry |-> <<1, 1>>]}
+/\ elections = {[term |-> 1, leader |-> n1]}
+/\ state = (n1 :> Primary @@ n2 :> Secondary @@ n3 :> Secondary @@ n4 :> Secondary)
+/\ log = (n1 :> <<1>> @@ n2 :> <<>> @@ n3 :> <<>> @@ n4 :> <<>>)
+
+State 4: <Next line 129, col 8 to line 129, col 35 of module MongoRaftReconfig>
+/\ config = (n1 :> {n1, n2} @@ n2 :> {n1} @@ n3 :> {n1} @@ n4 :> {n1})
+/\ configTerm = (n1 :> 1 @@ n2 :> 0 @@ n3 :> 0 @@ n4 :> 0)
+/\ configVersion = (n1 :> 2 @@ n2 :> 1 @@ n3 :> 1 @@ n4 :> 1)
+/\ currentTerm = (n1 :> 1 @@ n2 :> 0 @@ n3 :> 0 @@ n4 :> 0)
+/\ committed = {[term |-> 1, entry |-> <<1, 1>>]}
+/\ elections = {[term |-> 1, leader |-> n1]}
+/\ state = (n1 :> Primary @@ n2 :> Secondary @@ n3 :> Secondary @@ n4 :> Secondary)
+/\ log = (n1 :> <<1>> @@ n2 :> <<>> @@ n3 :> <<>> @@ n4 :> <<>>)
+
+State 5: <JointNext line 117, col 26 to line 119, col 33 of module MongoRaftReconfig>
+/\ config = (n1 :> {n1, n2} @@ n2 :> {n1} @@ n3 :> {n1} @@ n4 :> {n1})
+/\ configTerm = (n1 :> 2 @@ n2 :> 0 @@ n3 :> 0 @@ n4 :> 0)
+/\ configVersion = (n1 :> 2 @@ n2 :> 1 @@ n3 :> 1 @@ n4 :> 1)
+/\ currentTerm = (n1 :> 2 @@ n2 :> 2 @@ n3 :> 0 @@ n4 :> 0)
+/\ committed = {[term |-> 1, entry |-> <<1, 1>>]}
+/\ elections = {[term |-> 1, leader |-> n1], [term |-> 2, leader |-> n1]}
+/\ state = (n1 :> Primary @@ n2 :> Secondary @@ n3 :> Secondary @@ n4 :> Secondary)
+/\ log = (n1 :> <<1, 2>> @@ n2 :> <<>> @@ n3 :> <<>> @@ n4 :> <<>>)
+
+State 6: <Next line 129, col 8 to line 129, col 35 of module MongoRaftReconfig>
+/\ config = (n1 :> {n1, n2} @@ n2 :> {n1, n2} @@ n3 :> {n1} @@ n4 :> {n1})
+/\ configTerm = (n1 :> 2 @@ n2 :> 2 @@ n3 :> 0 @@ n4 :> 0)
+/\ configVersion = (n1 :> 2 @@ n2 :> 2 @@ n3 :> 1 @@ n4 :> 1)
+/\ currentTerm = (n1 :> 2 @@ n2 :> 2 @@ n3 :> 0 @@ n4 :> 0)
+/\ committed = {[term |-> 1, entry |-> <<1, 1>>]}
+/\ elections = {[term |-> 1, leader |-> n1], [term |-> 2, leader |-> n1]}
+/\ state = (n1 :> Primary @@ n2 :> Secondary @@ n3 :> Secondary @@ n4 :> Secondary)
+/\ log = (n1 :> <<1, 2>> @@ n2 :> <<>> @@ n3 :> <<>> @@ n4 :> <<>>)
+
+State 7: <Next line 129, col 8 to line 129, col 35 of module MongoRaftReconfig>
+/\ config = (n1 :> {n1, n2, n3} @@ n2 :> {n1, n2} @@ n3 :> {n1} @@ n4 :> {n1})
+/\ configTerm = (n1 :> 2 @@ n2 :> 2 @@ n3 :> 0 @@ n4 :> 0)
+/\ configVersion = (n1 :> 3 @@ n2 :> 2 @@ n3 :> 1 @@ n4 :> 1)
+/\ currentTerm = (n1 :> 2 @@ n2 :> 2 @@ n3 :> 0 @@ n4 :> 0)
+/\ committed = {[term |-> 1, entry |-> <<1, 1>>]}
+/\ elections = {[term |-> 1, leader |-> n1], [term |-> 2, leader |-> n1]}
+/\ state = (n1 :> Primary @@ n2 :> Secondary @@ n3 :> Secondary @@ n4 :> Secondary)
+/\ log = (n1 :> <<1, 2>> @@ n2 :> <<>> @@ n3 :> <<>> @@ n4 :> <<>>)
+
+State 8: <Next line 129, col 8 to line 129, col 35 of module MongoRaftReconfig>
+/\ config = (n1 :> {n1, n2, n3} @@ n2 :> {n1, n2, n3} @@ n3 :> {n1} @@ n4 :> {n1})
+/\ configTerm = (n1 :> 2 @@ n2 :> 2 @@ n3 :> 0 @@ n4 :> 0)
+/\ configVersion = (n1 :> 3 @@ n2 :> 3 @@ n3 :> 1 @@ n4 :> 1)
+/\ currentTerm = (n1 :> 2 @@ n2 :> 2 @@ n3 :> 0 @@ n4 :> 0)
+/\ committed = {[term |-> 1, entry |-> <<1, 1>>]}
+/\ elections = {[term |-> 1, leader |-> n1], [term |-> 2, leader |-> n1]}
+/\ state = (n1 :> Primary @@ n2 :> Secondary @@ n3 :> Secondary @@ n4 :> Secondary)
+/\ log = (n1 :> <<1, 2>> @@ n2 :> <<>> @@ n3 :> <<>> @@ n4 :> <<>>)
+
+State 9: <JointNext line 117, col 26 to line 119, col 33 of module MongoRaftReconfig>
+/\ config = (n1 :> {n1, n2, n3} @@ n2 :> {n1, n2, n3} @@ n3 :> {n1} @@ n4 :> {n1})
+/\ configTerm = (n1 :> 2 @@ n2 :> 3 @@ n3 :> 0 @@ n4 :> 0)
+/\ configVersion = (n1 :> 3 @@ n2 :> 3 @@ n3 :> 1 @@ n4 :> 1)
+/\ currentTerm = (n1 :> 2 @@ n2 :> 3 @@ n3 :> 3 @@ n4 :> 0)
+/\ committed = {[term |-> 1, entry |-> <<1, 1>>]}
+/\ elections = { [term |-> 1, leader |-> n1],
+  [term |-> 2, leader |-> n1],
+  [term |-> 3, leader |-> n2] }
+/\ state = (n1 :> Primary @@ n2 :> Primary @@ n3 :> Secondary @@ n4 :> Secondary)
+/\ log = (n1 :> <<1, 2>> @@ n2 :> <<3>> @@ n3 :> <<>> @@ n4 :> <<>>)
+
+State 10: <Next line 128, col 8 to line 128, col 35 of module MongoRaftReconfig>
+/\ config = (n1 :> {n1, n2, n3} @@ n2 :> {n1, n2, n3} @@ n3 :> {n1} @@ n4 :> {n1})
+/\ configTerm = (n1 :> 2 @@ n2 :> 3 @@ n3 :> 0 @@ n4 :> 0)
+/\ configVersion = (n1 :> 3 @@ n2 :> 3 @@ n3 :> 1 @@ n4 :> 1)
+/\ currentTerm = (n1 :> 2 @@ n2 :> 3 @@ n3 :> 3 @@ n4 :> 0)
+/\ committed = {[term |-> 1, entry |-> <<1, 1>>]}
+/\ elections = { [term |-> 1, leader |-> n1],
+  [term |-> 2, leader |-> n1],
+  [term |-> 3, leader |-> n2] }
+/\ state = (n1 :> Primary @@ n2 :> Primary @@ n3 :> Secondary @@ n4 :> Secondary)
+/\ log = (n1 :> <<1, 2>> @@ n2 :> <<3>> @@ n3 :> <<3>> @@ n4 :> <<>>)
+
+State 11: <Next line 128, col 8 to line 128, col 35 of module MongoRaftReconfig>
+/\ config = (n1 :> {n1, n2, n3} @@ n2 :> {n1, n2, n3} @@ n3 :> {n1} @@ n4 :> {n1})
+/\ configTerm = (n1 :> 2 @@ n2 :> 3 @@ n3 :> 0 @@ n4 :> 0)
+/\ configVersion = (n1 :> 3 @@ n2 :> 3 @@ n3 :> 1 @@ n4 :> 1)
+/\ currentTerm = (n1 :> 2 @@ n2 :> 3 @@ n3 :> 3 @@ n4 :> 0)
+/\ committed = {[term |-> 1, entry |-> <<1, 1>>], [term |-> 3, entry |-> <<1, 3>>]}
+/\ elections = { [term |-> 1, leader |-> n1],
+  [term |-> 2, leader |-> n1],
+  [term |-> 3, leader |-> n2] }
+/\ state = (n1 :> Primary @@ n2 :> Primary @@ n3 :> Secondary @@ n4 :> Secondary)
+/\ log = (n1 :> <<1, 2>> @@ n2 :> <<3>> @@ n3 :> <<3>> @@ n4 :> <<>>)
+
+65032989 states generated, 9217584 distinct states found, 5926269 states left on queue.
+The depth of the complete state graph search is 13.
+Finished in 05min 44s at (2021-01-30 15:26:55)
+Trace exploration spec path: ./MCMongoRaftReconfig_TTrace_1612038071.tla

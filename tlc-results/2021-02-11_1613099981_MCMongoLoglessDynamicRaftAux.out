@@ -1,0 +1,68 @@
+Git Revision: d6541d8
+Platform: Linux login-faculty.ccs.neu.edu 3.10.0-1127.19.1.el7.x86_64 #1 SMP Tue Aug 25 17:23:54 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+CPU Info Linux: model name	: Intel(R) Xeon(R) Gold 5118 CPU @ 2.30GHz
+CPU Cores Linux: 48
+CPU Info Mac: 
+CPU Cores Mac: 
+Spec: MCMongoLoglessDynamicRaftAux.tla
+Config: models/MCMongoLoglessDynamicRaftAux-4Servers-T3-CV4.cfg
+----
+INIT InitAux
+NEXT NextAux
+CONSTANTS 
+Nil = Nil
+Server = {n1, n2, n3, n4}
+Secondary = Secondary
+Primary = Primary
+MaxTerm = 3
+MaxConfigVersion = 4
+CONSTRAINT StateConstraint
+INVARIANT StateMachineSafety
+SYMMETRY ServerSymmetry
+ALIAS Alias
+----
+
+TLC2 Version 2.15 of Day Month 20?? (rev: fe75b8e)
+Warning: Please run the Java VM, which executes TLC with a throughput optimized garbage collector, by passing the "-XX:+UseParallelGC" property.
+(Use the -nowarning option to disable this warning.)
+Running breadth-first search Model-Checking with fp 98 and seed 8303580853167418846 with 16 workers on 48 cores with 30688MB heap and 4096MB offheap memory [pid: 186262] (Linux 3.10.0-1127.19.1.el7.x86_64 amd64, Oracle Corporation 11.0.8 x86_64, OffHeapDiskFPSet, DiskStateQueue).
+Parsing file /proj/will-fm/logless-reconfig/specs/MCMongoLoglessDynamicRaftAux.tla
+Parsing file /tmp/TLC.tla
+Parsing file /proj/will-fm/logless-reconfig/specs/MongoLoglessDynamicRaftAux.tla
+Parsing file /proj/will-fm/logless-reconfig/specs/MongoLoglessDynamicRaft.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/Integers.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module MongoLoglessDynamicRaft
+Semantic processing of module MongoLoglessDynamicRaftAux
+Semantic processing of module MCMongoLoglessDynamicRaftAux
+Starting... (2021-02-11 22:19:42)
+Computing initial states...
+Computed 2 initial states...
+Computed 4 initial states...
+Computed 8 initial states...
+Finished computing initial states: 15 states generated, with 4 of them distinct at 2021-02-11 22:19:43.
+Progress(12) at 2021-02-11 22:19:46: 391,073 states generated (391,073 s/min), 123,218 distinct states found (123,218 ds/min), 80,468 states left on queue.
+Progress(16) at 2021-02-11 22:20:46: 15,535,464 states generated (15,144,391 s/min), 2,909,651 distinct states found (2,786,433 ds/min), 1,279,381 states left on queue.
+Progress(17) at 2021-02-11 22:21:46: 31,865,528 states generated (16,330,064 s/min), 5,141,228 distinct states found (2,231,577 ds/min), 1,850,003 states left on queue.
+Progress(17) at 2021-02-11 22:22:46: 47,992,159 states generated (16,126,631 s/min), 6,946,961 distinct states found (1,805,733 ds/min), 2,051,219 states left on queue.
+Progress(18) at 2021-02-11 22:23:46: 64,706,557 states generated (16,714,398 s/min), 8,613,100 distinct states found (1,666,139 ds/min), 2,073,619 states left on queue.
+Progress(19) at 2021-02-11 22:24:46: 81,340,266 states generated (16,633,709 s/min), 10,083,325 distinct states found (1,470,225 ds/min), 1,940,719 states left on queue.
+Progress(19) at 2021-02-11 22:25:46: 97,973,187 states generated (16,632,921 s/min), 11,274,152 distinct states found (1,190,827 ds/min), 1,580,176 states left on queue.
+Progress(20) at 2021-02-11 22:26:46: 114,460,963 states generated (16,487,776 s/min), 12,366,728 distinct states found (1,092,576 ds/min), 1,152,679 states left on queue.
+Progress(21) at 2021-02-11 22:27:46: 130,814,711 states generated (16,353,748 s/min), 13,309,148 distinct states found (942,420 ds/min), 607,258 states left on queue.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 9.7E-5
+  based on the actual fingerprints:  val = 1.7E-5
+143807499 states generated, 13780913 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 26.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 18 and the 95th percentile is 4).
+Finished in 08min 51s at (2021-02-11 22:28:33)

@@ -1,0 +1,57 @@
+Git Revision: 3080ebf
+Platform: Linux login-faculty.ccs.neu.edu 3.10.0-1127.19.1.el7.x86_64 #1 SMP Tue Aug 25 17:23:54 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+CPU Info Linux: model name	: Intel(R) Xeon(R) Gold 5118 CPU @ 2.30GHz
+CPU Cores Linux: 48
+CPU Info Mac: 
+CPU Cores Mac: 
+Spec: MCMongoLoglessDynamicRaft.tla
+Config: models/MCMongoLoglessDynamicRaft-4Servers-T4-CV4.cfg
+----
+INIT Init
+NEXT Next
+CONSTANTS 
+Nil = Nil
+Server = {n1, n2, n3, n4}
+Secondary = Secondary
+Primary = Primary
+MaxTerm = 4
+MaxConfigVersion = 4
+CONSTRAINT StateConstraint
+INVARIANT OnePrimaryPerTerm
+SYMMETRY ServerSymmetry
+----
+
+TLC2 Version 2.15 of Day Month 20?? (rev: fe75b8e)
+Running breadth-first search Model-Checking with fp 116 and seed -2330035020771457301 with 20 workers on 48 cores with 27305MB heap and 4096MB offheap memory (Linux 3.10.0-1127.19.1.el7.x86_64 amd64, Oracle Corporation 1.8.0_262 x86_64, OffHeapDiskFPSet, DiskStateQueue).
+Parsing file /proj/will-fm/logless-reconfig/specs/MCMongoLoglessDynamicRaft.tla
+Parsing file /tmp/TLC.tla
+Parsing file /proj/will-fm/logless-reconfig/specs/MongoLoglessDynamicRaft.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/Integers.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module MongoLoglessDynamicRaft
+Semantic processing of module MCMongoLoglessDynamicRaft
+Starting... (2021-08-20 12:26:55)
+Computing initial states...
+Computed 2 initial states...
+Computed 4 initial states...
+Computed 8 initial states...
+Finished computing initial states: 15 states generated, with 4 of them distinct at 2021-08-20 12:26:56.
+Progress(12) at 2021-08-20 12:26:59: 902,636 states generated (902,636 s/min), 221,004 distinct states found (221,004 ds/min), 148,271 states left on queue.
+Progress(16) at 2021-08-20 12:27:59: 36,125,573 states generated (35,222,937 s/min), 3,924,904 distinct states found (3,703,900 ds/min), 1,089,471 states left on queue.
+Progress(19) at 2021-08-20 12:28:59: 73,646,429 states generated (37,520,856 s/min), 6,012,381 distinct states found (2,087,477 ds/min), 225,876 states left on queue.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 2.4E-5
+  based on the actual fingerprints:  val = 1.1E-6
+78480423 states generated, 6174538 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 25.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 15 and the 95th percentile is 4).
+Finished in 02min 13s at (2021-08-20 12:29:08)
