@@ -1,4 +1,4 @@
------------------------------ MODULE MongoRaftReconfig_RefinementProof -----------------------------
+----------------------------- MODULE MongoRaftReconfigRefinementProof -----------------------------
 
 EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC, TLAPS, MongoRaftReconfig
 
