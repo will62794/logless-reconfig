@@ -48,19 +48,31 @@ PrimaryCanReconfigImpliesItsInNewestConfig ==
     \A s \in Server :
     state[s] = Primary => (s \in ServersInNewestConfig)
 
+VC1 == 
+    \A t,i \in Server : \A Q \in Quorums(config[i]) :
+    \* ENABLED JointBecomeLeader(i, Q) => 
+    \* ~(state[t] = Primary /\ (i # t) /\ currentTerm[t] = currentTerm[i] +  1)
+    ~(/\ i \in config[i]
+      /\ i \in Q
+      /\ \A v \in Q : CSM!CanVoteForConfig(v, i, currentTerm[i] + 1)
+      /\ state[t] = Primary
+      /\ i # t
+      /\ currentTerm[t] = currentTerm[i] + 1)
+
 IndAlt2 ==
     \* /\ OnePrimaryPerTerm
     \* /\ ActiveConfigsSafeAtTerms
     \* /\ PrimaryConfigTermEqualToCurrentTerm
-    /\ OnePrimaryPerTerm
-    /\ ActiveConfigsSafeAtTerms
-    /\ PrimaryConfigTermEqualToCurrentTerm
+    \* /\ OnePrimaryPerTerm
+    /\ VC1
+    \* /\ ActiveConfigsSafeAtTerms
+    \* /\ PrimaryConfigTermEqualToCurrentTerm
     \* /\ OnlyPrimaryInNewestTermCanExecuteReconfig
     \* /\ PrimaryCanReconfigImpliesItsInNewestConfig
     \* /\ ActiveConfigsOverlap
     \* /\ ReconfigAllowedImpliesActiveConfigsHaveSameMemberSet
     \* /\ PrimaryCanReconfigImpliesAllOlderConfigsDisabled
-    /\ PrimaryInTermContainsNewestConfigOfTerm
+    \* /\ PrimaryInTermContainsNewestConfigOfTerm
     \* /\ ConfigVersionAndTermUnique
     \* /\ OnePrimaryPerTerm
     \* /\ ReconfigAllowedOnPrimaryImpliesAllOtherPrimariesCannotReconfig
