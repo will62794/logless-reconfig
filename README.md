@@ -1,7 +1,16 @@
 
-# TLA+ Specification of Logless Dynamic Reconfiguration in MongoDB
+# Formal Verification of Logless Reconfiguration in MongoDB
 
-This repository contains TLA+ specifications for the logless dynamic reconfiguration protocol used in the MongoDB replication system. The protocol, which is specified in the [`MongoRaftReconfig`](specs/MongoRaftReconfig.tla) specification, extends the static MongoDB replication protocol to allow for dynamic reconfiguration. It is formally specified as a composition of two subprotocols, [`MongoStaticRaft`](specs/MongoStaticRaft.tla) and [`MongoLoglessDynamicRaft`](specs/MongoLoglessDynamicRaft.tla). The former is responsible for managing the oplog, which handles user database operations, while the latter manages the configuration state of the replica set in a separate, logless replicated state machine.
+This repository contains TLA+ forma specification of *MongoRaftReconfig*, the logless dynamic reconfiguration protocol used in the MongoDB replication system. 
+
+<!-- TODO: Include these sentences once TLAPS proofs are organized. -->
+<!-- It also includes a formally stated inductive invariant for establishing its high level safety properties along with a machine checked TLAPS proof of these safety proofs. -->
+
+The overall reconfiguration protocol is defined in the [*MongoRaftReconfig*](specs/MongoRaftReconfig.tla) TLA+ specification. The protocol is formally described as the composition of two subprotocols: (1) [*MongoStaticRaft*](specs/MongoStaticRaft.tla), the static MongoDB replication protocol, and (2) [*MongoLoglessDynamicRaft*](specs/MongoLoglessDynamicRaft.tla), which manages the configuration state of the replica set in a separate, logless replicated state machine. Our specifications are written at a deliberately high level of abstraction, ignoring some lower level details of the protocol and system model. In practice,
+we have found the abstraction level of our specifications most useful for understanding
+and communicating the essential behaviors and safety characteristics of the protocol, while
+also serving to make automated verification via model checking more feasible.
+
 
 ## Checking Properties with TLC
 
@@ -24,6 +33,10 @@ For example, to verify safety properties of `MongoRaftReconfig` and `MongoLogles
 ./checkmodel.sh models/MCMongoLoglessDynamicRaft-4Servers-T4-CV4.cfg MCMongoLoglessDynamicRaft 1
 ```
 These models impose state constraints on both protocols to make the reachable state space finite. Complete verification time, however, will vary depending on the speed of your machine.
+
+<!-- TODO -->
+<!-- ## Inductive Invariant and TLAPS Proofs -->
+
 
 
 
