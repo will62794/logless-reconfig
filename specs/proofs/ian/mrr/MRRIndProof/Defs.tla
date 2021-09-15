@@ -233,9 +233,6 @@ NewerConfigsDisablePrimaryCommitsInOlderTerms ==
 ConfigsNonempty ==
     \A s \in Server : config[s] # {}
 
-ActiveConfigSetNonempty ==
-    ActiveConfigSet # {}
-
 --------------------------------------------------------------------------------
 
 \*IndAlt == 
@@ -274,7 +271,6 @@ Ind ==
     /\ NewerConfigsDisablePrimaryCommitsInOlderTerms
     
     /\ ConfigsNonempty
-    /\ ActiveConfigSetNonempty
 
 TypeOK ==
     /\ currentTerm \in [Server -> Nat]

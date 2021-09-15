@@ -26,9 +26,8 @@ PROOF
     <1>17. ActiveConfigsOverlapWithCommittedEntry' BY ActiveConfigsOverlapWithCommittedEntryAndNext
     <1>18. NewerConfigsDisablePrimaryCommitsInOlderTerms' BY NewerConfigsDisablePrimaryCommitsInOlderTermsAndNext
     <1>19. ConfigsNonempty' BY ConfigsNonemptyAndNext
-    <1>20. ActiveConfigSetNonempty' BY ActiveConfigSetNonemptyAndNext
     <1>. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6, <1>7, <1>8, <1>9, <1>10,
-                <1>11, <1>12, <1>13, <1>14, <1>15, <1>16, <1>17, <1>18, <1>19, <1>20
+                <1>11, <1>12, <1>13, <1>14, <1>15, <1>16, <1>17, <1>18, <1>19
           DEF Ind
 
 LEMMA IndAndUnchanged ==
@@ -55,10 +54,9 @@ PROOF
     <1>17. ActiveConfigsOverlapWithCommittedEntry' BY DEF Ind, ActiveConfigsOverlapWithCommittedEntry, InLog, TypeOK, vars
     <1>18. NewerConfigsDisablePrimaryCommitsInOlderTerms' BY DEF Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, TypeOK, vars
     <1>19. ConfigsNonempty' BY DEF Ind, ConfigsNonempty, InLog, TypeOK, vars
-    <1>20. ActiveConfigSetNonempty' BY DEF Ind, ActiveConfigSetNonempty, TypeOK, vars
-    <1>21. TypeOK' BY DEF TypeOK, vars
+    <1>20. TypeOK' BY DEF TypeOK, vars
     <1>. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6, <1>7, <1>8, <1>9, <1>10, <1>11,
-                <1>12, <1>13, <1>14, <1>15, <1>16, <1>17, <1>18, <1>19, <1>20, <1>21
+                <1>12, <1>13, <1>14, <1>15, <1>16, <1>17, <1>18, <1>19, <1>20
           DEF Ind
 
 --------------------------------------------------------------------------------
@@ -109,20 +107,8 @@ PROOF
         BY DEF Init, OSM!Init, CSM!Init, NewerConfigsDisablePrimaryCommitsInOlderTerms
     <1>19. ConfigsNonempty
         BY DEF Init, OSM!Init, CSM!Init, ConfigsNonempty
-    <1>20. ActiveConfigSetNonempty
-        <2>ok. TypeOK BY InitImpliesTypeOK
-        <2>1. \A s,t \in Server : CV(s) = CV(t) BY DEF Init, OSM!Init, CSM!Init, CV
-        <2>2. \A s,t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))
-            BY <2>1 DEF ActiveConfigSet, ConfigDisabled, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV
-        <2>3. \A s \in Server : config[s] # {} BY DEF Init, OSM!Init, CSM!Init, CV
-        <2>4. \A s \in Server : IsFiniteSet(config[s]) BY FS_Subset, ServerIsFinite, <2>ok DEF TypeOK
-        <2>5. \E s \in Server : \E Q \in Quorums(config[s]) : TRUE BY <2>3, <2>4, ServerIsNonempty, QuorumsExistForNonEmptySets
-        <2>6. PICK s \in Server : \E Q \in Quorums(config[s]) : \A n \in Q : CSM!NewerOrEqualConfig(CV(s), CV(n))
-            BY <2>2, <2>5, <2>ok DEF Quorums, TypeOK
-        <2>7. ~ConfigDisabled(s) BY <2>6, <2>ok, NewerIsNotSymmetric DEF ConfigDisabled, CSM!NewerConfig, Quorums, CV, TypeOK
-        <2>. QED BY <2>7 DEF ActiveConfigSetNonempty, ActiveConfigSet, ConfigDisabled, CSM!NewerConfig, Quorums, CV, TypeOK
     <1>. QED BY <1>1, <1>2, <1>3, <1>4, <1>5, <1>6, <1>7, <1>8, <1>9, <1>10,
-                <1>11, <1>12, <1>13, <1>14, <1>15, <1>16, <1>17, <1>18, <1>19, <1>20
+                <1>11, <1>12, <1>13, <1>14, <1>15, <1>16, <1>17, <1>18, <1>19
           DEF Ind
 
 THEOREM IndIsInductiveInvariant ==

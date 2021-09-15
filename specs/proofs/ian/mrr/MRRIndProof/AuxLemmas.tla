@@ -2,7 +2,6 @@
 
 EXTENDS MongoRaftReconfig, Defs, Axioms, TypeOK, Lib
 
-
 \* began: 9/14
 \* finished: 9/14
 \* approx 2 min
@@ -31,38 +30,6 @@ PROOF
             BY <2>1 DEF OSM!BecomeLeader, Ind, ConfigsNonempty
         <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
             BY <2>2 DEF OSM!UpdateTerms, Ind, ConfigsNonempty
-        <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
-    <1>. QED BY <1>1, <1>2, <1>3 DEF Next
-
-\* began: 9/14
-LEMMA ActiveConfigSetNonemptyAndNext ==
-ASSUME TypeOK, Ind, Next
-PROVE ActiveConfigSetNonempty'
-PROOF
-    \*<1>.  USE DEF ActiveConfigSet, ConfigDisabled, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV
-    \*<1>.  USE NewerIsNotSymmetric
-    <1>1. CASE OSMNext /\ UNCHANGED csmVars
-        BY <1>1 DEF csmVars, Ind, ActiveConfigSetNonempty, ActiveConfigSet, ConfigDisabled,
-            CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, TypeOK
-    <1>2. CASE CSMNext /\ UNCHANGED osmVars
-        <2>1. CASE \E s \in Server, newConfig \in SUBSET Server : OplogCommitment(s) /\ CSM!Reconfig(s, newConfig)
-            \*<3>1. CASE config[s] = 
-            <3>. QED
-            \*BY <1>2, <2>1 DEF OplogCommitment, CSM!Reconfig, Ind, ConfigsNonempty
-        <2>2. CASE \E s,t \in Server : CSM!SendConfig(s, t)
-            <3>1. PICK s,t \in Server : CSM!SendConfig(s, t) BY <2>2
-            <3>2. config'[t] = config[s] BY <3>1 DEF CSM!SendConfig, TypeOK
-            <3>. QED
-            (*BY <1>2, <2>2, SendConfigActiveConfigSetIdenticalExceptRecipient DEF CSM!SendConfig, Ind, ConfigsNonempty,
-                ActiveConfigSet, ConfigDisabled, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, TypeOK*)
-        <2>. QED BY <1>2, <2>1, <2>2 DEF CSMNext
-    <1>3. CASE JointNext
-        <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
-            BY <2>1, BecomeLeaderActiveConfigSetIdentical DEF CSM!BecomeLeader, Ind, ActiveConfigSetNonempty,
-                ActiveConfigSet, ConfigDisabled, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, TypeOK
-        <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
-            BY <2>2 DEF CSM!UpdateTerms, Ind, ActiveConfigSetNonempty, ActiveConfigSet,
-                ConfigDisabled, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, TypeOK
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 

@@ -29,60 +29,84 @@ ASSUME TRUE
 PROVE MRRSpec => []LeaderCompleteness2
 BY MRRImpliesLeaderCompletenessGeneralized DEF LeaderCompleteness2, LeaderCompletenessGeneralized, InLog, TypeOK
 
+LEMMA FS_InductionInServer == 
+  ASSUME NEW S, IsFiniteSet(S), S \in SUBSET Server,
+         NEW P(_), P({}),
+         ASSUME NEW T, NEW x, IsFiniteSet(T), P(T), x \notin T,
+         x \in Server, T \in SUBSET Server
+         PROVE  P(T \cup {x})
+  PROVE  P(S)
+<1>.  DEFINE Q(n) == \A T : T \in SUBSET Server /\ IsFiniteSet(T) /\ Cardinality(T) = n => P(T)
+<1>1. SUFFICES \A n \in Nat : Q(n)  BY FS_CardinalityType
+<1>2. Q(0)  BY FS_EmptySet, Zenon
+<1>3. ASSUME NEW n \in Nat, Q(n),
+             NEW T, IsFiniteSet(T), Cardinality(T) = n+1,
+             T \in SUBSET Server
+      PROVE  P(T)
+  <2>1. PICK x \in T : x \in Server  BY <1>3, FS_EmptySet
+  <2>2. /\ IsFiniteSet(T \ {x})
+        /\ Cardinality(T \ {x}) = n
+    BY <1>3, FS_RemoveElement, Isa
+  <2>3. P(T \ {x})  BY <1>3, <2>1, <2>2, Q(n)
+  <2>4. P((T \ {x}) \cup {x})
+    <3>1. T \in SUBSET Server BY <1>3
+    <3>2. T = ((T \ {x}) \cup {x}) OBVIOUS
+    <3>. QED BY <2>2, <2>3, Zenon, <3>1, <3>2
+  <2>. QED  BY <2>4, Zenon
+<1>4. QED  BY <1>2, <1>3, NatInduction, Isa
+
+LEMMA NewerConfigImpliesNewerOrEqual ==
+ASSUME TypeOK,
+       NEW s \in Server,
+       NEW t \in Server,
+       CSM!NewerConfig(CV(s), CV(t))
+PROVE CSM!NewerOrEqualConfig(CV(s), CV(t))
+BY DEF CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, TypeOK
+
 LEMMA ServerHasLargestConfig ==
 ASSUME TypeOK, Ind
 PROVE \E s \in Server : \A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))
+PROOF
+    <1>.  DEFINE P(S) == \/ S = {}
+                         \/ \E s \in S : \A t \in S : CSM!NewerOrEqualConfig(CV(s), CV(t))
+    <1>.  HIDE DEF P
+    <1>1. P({}) BY DEF P
+    <1>2. ASSUME NEW T, NEW x, IsFiniteSet(T), P(T), x \notin T, x \in Server, T \in SUBSET Server
+          PROVE P(T \cup {x})
+            <2>1. CASE T = {} BY <2>1 DEF CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, TypeOK, P
+            <2>2. CASE T # {}
+                <3>1. PICK s \in T : \A t \in T : CSM!NewerOrEqualConfig(CV(s), CV(t)) BY <1>2, <2>2 DEF P
+                <3>2. CASE CSM!NewerOrEqualConfig(CV(s), CV(x)) BY <3>1, <3>2, NewerOrEqualConfigTransitivity DEF P
+                <3>3. CASE ~CSM!NewerOrEqualConfig(CV(s), CV(x))
+                    <4>1. CSM!NewerConfig(CV(x), CV(s)) BY <1>2, <3>3, NewerIsNotSymmetric
+                    <4>2. \A t \in T : CSM!NewerOrEqualConfig(CV(x), CV(t))
+                        BY <1>2, <3>1, <4>1, NewerConfigTransitivity, NewerConfigImpliesNewerOrEqual
+                    <4>3. CSM!NewerOrEqualConfig(CV(x), CV(x)) BY DEF CSM!NewerOrEqualConfig, CSM!NewerConfig, CV
+                    <4>. QED BY <4>2, <4>3 DEF P
+                <3>. QED BY <3>2, <3>3, NewerIsNotSymmetric
+            <2>. QED BY <2>1, <2>2
+    <1>3. P(Server) BY <1>1, <1>2, ServerIsFinite, FS_InductionInServer, Isa
+    <1>. QED BY <1>3, ServerIsNonempty DEF P
 
-LEMMA ServerSubsetsHaveLargestConfig ==
-ASSUME TypeOK, Ind,
-       NEW conf \in SUBSET Server,
-       conf # {}
-PROVE \E s \in conf : \A t \in conf : CSM!NewerOrEqualConfig(CV(s), CV(t))
-
-LEMMA ActiveConfigSetNonempty2 ==
+LEMMA ActiveConfigSetNonempty ==
 ASSUME TypeOK, Ind
 PROVE ActiveConfigSet # {}
 PROOF
     <1>1. SUFFICES ASSUME \A s \in Server : ConfigDisabled(s)
                    PROVE FALSE BY DEF ActiveConfigSet
-    <1>2. \A s \in Server : \A Q \in Quorums(config[s]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(s)) BY <1>1 DEF ConfigDisabled
+    <1>2. \A s \in Server : \A Q \in Quorums(config[s]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(s))
+        BY <1>1 DEF ConfigDisabled
     <1>3. \A s \in Server : Quorums(config[s]) # {}
         <2>.  TAKE s \in Server
         <2>1. config[s] # {} BY DEF Ind, ConfigsNonempty
         <2>2. IsFiniteSet(config[s]) BY FS_Subset, ServerIsFinite DEF TypeOK
         <2>. QED BY <2>1, <2>2, QuorumsExistForNonEmptySets
     <1>. QED BY <1>2, <1>3, ServerHasLargestConfig, NewerIsNotSymmetric DEF Quorums, TypeOK
-                   
-    \*<1>2. PICK s \in Server : ConfigDisabled(s) BY <1>1, ServerIsNonempty
-    \*<1>3. \A Q \in Quorums(config[s]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(s)) BY <1>2 DEF ConfigDisabled
-    \*<1>4. \A Q \in Quorums(config[s]) : (Q \in SUBSET Server /\ Q # {}) BY <1>3 DEF Quorums, TypeOK
-    \*<1>4. \A Q \in Quorums(config[s]) : \E n \in Q : n # s BY <1>3 DEF CSM!NewerConfig, CV, TypeOK
-    
-    (*<1>5. Quorums(config[s]) # {}
-        <2>1. config[s] # {} BY <1>4, ServerIsNonempty DEF Quorums, TypeOK
-        <2>2. IsFiniteSet(config[s]) BY FS_Subset, ServerIsFinite DEF TypeOK
-        <2>. QED BY <2>1, <2>2, QuorumsExistForNonEmptySets
-    <1>6. \E n \in Server : CSM!NewerConfig(CV(n), CV(s)) BY <1>3, <1>4, <1>5 DEF Quorums, TypeOK
-    <1>. QED*)
-
-(*
-
-LEMMA ActiveConfigSetNonempty2 ==
-ASSUME TypeOK, Ind
-PROVE ActiveConfigSet # {}
-PROOF
-    <1>1. SUFFICES ASSUME \A s \in Server : ConfigDisabled(s)
-                   PROVE FALSE BY DEF ActiveConfigSet
-    <1>2. PICK s \in Server : ConfigDisabled(s) BY <1>1, ServerIsNonempty
-    <1>3. \A Q \in Quorums(config[s]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(s)) BY <1>2 DEF ConfigDisabled
-    <1>4. \A Q \in Quorums(config[s]) : (Q \in SUBSET Server /\ Q # {}) BY <1>3 DEF Quorums, TypeOK
-    <1>5. \A Q \in Quorums(config[s]) : \E t \in Q : \A n \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))
-    <1>. QED*)
 
 LEMMA CommitsAreLogEntries ==
 ASSUME TypeOK, Ind
 PROVE \A c \in committed : \E s \in Server : InLog(c.entry, s)
-BY DEF Ind, ActiveConfigSetNonempty, ActiveConfigsOverlapWithCommittedEntry, Quorums,
+BY ActiveConfigSetNonempty DEF Ind, ActiveConfigsOverlapWithCommittedEntry, Quorums,
     ActiveConfigSet, ConfigDisabled, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, TypeOK
 
 LEMMA IndImpliesStateMachineSafety ==
@@ -128,11 +152,5 @@ THEOREM MRRImpliesStateMachineSafety ==
 ASSUME TRUE
 PROVE MRRSpec => []StateMachineSafety2
 BY MRRImpliesInd, IndImpliesStateMachineSafety, PTL
-
-(*PROOF
-    <1>1. Init => Ind BY IndIsInductiveInvariant
-    <1>2. Ind /\ TypeOK /\ [Next]_vars => (TypeOK /\ Ind)' BY IndIsInductiveInvariant
-    <1>3. Ind => LeaderCompletenessGeneralized BY DEF Ind
-    <1>. QED BY <1>1, <1>2, <1>3, PTL DEF MRRSpec*)
 
 =============================================================================
