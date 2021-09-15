@@ -230,6 +230,12 @@ NewerConfigsDisablePrimaryCommitsInOlderTerms ==
     (state[t] = Primary /\ currentTerm[t] < configTerm[s]) =>
         \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] > currentTerm[t]
 
+ConfigsNonempty ==
+    \A s \in Server : config[s] # {}
+
+ActiveConfigSetNonempty ==
+    ActiveConfigSet # {}
+
 --------------------------------------------------------------------------------
 
 \*IndAlt == 
@@ -265,7 +271,10 @@ Ind ==
     /\ LeaderCompletenessGeneralized
     /\ LogsLaterThanCommittedMustHaveCommitted
     /\ ActiveConfigsOverlapWithCommittedEntry
-    /\ NewerConfigsDisablePrimaryCommitsInOlderTerms 
+    /\ NewerConfigsDisablePrimaryCommitsInOlderTerms
+    
+    /\ ConfigsNonempty
+    /\ ActiveConfigSetNonempty
 
 TypeOK ==
     /\ currentTerm \in [Server -> Nat]

@@ -5,6 +5,7 @@ EXTENDS MongoRaftReconfig
 AXIOM PrimaryAndSecondaryAreDifferent == Primary # Secondary
 AXIOM ServerIsFinite == IsFiniteSet(Server)
 AXIOM ServerIsNonempty == Server # {}
+\*AXIOM ServersAreEqual == Server = CSM!currentTerm
 
 LEMMA ConfigsAreFinite ==
 ASSUME TRUE
