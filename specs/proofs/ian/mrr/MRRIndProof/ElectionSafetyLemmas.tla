@@ -2,7 +2,7 @@
 
 EXTENDS MongoRaftReconfig, Defs, Axioms, TypeOK, Lib, BasicQuorumsLib
 
-\* approximately 1-2 after 3-4 weeks of prep work
+\* approximately 1-2 dafter 3-4 weeks of prep work
 \* completed 6/23
 \* alt: started 8/13
 \* alt: completed 8/16

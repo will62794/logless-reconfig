@@ -83,7 +83,7 @@ PROOF
                         <6>2. nLastIdx \in DOMAIN log[t] BY <4>3, <6>1 DEF Ind, CommittedEntryIndexesAreNonZero, InLog, TypeOK
                         <6>. QED BY <6>1, <6>2 DEF TypeOK
                     <5>2. \A j \in Nat : (j > 0 /\ j < Len(log[n])) => log[n][j] = log[t][j]
-                        BY <3>2, <3>n, <4>1, <4>2, <4>4, <5>1 DEF Ind, LogMatching, EqualUpTo, LastTerm, TypeOK
+                        BY <3>2, <3>n, <4>1, <4>2, <4>4, <5>1, Z3 DEF Ind, LogMatching, EqualUpTo, LastTerm, TypeOK
                     <5>. QED BY <3>2, <3>n, <4>1, <4>2, <4>3, <4>4, <5>1, <5>2 DEF InLog, TypeOK
                 <4>6. OSM!IsPrefix(log[n], log[t]) BY <4>5 DEF OSM!IsPrefix
                 <4>. QED BY <3>2, <3>n, <4>1, <4>6 DEF OSM!RollbackEntries, OSM!CanRollback, OSM!IsPrefix, TypeOK

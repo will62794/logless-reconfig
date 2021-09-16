@@ -558,7 +558,7 @@ PROOF
                 <4>5. log'[t][tLastIdx] = log[v][tLastIdx]
                     BY <3>1, <3>5, <3>7, <4>1, <4>3 DEF OSM!GetEntries, OSM!Empty, TypeOK
                 <4>6. (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) => (tLastIdx < i => log[v][tLastIdx] # log[s][i])
-                    BY <3>1, <3>5, <3>7, <4>1 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, UniformLogEntriesInTerm
+                    BY <3>1, <3>5, <3>7, <4>1, Z3 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, UniformLogEntriesInTerm
                 <4>. QED BY <3>1, <3>5, <3>7, <4>1, <4>2, <4>3, <4>4, <4>5, <4>6 DEF OSM!GetEntries, OSM!Empty, TypeOK
             <3>8. CASE s # u /\ t # u BY <3>1, <3>8 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, UniformLogEntriesInTerm
             <3>. QED BY <3>6, <3>7, <3>8

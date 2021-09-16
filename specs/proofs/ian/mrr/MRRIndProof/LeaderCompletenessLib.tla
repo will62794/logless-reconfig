@@ -87,7 +87,8 @@ PROOF
             BY <1>3, <1>5, <1>6 DEF TypeOK
         <2>. QED BY <2>1, SeqDownwardInduction, Isa DEF TypeOK
     <1>8. log[s][1] = log[s][upper] BY <1>7 DEF P
-    <1>. QED BY <1>2, <1>3, <1>8 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
+    <1>9. 1 \in DOMAIN log[s] /\ upper \in DOMAIN log[s] BY DEF TypeOK
+    <1>. QED BY <1>2, <1>3, <1>8, <1>9, Z3 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
 
 LEMMA EqualLastTermImpliesEqualAtIdx ==
 ASSUME TypeOK, Ind,
@@ -187,7 +188,11 @@ PROOF
     <1>3. PICK d \in committed : d.term = currentTerm[p] BY DEF OplogCommitment
     <1>.  DEFINE k == d.entry[1]
     <1>4. PICK Q \in Quorums(config[p]) : \A s \in Q : (log[s][k] = log[p][k] /\ currentTerm[s] = currentTerm[p])
-        BY <1>3 DEF OplogCommitment, IsCommitted, TypeOK, Ind, CommittedEntryIndexesAreNonZero
+        \* thanks tlaps for making me spell this out...
+        <2>1. \E Q \in Quorums(config[p]) : \A s \in Q :
+                    \E i \in DOMAIN log[s] : (i = k /\ log[s][k] = log[p][k] /\ currentTerm[s] = currentTerm[p])
+            BY <1>3 DEF OplogCommitment, IsCommitted, TypeOK
+        <2>. QED BY <2>1
     <1>5. \E n \in Q : InLog(c.entry, n) BY <1>4, ReconfigImpliesInActiveConfigSet DEF Ind, ActiveConfigsOverlapWithCommittedEntry
     <1>6. PICK s \in Server : configTerm[s] >= c.term
         BY <1>4, <1>5 DEF Ind, LogEntryInTermImpliesConfigInTerm, CommittedTermMatchesEntry, Quorums, InLog, TypeOK
