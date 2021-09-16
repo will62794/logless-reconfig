@@ -396,25 +396,25 @@ PROOF
             <3>4. config[t] = config[p] BY <3>p, <3>3, ReconfigImpliesActiveConfigSetHaveSameConfig
             <3>5. CASE t # p
                 <4>1. config'[t] = config[t] /\ config'[t] = config[p] BY <3>p, <3>4, <3>5 DEF CSM!Reconfig, TypeOK
-                <4>2. PICK pQ \in Quorums(config[p]) : \A n \in pQ : CVT(n) = CVT(p)
-                    BY <3>p, QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigIsCommitted, CSM!QuorumsAt, CVT
+                <4>2. PICK pQ \in Quorums(config[p]) : \A n \in pQ : currentTerm[n] = currentTerm[p]
+                    BY <3>p, QuorumsIdentical DEF CSM!Reconfig, CSM!TermQuorumCheck, CSM!QuorumsAt
                 <4>3. TAKE tQ \in Quorums(config'[t])
                 <4>4. tQ \in Quorums(config[t]) BY <4>1, <4>3
                 <4>5. QuorumsOverlap(config[t], config[p])
                     BY <3>3, ReconfigImpliesSameActiveConfigSet, <3>p, ReconfigImpliesInActiveConfigSet DEF Ind, ActiveConfigsOverlap
                 <4>6. PICK n \in tQ : n \in pQ BY <4>2, <4>4, <4>5 DEF QuorumsOverlap
-                <4>7. currentTerm[n] >= configTerm[s] BY <3>p, <3>2, <4>2, <4>6, ReconfigImpliesCurrentTermGreaterThanConfigTerms DEF CVT
+                <4>7. currentTerm[n] >= configTerm[s] BY <3>p, <3>2, <4>2, <4>6, ReconfigImpliesCurrentTermGreaterThanConfigTerms
                 <4>8. currentTerm'[n] >= configTerm'[s]
                     BY <3>p, <3>2, <3>3, <4>4, <4>6, <4>7, ReconfigImpliesConfigTermUnchanged DEF CSM!Reconfig, Quorums, TypeOK
                 <4>. QED BY <3>1, <3>2, <3>3, <4>3, <4>8
             <3>6. CASE t = p
-                <4>1. PICK pQ \in Quorums(config[p]) : \A n \in pQ : CVT(n) = CVT(p)
-                    BY <3>p, QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigIsCommitted, CSM!QuorumsAt, CVT
+                <4>1. PICK pQ \in Quorums(config[p]) : \A n \in pQ : currentTerm[n] = currentTerm[p]
+                    BY <3>p, QuorumsIdentical DEF CSM!Reconfig, CSM!TermQuorumCheck, CSM!QuorumsAt
                 <4>2. config'[t] = newConfig BY <3>p, <3>6 DEF CSM!Reconfig, TypeOK
                 <4>3. TAKE tQ \in Quorums(config'[t])
                 <4>4. QuorumsOverlap(config[p], newConfig) BY <3>p, <4>1, <4>2, <4>3, QuorumsOverlapIdentical DEF CSM!Reconfig, TypeOK
                 <4>5. PICK n \in tQ : n \in pQ BY <4>1, <4>2, <4>3, <4>4 DEF QuorumsOverlap
-                <4>6. currentTerm[n] >= configTerm[s] BY <3>p, <3>2, <4>1, <4>5, ReconfigImpliesCurrentTermGreaterThanConfigTerms DEF CVT
+                <4>6. currentTerm[n] >= configTerm[s] BY <3>p, <3>2, <4>1, <4>5, ReconfigImpliesCurrentTermGreaterThanConfigTerms
                 <4>7. currentTerm'[n] >= configTerm'[s]
                     BY <3>p, <3>2, <3>3, <4>3, <4>5, <4>6, ReconfigImpliesConfigTermUnchanged DEF CSM!Reconfig, Quorums, TypeOK
                 <4>. QED BY <3>1, <3>2, <3>3, <4>3, <4>7

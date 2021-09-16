@@ -72,19 +72,19 @@ PROOF
                 <4>3. InLog(c.entry, t)
                     <5>1. \E i \in DOMAIN log[t] : log[t][i] > c.term
                         BY <3>2, <4>1, <4>2 DEF OSM!RollbackEntries, OSM!CanRollback, OSM!LastTerm, InLog, LastTerm, TypeOK, Ind, CommittedTermMatchesEntry
-                    <5>2. Len(log[t]) >= c.entry[1] /\ log[t][c.entry[1]] = c.term
-                        BY <3>2, <3>4, <4>1, <5>1 DEF OSM!RollbackEntries, Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
-                    <5>. QED BY <3>2, <3>4, <4>1, <5>2 DEF OSM!RollbackEntries, Ind, CommittedTermMatchesEntry, CommittedEntryIndexesAreNonZero, InLog, TypeOK
+                    <5>2. c \in committed BY <3>2, <3>4, <4>1 DEF OSM!RollbackEntries, TypeOK
+                    <5>3. Len(log[t]) >= c.entry[1] /\ log[t][c.entry[1]] = c.term
+                        BY <4>1, <5>1, <5>2 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
+                    <5>. QED BY <3>2, <3>4, <4>1, <5>3 DEF OSM!RollbackEntries, Ind, CommittedTermMatchesEntry, CommittedEntryIndexesAreNonZero, InLog, TypeOK
                 <4>4. log[t][c.entry[1]] = log[n][c.entry[1]] BY <4>2, <4>3 DEF LastTerm, InLog, TypeOK
                 <4>5. Len(log[n]) <= Len(log[t]) /\ \A i \in DOMAIN log[n] : log[n][i] = log[t][i]
-                    <5>1. Len(log[n]) <= Len(log[t])
-                        <6>.  DEFINE nLastIdx == Len(log[n])
-                        <6>1. nLastIdx = c.entry[1] BY <4>2
-                        <6>2. nLastIdx \in DOMAIN log[t] BY <4>3, <6>1 DEF Ind, CommittedEntryIndexesAreNonZero, InLog, TypeOK
-                        <6>. QED BY <6>1, <6>2 DEF TypeOK
-                    <5>2. \A j \in Nat : (j > 0 /\ j < Len(log[n])) => log[n][j] = log[t][j]
-                        BY <3>2, <3>n, <4>1, <4>2, <4>4, <5>1, Z3 DEF Ind, LogMatching, EqualUpTo, LastTerm, TypeOK
-                    <5>. QED BY <3>2, <3>n, <4>1, <4>2, <4>3, <4>4, <5>1, <5>2 DEF InLog, TypeOK
+                    <5>.  DEFINE nLastIdx == Len(log[n])
+                    <5>1. nLastIdx = c.entry[1] BY <4>2
+                    <5>2. nLastIdx \in DOMAIN log[t] BY <4>3, <5>1 DEF Ind, CommittedEntryIndexesAreNonZero, InLog, TypeOK
+                    <5>3. Len(log[n]) <= Len(log[t]) BY <5>1, <5>2
+                    <5>4. log[n][nLastIdx] = log[t][nLastIdx] BY <5>1, <5>2, <4>4 DEF TypeOK
+                    <5>5. EqualUpTo(log[n], log[t], nLastIdx) BY <3>n, <5>2, <5>3, <5>4 DEF Ind, LogMatching, EqualUpTo, TypeOK
+                    <5>. QED BY <5>3, <5>5 DEF EqualUpTo
                 <4>6. OSM!IsPrefix(log[n], log[t]) BY <4>5 DEF OSM!IsPrefix
                 <4>. QED BY <3>2, <3>n, <4>1, <4>6 DEF OSM!RollbackEntries, OSM!CanRollback, OSM!IsPrefix, TypeOK
             <3>10. (n # s) => InLog(c.entry, n)' BY <3>2, <3>4, <3>6, <3>7, <3>8 DEF OSM!RollbackEntries, Quorums, InLog, TypeOK
@@ -133,7 +133,7 @@ PROOF
             <3>7. CASE s # p
                 <4>1. \A Q \in Quorums(config[s]) : \E n \in Q : InLog(c.entry, n)
                     BY <3>2, <3>5, <3>6, <3>7 DEF Ind, ActiveConfigsOverlapWithCommittedEntry, TypeOK
-                <4>. QED BY <1>2, <3>2, <3>7, <4>1 DEF osmVars, CSM!Reconfig, TypeOK, Quorums, InLog
+                <4>. QED BY <1>2, <3>2, <3>7, <4>1, Z3 DEF osmVars, CSM!Reconfig, TypeOK, Quorums, InLog
             <3>8. CASE s = p
                 <4>1. \A Q \in Quorums(newConfig) : \E n \in Q : InLog(c.entry, n)
                     BY <3>2, <3>5, <3>8, ReconfigImpliesHasQuorumWithAllCommits
@@ -300,7 +300,7 @@ PROOF
                   PROVE \A Q \in Quorums(config'[t]) : \E n \in Q : currentTerm'[n] > currentTerm'[t] OBVIOUS
             <3>5. PICK u,v \in Server : OSM!UpdateTerms(u,v) /\ CSM!UpdateTerms(u,v) BY <2>2
             <3>6. t # v BY <3>4, <3>5, PrimaryAndSecondaryAreDifferent DEF CSM!UpdateTerms, CSM!UpdateTermsExpr, TypeOK
-            <3>. QED BY <3>4, <3>5, <3>6 DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, CSM!UpdateTerms, CSM!UpdateTermsExpr, Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, TypeOK
+            <3>. QED BY <3>4, <3>5, <3>6, Z3 DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, CSM!UpdateTerms, CSM!UpdateTermsExpr, Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, TypeOK
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 

@@ -7,11 +7,11 @@ MRRSpec == /\ TypeOK
            /\ Init
            /\ [][Next]_vars
 
-LeaderCompleteness2 ==
+LeaderCompleteness ==
     \A s \in Server :
         (state[s] = Primary) => (\A c \in committed : c.term <= currentTerm[s] => InLog(c.entry, s))
 
-StateMachineSafety2 ==
+StateMachineSafety ==
     \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
 
 LEMMA MRRImpliesInd ==
@@ -26,8 +26,8 @@ BY MRRImpliesInd, PTL DEF Ind
 
 THEOREM MRRImpliesLeaderCompleteness ==
 ASSUME TRUE
-PROVE MRRSpec => []LeaderCompleteness2
-BY MRRImpliesLeaderCompletenessGeneralized DEF LeaderCompleteness2, LeaderCompletenessGeneralized, InLog, TypeOK
+PROVE MRRSpec => []LeaderCompleteness
+BY MRRImpliesLeaderCompletenessGeneralized DEF LeaderCompleteness, LeaderCompletenessGeneralized, InLog, TypeOK
 
 LEMMA FS_InductionInServer == 
   ASSUME NEW S, IsFiniteSet(S), S \in SUBSET Server,
@@ -111,11 +111,11 @@ BY ActiveConfigSetNonempty DEF Ind, ActiveConfigsOverlapWithCommittedEntry, Quor
 
 LEMMA IndImpliesStateMachineSafety ==
 ASSUME TypeOK, Ind
-PROVE StateMachineSafety2
+PROVE StateMachineSafety
 PROOF
     <1>1. SUFFICES ASSUME TRUE
           PROVE \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
-          BY DEF StateMachineSafety2
+          BY DEF StateMachineSafety
     <1>2. TAKE c1, c2 \in committed
     <1>3. SUFFICES ASSUME c1.entry[1] = c2.entry[1], c1 # c2
           PROVE FALSE OBVIOUS
@@ -150,7 +150,7 @@ PROOF
 
 THEOREM MRRImpliesStateMachineSafety ==
 ASSUME TRUE
-PROVE MRRSpec => []StateMachineSafety2
+PROVE MRRSpec => []StateMachineSafety
 BY MRRImpliesInd, IndImpliesStateMachineSafety, PTL
 
 =============================================================================

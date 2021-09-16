@@ -281,10 +281,6 @@ TypeOK ==
     /\ configTerm \in [Server -> Nat]
     \* For checking MongoRaftReconfig with logs.
     /\ committed \in SUBSET [ entry : Nat \X Nat, term : Nat ]
-    /\ elections \in SUBSET [ leader : Server, term : Nat ]
-
---------------------------------------------------------------------------------
-
-CVT(s) == <<configTerm[s], configVersion[s], currentTerm[s]>>
+    \*/\ elections \in SUBSET [ leader : Server, term : Nat ]
 
 =============================================================================

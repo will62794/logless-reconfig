@@ -17,9 +17,7 @@ VARIABLE config
 VARIABLE configVersion
 VARIABLE configTerm
 
-VARIABLE elections
-
-vars == <<currentTerm, state, log, configVersion, configTerm, config, log, elections, committed>>
+vars == <<currentTerm, state, log, configVersion, configTerm, config, log, committed>>
 
 \*
 \* Helper operators.
@@ -45,7 +43,7 @@ LogTerm(i, index) == GetTerm(log[i], index)
 -------------------------------------------------------------------------------------------
 
 
-osmVars == <<log, elections, committed>>
+osmVars == <<log, committed>>
 csmVars == <<configVersion, configTerm, config>>
 
 \* The config state machine.
@@ -62,7 +60,6 @@ OSM == INSTANCE MongoStaticRaft
              state <- state,
              log <- log,
              config <- config,
-             elections <- elections,
              committed <- committed
              
 \*
@@ -108,12 +105,10 @@ IsCommitted(index, primary) ==
 \* committed by the rules of configuration C i.e. it is "immediately committed"
 \* in C. That is, present on some quorum of servers in C that are in term T. 
 OplogCommitment(s) == 
-    \* The primary has at least committed one entry in its term if there are any
-    \* entries committed in earlier terms.
-    \*/\ committed = {} \/ \E c \in committed : IsCommitted(c.entry[1], s)
-    \* All entries committed in the primary's term have been committed in the
-    \* current config.
-    /\ \E c \in committed : (c.term = currentTerm[s])
+    \* The primary has committed at least one entry in its term, or, no entries
+    \* have been committed yet.
+    /\ (committed = {}) \/ (\E c \in committed : (c.term = currentTerm[s]))
+    \* All entries committed in the primary's term are committed in its current config.
     /\ \A c \in committed : (c.term = currentTerm[s]) => IsCommitted(c.entry[1], s)
 
 \* Config State Machine actions.
@@ -124,10 +119,6 @@ CSMNext ==
         /\ CSM!Reconfig(s, newConfig)
     \/ \E s,t \in Server : CSM!SendConfig(s, t)
 
-JointBecomeLeader(i, Q) == 
-    /\ OSM!BecomeLeader(i, Q)
-    /\ CSM!BecomeLeader(i, Q)
-        
 \* Actions shared by the CSM and OSM i.e. that must be executed jointly by both protocols.
 JointNext == 
     \/ \E i \in Server : \E Q \in Quorums(config[i]) : 
@@ -151,14 +142,10 @@ Spec == Init /\ [][Next]_vars
 \* Correctness properties.
 \*
 
-ElectionSafety == OSM!ElectionSafety
+(*
+OnePrimaryPerTerm == OSM!OnePrimaryPerTerm
 StateMachineSafety == OSM!StateMachineSafety
 LeaderCompleteness == OSM!LeaderCompleteness
-
-ConfigTermsMonotonic == 
-    [][\A s \in Server : configTerm'[s] >= configTerm[s]]_vars
-
-CurrentTermGreaterOrEqualToConfigTerm ==
-    \A s \in Server : currentTerm[s] >= configTerm[s]
+*)
 
 =============================================================================

@@ -30,7 +30,7 @@ Min(s) == CHOOSE x \in s : \A y \in s : x <= y
 Max(s) == CHOOSE x \in s : \A y \in s : x >= y
 
 \* Return the range of a given function.
-Range(f) == {f[x] : x \in DOMAIN f}
+\*Range(f) == {f[x] : x \in DOMAIN f}
 
 \* Is a sequence empty.
 Empty(s) == Len(s) = 0
@@ -66,20 +66,15 @@ CanVoteForConfig(i, j, term) ==
 \* Do all quorums of set x and set y share at least one overlapping node.
 QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
 
-\* Is the current config on primary s committed. A config C=(v, t) can be committed on 
-\* a primary in term T iff t=T and there are a quorum of nodes in term T that currently
-\* have config C.
-ConfigIsCommitted(s) == 
-    /\ state[s] = Primary
-    \* Config must be in the term of this primary.
-    /\ configTerm[s] = currentTerm[s]
-    /\ \E Q \in QuorumsAt(s) : 
-        \A t \in Q : 
-            \* Node must have the same config as the primary.
-            /\ configVersion[s] = configVersion[t]
-            /\ configTerm[s] = configTerm[t]
-            \* Node must be in the same term as the primary (and the config).
-            /\ currentTerm[t] = currentTerm[s]
+\* A quorum of servers in the config of server i have i's config.
+ConfigQuorumCheck(i) ==
+    \E Q \in Quorums(config[i]) : \A t \in Q : 
+        /\ configVersion[t] = configVersion[i]
+        /\ configTerm[t] = configTerm[i]
+
+\* A quorum of servers in the config of server i have the term of i.
+TermQuorumCheck(i) ==
+    \E Q \in Quorums(config[i]) : \A t \in Q : currentTerm[t] = currentTerm[i]    
 
 -------------------------------------------------------------------------------------------
 
@@ -100,8 +95,8 @@ UpdateTerms(i, j) ==
 BecomeLeader(i, voteQuorum) == 
     \* Primaries make decisions based on their current configuration.
     LET newTerm == currentTerm[i] + 1 IN
-    /\ i \in config[i] \* only become a leader if you are a part of your config.
-    /\ i \in voteQuorum \* The new leader should vote for itself.
+    /\ i \in config[i]
+    /\ i \in voteQuorum
     /\ \A v \in voteQuorum : CanVoteForConfig(v, i, newTerm)
     \* Update the terms of each voter.
     /\ currentTerm' = [s \in Server |-> IF s \in voteQuorum THEN newTerm ELSE currentTerm[s]]
@@ -116,7 +111,8 @@ BecomeLeader(i, voteQuorum) ==
 \* A reconfig occurs on node i. The node must currently be a leader.
 Reconfig(i, newConfig) ==
     /\ state[i] = Primary
-    /\ ConfigIsCommitted(i)
+    /\ ConfigQuorumCheck(i)
+    /\ TermQuorumCheck(i)
     /\ QuorumsOverlap(config[i], newConfig)
     /\ i \in newConfig
     /\ configTerm' = [configTerm EXCEPT ![i] = currentTerm[i]]
@@ -149,6 +145,5 @@ Next ==
     \/ \E s,t \in Server : UpdateTerms(s,t)
 
 Spec == Init /\ [][Next]_vars
-
 
 =============================================================================

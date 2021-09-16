@@ -166,7 +166,21 @@ LEMMA QuorumsOverlapIsCommutative ==
 ASSUME TypeOK
 PROVE \A conf1,conf2 \in SUBSET Server :
         QuorumsOverlap(conf1,conf2) <=> QuorumsOverlap(conf2,conf1)
-\*PROOF BY DEF QuorumsOverlap, Quorums, TypeOK
+PROOF
+    <1>1. TAKE conf1, conf2 \in SUBSET Server
+    <1>2. QuorumsOverlap(conf1,conf2) => QuorumsOverlap(conf2,conf1)
+        <2>1. SUFFICES ASSUME QuorumsOverlap(conf1,conf2)
+              PROVE QuorumsOverlap(conf2,conf1) OBVIOUS
+        <2>2. \A qx \in Quorums(conf1), qy \in Quorums(conf2) : qx \cap qy # {} BY <2>1 DEF QuorumsOverlap
+        <2>3. \A qy \in Quorums(conf2), qx \in Quorums(conf1) : qy \cap qx # {} BY <2>2
+        <2>. QED BY <2>3 DEF QuorumsOverlap
+    <1>3. QuorumsOverlap(conf2,conf1) => QuorumsOverlap(conf1,conf2)
+        <2>1. SUFFICES ASSUME QuorumsOverlap(conf2,conf1)
+              PROVE QuorumsOverlap(conf1,conf2) OBVIOUS
+        <2>2. \A qx \in Quorums(conf2), qy \in Quorums(conf1) : qx \cap qy # {} BY <2>1 DEF QuorumsOverlap
+        <2>3. \A qy \in Quorums(conf1), qx \in Quorums(conf2) : qy \cap qx # {} BY <2>2
+        <2>. QED BY <2>3 DEF QuorumsOverlap
+    <1>. QED BY <1>2, <1>3
 
 LEMMA NewerOrEqualImpliesConfigTermGreaterThanOrEqual ==
 ASSUME TypeOK,
@@ -215,7 +229,7 @@ ASSUME TypeOK,
        NEW newConfig \in SUBSET Server,
        CSM!Reconfig(s, newConfig)
 PROVE s \in ActiveConfigSet
-PROOF BY QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigIsCommitted, CSM!QuorumsAt,
+PROOF BY QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigQuorumCheck, CSM!QuorumsAt,
             ActiveConfigSet, ConfigDisabled, CSM!NewerConfig, CV, Quorums, TypeOK
 
 LEMMA ReconfigImpliesCurrentTermGreaterThanConfigTerms ==
@@ -228,7 +242,7 @@ PROOF
     <1>1. s \in ActiveConfigSet BY ReconfigImpliesInActiveConfigSet
     <1>2. TAKE t \in Server
     <1>3. PICK Q \in Quorums(config[s]) : \A n \in Q : currentTerm[n] = currentTerm[s]
-        BY QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigIsCommitted, CSM!QuorumsAt
+        BY QuorumsIdentical DEF CSM!Reconfig, CSM!TermQuorumCheck, CSM!QuorumsAt
     <1>4. PICK n \in Q : currentTerm[n] >= configTerm[t] BY <1>1, <1>3 DEF Ind, ActiveConfigsSafeAtTerms
     <1>5. currentTerm[s] = currentTerm[n] BY <1>3
     <1>. QED BY <1>4, <1>5 DEF Quorums, TypeOK
@@ -252,7 +266,7 @@ PROVE \A n \in ActiveConfigSet' : n \in ActiveConfigSet
     <4>2. PICK Q \in Quorums(config[n])' : \A q \in Q : ~CSM!NewerConfig(CV(q), CV(n))' BY <4>1 DEF ActiveConfigSet, ConfigDisabled
     <4>. CASE n = p
         <5>1. \E nQ \in Quorums(config[n]) : \A q \in nQ : CV(n) = CV(q)
-            BY QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigIsCommitted, CSM!QuorumsAt, Quorums, CV
+            BY QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigQuorumCheck, CSM!QuorumsAt, Quorums, CV
         <5>. QED BY <5>1 DEF ActiveConfigSet, ConfigDisabled, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, CSM!Reconfig, TypeOK
     <4>. CASE n # p
         <5>1. Q \in Quorums(config[n])
@@ -304,8 +318,8 @@ PROOF
     <4>. s \in ActiveConfigSet BY ReconfigImpliesSameActiveConfigSet
     <4>. s \in Server BY DEF ActiveConfigSet, ConfigDisabled
     <4>1. PICK Q \in Quorums(config[s]) : \A n \in Q : ~CSM!NewerConfig(CV(n), CV(s)) BY DEF ActiveConfigSet, ConfigDisabled
-    <4>2. PICK pQ \in Quorums(config[p]) : \A q \in pQ : CVT(q) = CVT(p)
-        BY QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigIsCommitted, CSM!QuorumsAt, CVT, TypeOK
+    <4>2. PICK pQ \in Quorums(config[p]) : \A q \in pQ : CV(q) = CV(p)
+        BY QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigQuorumCheck, CSM!QuorumsAt, CV, TypeOK
     <4>3. PICK q \in pQ : ~CSM!NewerConfig(CV(q), CV(s))
         BY <4>1, <4>2, ReconfigImpliesInActiveConfigSet DEF Ind, ActiveConfigsOverlap, QuorumsOverlap
     <4>4. CSM!NewerOrEqualConfig(CV(s), CV(q))
@@ -314,13 +328,13 @@ PROOF
         <5>1. configTerm[p] >= configTerm[s] BY ReconfigImpliesActiveConfigSetHaveSmallerOrEqualConfigTerm
         <5>2. configTerm[s] >= configTerm[q]
             BY <4>4, NewerOrEqualImpliesConfigTermGreaterThanOrEqual DEF Quorums, TypeOK
-        <5>. QED BY <4>2, <5>1, <5>2 DEF CVT, TypeOK
+        <5>. QED BY <4>2, <5>1, <5>2 DEF CV, TypeOK
     <4>6. configVersion[p] = configVersion[s]
         <5>1. configVersion[p] >= configVersion[s]
             BY <4>5 DEF CSM!Reconfig, Ind, PrimaryInTermContainsNewestConfigOfTerm, PrimaryConfigTermEqualToCurrentTerm
         <5>2. configVersion[s] >= configVersion[q]
-            BY <4>2, <4>3, <4>4, <4>5, NewerOrEqualConfigWithSameTermImpliesGreaterOrEqualVersion DEF CVT, Quorums, TypeOK
-        <5>. QED BY <4>2, <5>1, <5>2 DEF CVT, TypeOK
+            BY <4>2, <4>3, <4>4, <4>5, NewerOrEqualConfigWithSameTermImpliesGreaterOrEqualVersion DEF Quorums, CV, TypeOK
+        <5>. QED BY <4>2, <5>1, <5>2 DEF CV, TypeOK
     <4>. QED BY <4>5, <4>6 DEF Ind, ConfigVersionAndTermUnique
 
 LEMMA ConfigsIncreaseMonotonically ==

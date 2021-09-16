@@ -506,13 +506,20 @@ PROOF
                 <4>4. log'[t][Len(log'[t])] = currentTerm[t] BY <3>1, <3>7 DEF OSM!ClientRequest, TypeOK
                 <4>5. \A u \in Server : ~\E k \in DOMAIN log[u] : log[u][k] = currentTerm[t] /\ ~InLog(<<k,log[u][k]>>, t)
                     BY <3>1, <3>7, <4>4 DEF OSM!ClientRequest, TypeOK, Ind, PrimaryHasEntriesItCreated, InLog
-                <4>. QED BY <3>1, <3>7, <4>1, <4>2, <4>3, <4>4, <4>5 DEF OSM!ClientRequest, TypeOK, Ind, UniformLogEntriesInTerm, InLog
+                <4>6. SUFFICES ASSUME (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])'
+                      PROVE (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])' OBVIOUS
+                \* splitting into cases helps tlaps
+                <4>7. CASE i = Len(log'[s])
+                    BY <3>1, <3>7, <4>1, <4>2, <4>3, <4>4, <4>5, <4>6, <4>7 DEF OSM!ClientRequest, TypeOK, Ind, UniformLogEntriesInTerm, InLog
+                <4>8. CASE i < Len(log'[s])
+                    BY <3>1, <3>7, <4>1, <4>2, <4>3, <4>4, <4>5, <4>6, <4>8 DEF OSM!ClientRequest, TypeOK, Ind, UniformLogEntriesInTerm, InLog
+                <4>. QED BY <3>1, <3>5, <3>7, <4>7, <4>8 DEF OSM!ClientRequest, TypeOK
             <3>8. CASE s # p /\ t # p BY <3>1, <3>8 DEF OSM!ClientRequest, TypeOK, Ind, UniformLogEntriesInTerm
             <3>. QED BY <3>6, <3>7, <3>8
         <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
             <3>1. PICK u, v \in Server : OSM!GetEntries(u, v) BY <2>2
-            <3>.  DEFINE sLastIdx == Len(log'[u])
-            <3>m. log'[u] = SubSeq(log[v], 1, sLastIdx) BY <3>1 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, LogMatching, EqualUpTo
+            <3>.  DEFINE uLastIdx == Len(log'[u])
+            <3>m. log'[u] = SubSeq(log[v], 1, uLastIdx) BY <3>1 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, LogMatching, EqualUpTo
             <3>2. SUFFICES ASSUME TRUE
                   PROVE (\A s,t \in Server : \A i \in DOMAIN log[s] :
                             (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) =>
@@ -531,11 +538,12 @@ PROOF
                 <4>2. \A j \in DOMAIN log[v] : (j < i) => (j \in DOMAIN log'[s] /\ log[s][j] = log'[s][j])
                     BY <3>1, <3>m, <3>6 DEF OSM!GetEntries, OSM!Empty, TypeOK
                 <4>3. (\A j \in DOMAIN log'[s] : (j < i) => log'[s][j] # log'[s][i]) => (\A j \in DOMAIN log[v] : (j < i) => log[v][j] # log[v][i])
-                    \* why do i have to spell this out?  because TLAPS is stupid
                     <5>1. \A j \in DOMAIN log[v] : (j < i) => (j \in DOMAIN log'[s]) BY <4>2
-                    <5>. QED BY <3>1, <3>m, <3>6, <4>1, <5>1 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                    <5>2. \A j \in DOMAIN log'[s] : (j \in DOMAIN log[v] /\ log[v][j] = log'[s][j]) BY <3>1, <3>m, <3>6 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                    <5>. QED BY <5>1, <5>2
                 <4>4. (\A j \in DOMAIN log[v] : (j < i) => log[v][j] # log[v][i]) => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[v][i])
-                    BY <3>1, <3>3, <3>4, <3>5, <3>6, <4>2 DEF OSM!GetEntries, OSM!Empty, Ind, UniformLogEntriesInTerm, TypeOK
+                    <5>1. i \in DOMAIN log[v] BY <3>1, <3>5, <3>6 DEF OSM!GetEntries, OSM!Empty, TypeOK
+                    <5>. QED BY <3>6, <4>2, <5>1 DEF Ind, UniformLogEntriesInTerm
                 <4>5. (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[v][i]) => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
                     <5>1. SUFFICES ASSUME \A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[v][i]
                           PROVE (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])' OBVIOUS
@@ -578,7 +586,7 @@ PROOF
             <3>6. CASE s = u
                 <4>a. SUFFICES ASSUME t # s
                       PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
-                      BY <3>1, <3>5, <3>6 DEF OSM!RollbackEntries, TypeOK
+                      BY <3>1, <3>5, <3>6, Z3 DEF OSM!RollbackEntries, TypeOK
                 <4>1. \A j \in DOMAIN log'[s] : j \in DOMAIN log[s] /\ log'[s][j] = log[s][j]
                     BY <3>1, <3>5, <3>6 DEF OSM!RollbackEntries, TypeOK
                 <4>2. \A j \in DOMAIN log[s] : (j < i) => (j \in DOMAIN log'[s] /\ log'[s][j] = log[s][j])
@@ -586,13 +594,18 @@ PROOF
                 <4>3. (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])
                     BY <3>5, <4>1, <4>2
                 <4>4. (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])
-                    BY <3>1, <3>5, <3>6 DEF OSM!RollbackEntries, TypeOK, Ind, UniformLogEntriesInTerm
+                    <5>1. i \in DOMAIN log[s] BY <3>1, <3>5 DEF OSM!RollbackEntries, TypeOK
+                    <5>. QED BY <3>6, <5>1 DEF Ind, UniformLogEntriesInTerm
                 <4>5. (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i]) => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
                     BY <3>1, <3>5, <3>6, <4>a DEF OSM!RollbackEntries, TypeOK
                 <4>. QED BY <4>1, <4>2, <4>3, <4>4, <4>5
             <3>7. CASE t = u
-                \* i think if i included the def of OSM!CanRollback, OSM!LastTerm, OSM!LogTerm, OSM!GetTerm then i wouldn't need LogMatching
-                BY <3>1, <3>5, <3>7 DEF OSM!RollbackEntries, OSM!Empty, TypeOK, Ind, UniformLogEntriesInTerm, LogMatching, EqualUpTo
+                <4>1. SUFFICES ASSUME (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])'
+                      PROVE (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])' OBVIOUS
+                <4>2. \A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i] BY <3>1, <3>7, <4>1 DEF OSM!RollbackEntries, OSM!Empty, TypeOK
+                <4>3. \A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i]
+                    BY <3>1, <3>7, <4>2 DEF Ind, UniformLogEntriesInTerm, OSM!RollbackEntries, OSM!Empty
+                <4>. QED BY <3>1, <3>7, <4>3 DEF OSM!RollbackEntries, OSM!Empty, TypeOK
             <3>8. CASE s # u /\ t # u BY <3>1, <3>8 DEF OSM!RollbackEntries, OSM!Empty, TypeOK, Ind, UniformLogEntriesInTerm
             <3>. QED BY <3>6, <3>7, <3>8
         <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
@@ -602,7 +615,7 @@ PROOF
         BY <1>2 DEF osmVars, Ind, UniformLogEntriesInTerm
     <1>3. CASE JointNext
         <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
-            BY <2>1 DEF OSM!BecomeLeader, TypeOK, Ind, UniformLogEntriesInTerm
+            BY <2>1 DEF OSM!BecomeLeader, CSM!BecomeLeader, TypeOK, Ind, UniformLogEntriesInTerm
         <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
             BY <2>2 DEF OSM!UpdateTerms, TypeOK, Ind, UniformLogEntriesInTerm
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext

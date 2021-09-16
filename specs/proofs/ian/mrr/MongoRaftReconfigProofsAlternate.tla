@@ -625,6 +625,10 @@ NewerConfigsDeactivateOlderNonoverlappingConfigs ==
         (CSM!NewerConfig(CV(s), CV(t)) /\ ~QuorumsOverlap(config[s], config[t]))
             => ConfigDisabled(t)
 
+ActiveConfigSetNonempty2 ==
+    \*(\A s \in Server : config[s] = {}) \/ (ActiveConfigSet # {})
+    (ActiveConfigSet # {})
+
 \* Alternate, smaller inductive invariant.
 \*IndAlt == 
 Ind == 

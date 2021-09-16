@@ -143,7 +143,7 @@ PROVE \A c \in committed : InLog(c.entry, p)
         <2>3. \A i \in DOMAIN log[n] : log[n][i] = log[p][i]
             <3>1. \A i \in DOMAIN log[n] : \A j \in Nat : (j > 0 /\ j < nLen) => log[p][j] = log[n][j]
                 BY <1>n, <1>4, <2>1, <2>2 DEF Ind, LogMatching, EqualUpTo, TypeOK
-            <3>. QED BY <1>n, <1>4, <2>1, <2>2, <3>1 DEF TypeOK
+            <3>. QED BY <1>n, <1>4, <2>1, <2>2, <3>1, Zenon, Z3 DEF TypeOK
         <2>. QED BY <1>1, <1>n, <1>2, <1>4, <2>3 DEF InLog, TypeOK
     <1>. QED BY <1>3, <1>4 DEF OSM!BecomeLeader, OSM!CanVoteForOplog, OSM!LastTerm, LastTerm
 
@@ -160,7 +160,7 @@ PROOF
     <1>n. n \in Server BY <1>2 DEF Quorums, TypeOK
     <1>3. state[p] = Primary BY DEF OSM!CommitEntry
     <1>4. n # p BY <1>2 DEF CSM!NewerConfig, CV, TypeOK
-    <1>5. currentTerm[n] = currentTerm[p] \*Len(log[n]) >= ind /\ log[n][ind] = currentTerm[p] /\ 
+    <1>5. currentTerm[n] = currentTerm[p]
         <2>1. OSM!ImmediatelyCommitted(<<Len(log[p]),currentTerm[p]>>, pQ) BY DEF OSM!CommitEntry, TypeOK
         <2>. QED BY <2>1 DEF OSM!ImmediatelyCommitted, OSM!InLog, TypeOK
     <1>6. configTerm[n] > currentTerm[p]
@@ -246,7 +246,9 @@ PROVE \A c \in committed : \A Q \in Quorums(newConfig) : \E n \in Q : InLog(c.en
             <3>. QED BY <3>1, <3>2 DEF LogTerm, GetTerm, TypeOK
         <2>3. InLog(c.entry, p)
             <3>1. \E i \in DOMAIN log[p] : log[p][i] > c.term BY <1>3, <2>1, <2>2 DEF TypeOK
-            <3>2. Len(log[p]) >= c.entry[1] /\ log[p][c.entry[1]] = c.term BY <1>1, <2>1, <3>1, Z3 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
+            <3>2. Len(log[p]) >= c.entry[1] /\ log[p][c.entry[1]] = c.term
+                <4>1. c.term <= c.term BY DEF TypeOK
+                <4>. QED BY <1>1, <2>1, <3>1, <4>1, Zenon, Z3 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
             <3>. QED BY <1>1, <3>2 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry, InLog, TypeOK
         <2>4. PICK pQ \in Quorums(config[p]) : \A s \in pQ : InLog(c.entry, s)
             <3>1. PICK pQ \in Quorums(config[p]) : \A s \in pQ : (log[s][k] = log[p][k] /\ k \in DOMAIN log[s])
@@ -307,7 +309,9 @@ PROVE \A c \in committed : \A Q \in Quorums(config[p]) : \E n \in Q : InLog(c.en
             <3>. QED BY <3>1, <3>2 DEF LogTerm, GetTerm, TypeOK
         <2>3. InLog(c.entry, p)
             <3>1. \E i \in DOMAIN log[p] : log[p][i] > c.term BY <1>3, <2>1, <2>2 DEF TypeOK
-            <3>2. Len(log[p]) >= c.entry[1] /\ log[p][c.entry[1]] = c.term BY <1>1, <2>1, <3>1, Z3 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
+            <3>2. Len(log[p]) >= c.entry[1] /\ log[p][c.entry[1]] = c.term
+                <4>1. c.term <= c.term BY DEF TypeOK
+                <4>. QED BY <1>1, <2>1, <3>1, <4>1, Zenon, Z3 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
             <3>. QED BY <1>1, <3>2 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry, InLog, TypeOK
         <2>4. PICK pQ \in Quorums(config[p]) : \A s \in pQ : InLog(c.entry, s)
             <3>1. PICK pQ \in Quorums(config[p]) : \A s \in pQ : (log[s][k] = log[p][k] /\ k \in DOMAIN log[s])
@@ -334,5 +338,4 @@ PROVE \A c \in committed : \A Q \in Quorums(config[p]) : \E n \in Q : InLog(c.en
     <1>. QED BY <1>2, <1>3, ReconfigImpliesCommitTermsSmallerOrEqual DEF TypeOK
 
 =============================================================================
-
 

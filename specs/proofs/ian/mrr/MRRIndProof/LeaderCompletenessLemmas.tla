@@ -75,7 +75,7 @@ PROOF
         <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
             BY <2>2 DEF OSM!GetEntries, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
-            BY <2>3, PrimaryAndSecondaryAreDifferent DEF OSM!RollbackEntries, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
+            BY <2>3, PrimaryAndSecondaryAreDifferent, Z3 DEF OSM!RollbackEntries, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
         <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
             <3>1. PICK p \in Server : \E Q \in OSM!QuorumsAt(p) : OSM!CommitEntry(p, Q) BY <2>4
             <3>2. \A s \in Server : currentTerm[p] >= configTerm[s]
@@ -222,7 +222,12 @@ PROOF
             <3>6. SUFFICES ASSUME d.term <= c.term
                   PROVE Len(log'[s]) >= d.entry[1] /\ log'[s][d.entry[1]] = d.term OBVIOUS
             <3>7. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!CommitEntry(p, Q) BY <2>4, QuorumsIdentical DEF OSM!QuorumsAt
-            <3>8. CASE d \in committed BY <3>4, <3>6, <3>7, <3>8 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, OSM!CommitEntry, TypeOK
+            <3>8. CASE d \in committed
+                <4>1. i \in DOMAIN log[s] BY <3>4, <3>7 DEF OSM!CommitEntry, TypeOK
+                <4>2. log[s][i] > d.term BY <3>4, <3>6, <3>7 DEF OSM!CommitEntry, TypeOK
+                <4>3. Len(log[s]) >= d.entry[1] /\ log[s][d.entry[1]] = d.term
+                    BY <3>8, <4>1, <4>2 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
+                <4>. QED BY <3>7, <4>3 DEF OSM!CommitEntry, TypeOK
             <3>9. CASE d \notin committed
                 \* interestingly enough, this case is not possible.  proof by contradiction
                 <4>.  DEFINE pLen == Len(log[p])
@@ -246,7 +251,8 @@ PROOF
         <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
             BY <2>1 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, OSM!BecomeLeader, TypeOK
         <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
-            BY <2>2 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, OSM!UpdateTerms, OSM!UpdateTermsExpr, TypeOK
+            BY <2>2 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, OSM!UpdateTerms, OSM!UpdateTermsExpr,
+                CSM!UpdateTerms, CSM!UpdateTermsExpr, TypeOK
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
