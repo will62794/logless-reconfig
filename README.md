@@ -25,10 +25,12 @@ This will save the results of the execution, along with auxiliary information ab
 ```
 These models impose state constraints on both protocols to make the reachable state space finite. Complete verification time, however, will vary depending on the speed of your local machine.
 
-## TLAPS Safety Proofs
+## Inductive Invariant and TLAPS Safety Proofs
 
-TLAPS proofs of the safety properties of MongoRaftReconfig are provided in the [`proofs`](proofs) sub-directory. The statement of the main, high level theorems for establishing safety are given in [`proofs/MongoRaftReconfigProofs.tla`](proofs/MongoRaftReconfigProofs.tla). The main inductive invariant used to establish these safety properties is stated as `Ind` in the `Defs.tla` file. More information on how to inspect and check these proofs using the TLA+ proof system tools is provided in the README in the [`proofs`](proofs) directory.
+TLAPS proofs of the safety properties of MongoRaftReconfig are provided in the [`proofs`](proofs) sub-directory. This includes a [formal inductive invariant](https://github.com/will62794/logless-reconfig/blob/3fe9ef6801c579774149b9dc8122023f738ab9b5/proofs/Defs.tla#L226-L260) for establishing safety. Information on how to inspect and check these proofs using the TLA+ proof system is provided in the README present in the [`proofs`](proofs) sub-directory.
 
+<!-- 
+The statement of the main, high level theorems for establishing safety are given in [`proofs/MongoRaftReconfigProofs.tla`](proofs/MongoRaftReconfigProofs.tla). The main inductive invariant used to establish these safety properties is stated as `Ind` in the `Defs.tla` file.  -->
 
 
 
