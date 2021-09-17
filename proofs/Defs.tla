@@ -171,12 +171,6 @@ CommitOfNewConfigPreventsCommitsInOldTerms ==
 \* Establishing leader completeness invariant.
 \*
 
-\* If a node is primary, it must contain all committed entries from previous terms in its log.
-LeaderCompletenessGeneralized ==
-    \A s \in Server : 
-        (state[s] = Primary) =>
-        (\A c \in committed : c.term <= currentTerm[s] => InLog(c.entry, s))
-
 CommittedEntryIntersectsWithNewestConfig ==
     \A c \in committed :
     \A s \in ServersInNewestConfig :
@@ -258,7 +252,7 @@ Ind ==
     /\ CommittedTermMatchesEntry
 
     \* (alternate)
-    /\ LeaderCompletenessGeneralized
+    /\ LeaderCompleteness
     /\ LogsLaterThanCommittedMustHaveCommitted
     /\ ActiveConfigsOverlapWithCommittedEntry
     /\ NewerConfigsDisablePrimaryCommitsInOlderTerms

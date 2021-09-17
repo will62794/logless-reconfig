@@ -138,15 +138,10 @@ ASSUME TRUE
 PROVE MRRSpec => [](TypeOK /\ Ind)
 BY IndIsInductiveInvariant, PTL DEF MRRSpec
 
-LEMMA MRRImpliesLeaderCompletenessGeneralized ==
-ASSUME TRUE
-PROVE MRRSpec => []LeaderCompletenessGeneralized
-BY MRRImpliesInd, PTL DEF Ind
-
-THEOREM MRRImpliesLeaderCompleteness ==
+LEMMA MRRImpliesLeaderCompleteness ==
 ASSUME TRUE
 PROVE MRRSpec => []LeaderCompleteness
-BY MRRImpliesLeaderCompletenessGeneralized DEF LeaderCompleteness, LeaderCompletenessGeneralized, InLog, TypeOK
+BY MRRImpliesInd, PTL DEF Ind
 
 THEOREM MRRImpliesStateMachineSafety ==
 ASSUME TRUE

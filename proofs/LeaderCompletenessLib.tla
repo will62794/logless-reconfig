@@ -208,7 +208,7 @@ ASSUME TypeOK, Ind,
        CSM!Reconfig(p, newConfig)
 PROVE \A c \in committed : InLog(c.entry, p)
 BY ReconfigImpliesCommitTermsSmallerOrEqual DEF CSM!Reconfig,
-    Ind, LeaderCompletenessGeneralized, CommittedTermMatchesEntry, InLog, TypeOK
+    Ind, LeaderCompleteness, CommittedTermMatchesEntry, InLog, TypeOK
 
 LEMMA ReconfigImpliesHasQuorumWithAllCommits ==
 ASSUME TypeOK, Ind,

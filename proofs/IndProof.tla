@@ -21,7 +21,7 @@ PROOF
     <1>12. UniformLogEntriesInTerm' BY UniformLogEntriesInTermAndNext
     <1>13. CommittedEntryIndexesAreNonZero' BY CommittedEntryIndexesAreNonZeroAndNext
     <1>14. CommittedTermMatchesEntry' BY CommittedTermMatchesEntryAndNext
-    <1>15. LeaderCompletenessGeneralized' BY LeaderCompletenessGeneralizedAndNext
+    <1>15. LeaderCompleteness' BY LeaderCompletenessAndNext
     <1>16. LogsLaterThanCommittedMustHaveCommitted' BY LogsLaterThanCommittedMustHaveCommittedAndNext
     <1>17. ActiveConfigsOverlapWithCommittedEntry' BY ActiveConfigsOverlapWithCommittedEntryAndNext
     <1>18. NewerConfigsDisablePrimaryCommitsInOlderTerms' BY NewerConfigsDisablePrimaryCommitsInOlderTermsAndNext
@@ -49,7 +49,7 @@ PROOF
     <1>12. UniformLogEntriesInTerm' BY DEF Ind, UniformLogEntriesInTerm, TypeOK, vars
     <1>13. CommittedEntryIndexesAreNonZero' BY DEF Ind, CommittedEntryIndexesAreNonZero, TypeOK, vars
     <1>14. CommittedTermMatchesEntry' BY DEF Ind, CommittedTermMatchesEntry, TypeOK, vars
-    <1>15. LeaderCompletenessGeneralized' BY DEF Ind, LeaderCompletenessGeneralized, InLog, TypeOK, vars
+    <1>15. LeaderCompleteness' BY DEF Ind, LeaderCompleteness, InLog, TypeOK, vars
     <1>16. LogsLaterThanCommittedMustHaveCommitted' BY DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK, vars
     <1>17. ActiveConfigsOverlapWithCommittedEntry' BY DEF Ind, ActiveConfigsOverlapWithCommittedEntry, InLog, TypeOK, vars
     <1>18. NewerConfigsDisablePrimaryCommitsInOlderTerms' BY DEF Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, TypeOK, vars
@@ -97,8 +97,8 @@ PROOF
         BY DEF Init, OSM!Init, CSM!Init, CommittedEntryIndexesAreNonZero
     <1>14. CommittedTermMatchesEntry
         BY DEF Init, OSM!Init, CSM!Init, CommittedTermMatchesEntry
-    <1>15. LeaderCompletenessGeneralized
-        BY DEF Init, OSM!Init, CSM!Init, LeaderCompletenessGeneralized
+    <1>15. LeaderCompleteness
+        BY DEF Init, OSM!Init, CSM!Init, LeaderCompleteness
     <1>16. LogsLaterThanCommittedMustHaveCommitted
         BY DEF Init, OSM!Init, CSM!Init, LogsLaterThanCommittedMustHaveCommitted
     <1>17. ActiveConfigsOverlapWithCommittedEntry

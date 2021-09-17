@@ -65,30 +65,30 @@ PROOF
 \*  <n>m. TRUE BY Isa
 \* I'm not sure if it's an issue with just isabelle + long files; either way I refactored
 \* the project into separate files and everything works.
-LEMMA LeaderCompletenessGeneralizedAndNext ==
+LEMMA LeaderCompletenessAndNext ==
 ASSUME TypeOK, Ind, Next
-PROVE LeaderCompletenessGeneralized'
+PROVE LeaderCompleteness'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
         <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
-            BY <2>1 DEF OSM!ClientRequest, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
+            BY <2>1 DEF OSM!ClientRequest, Ind, LeaderCompleteness, InLog, TypeOK
         <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
-            BY <2>2 DEF OSM!GetEntries, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
+            BY <2>2 DEF OSM!GetEntries, Ind, LeaderCompleteness, InLog, TypeOK
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
-            BY <2>3, PrimaryAndSecondaryAreDifferent, Z3 DEF OSM!RollbackEntries, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
+            BY <2>3, PrimaryAndSecondaryAreDifferent, Z3 DEF OSM!RollbackEntries, Ind, LeaderCompleteness, InLog, TypeOK
         <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
             <3>1. PICK p \in Server : \E Q \in OSM!QuorumsAt(p) : OSM!CommitEntry(p, Q) BY <2>4
             <3>2. \A s \in Server : currentTerm[p] >= configTerm[s]
                 BY <3>1, QuorumsIdentical, CommitEntryImpliesCurrentTermGreaterThanConfigTerms DEF OSM!QuorumsAt
             <3>3. \A s \in Server : (state[s] = Primary /\ s # p) => currentTerm[s] < currentTerm[p]
                 BY <3>1, <3>2 DEF OSM!CommitEntry, Ind, OnePrimaryPerTerm, PrimaryConfigTermEqualToCurrentTerm, TypeOK
-            <3>. QED BY <3>1, <3>3 DEF OSM!CommitEntry, Ind, LeaderCompletenessGeneralized, InLog, OnePrimaryPerTerm, TypeOK
+            <3>. QED BY <3>1, <3>3 DEF OSM!CommitEntry, Ind, LeaderCompleteness, InLog, OnePrimaryPerTerm, TypeOK
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
     <1>2. CASE CSMNext /\ UNCHANGED osmVars
         <2>1. CASE \E s \in Server, newConfig \in SUBSET Server : OplogCommitment(s) /\ CSM!Reconfig(s, newConfig)
-            BY <1>2, <2>1 DEF osmVars, CSM!Reconfig, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
+            BY <1>2, <2>1 DEF osmVars, CSM!Reconfig, Ind, LeaderCompleteness, InLog, TypeOK
         <2>2. CASE \E s,t \in Server : CSM!SendConfig(s, t)
-            BY <1>2, <2>2 DEF osmVars, CSM!SendConfig, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
+            BY <1>2, <2>2 DEF osmVars, CSM!SendConfig, Ind, LeaderCompleteness, InLog, TypeOK
         <2>. QED BY <1>2, <2>1, <2>2 DEF CSMNext
     <1>3. CASE JointNext
         <2>1. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!BecomeLeader(s, Q) /\ CSM!BecomeLeader(s, Q)
@@ -96,12 +96,12 @@ PROOF
             <3>2. \A c \in committed : InLog(c.entry, p) BY <3>1, ElectedLeadersHaveAllCommits
             <3>3. \A c \in committed : InLog(c.entry, p)' BY <3>1, <3>2 DEF OSM!BecomeLeader, InLog, TypeOK
             <3>4. \A s \in Server : (state[s] = Primary /\ s # p) => (\A c \in committed : c.term <= currentTerm[s] => InLog(c.entry, s))
-                BY <3>1 DEF OSM!BecomeLeader, Ind, LeaderCompletenessGeneralized
+                BY <3>1 DEF OSM!BecomeLeader, Ind, LeaderCompleteness
             <3>5. \A s \in Server : (state'[s] = Primary /\ s # p) => (\A c \in committed : c.term <= currentTerm[s] => InLog(c.entry, s))'
                 BY <3>1, <3>4, PrimaryAndSecondaryAreDifferent DEF OSM!BecomeLeader, InLog, TypeOK
-            <3>. QED BY <3>1, <3>3, <3>5 DEF LeaderCompletenessGeneralized, OSM!BecomeLeader, TypeOK
+            <3>. QED BY <3>1, <3>3, <3>5 DEF LeaderCompleteness, OSM!BecomeLeader, TypeOK
         <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
-            BY <2>2, PrimaryAndSecondaryAreDifferent DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, Ind, LeaderCompletenessGeneralized, InLog, TypeOK
+            BY <2>2, PrimaryAndSecondaryAreDifferent DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, Ind, LeaderCompleteness, InLog, TypeOK
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
@@ -131,7 +131,7 @@ PROOF
             <3>8. CASE s # p BY <3>4, <3>6, <3>7, <3>8, Zenon DEF OSM!ClientRequest, Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
             <3>9. CASE s = p \* <3>9 isn't used, clearly the CASE split isn't necessary
                 BY Z3,<3>4, <3>6, <3>7, <3>8 DEF OSM!ClientRequest, InLog, TypeOK,
-                    Ind, LogsLaterThanCommittedMustHaveCommitted, LeaderCompletenessGeneralized, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry
+                    Ind, LogsLaterThanCommittedMustHaveCommitted, LeaderCompleteness, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry
             <3>. QED BY <3>8, <3>9
         <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
             <3>1. SUFFICES ASSUME TRUE
