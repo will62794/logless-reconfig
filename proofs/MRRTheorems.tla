@@ -7,13 +7,6 @@ MRRSpec == /\ TypeOK
            /\ Init
            /\ [][Next]_vars
 
-LeaderCompleteness ==
-    \A s \in Server :
-        (state[s] = Primary) => (\A c \in committed : c.term <= currentTerm[s] => InLog(c.entry, s))
-
-StateMachineSafety ==
-    \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
-
 LEMMA MRRImpliesInd ==
 ASSUME TRUE
 PROVE MRRSpec => [](TypeOK /\ Ind)

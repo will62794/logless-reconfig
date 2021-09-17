@@ -3,8 +3,6 @@
 EXTENDS MongoRaftReconfig
 
 
-InLog(e, i) == \E x \in DOMAIN log[i] : x = e[1] /\ log[i][x] = e[2]
-
 \* The term of the last entry in a log, or 0 if the log is empty.
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)]
 LastEntry(xlog) == <<Len(xlog),xlog[Len(xlog)]>>
@@ -31,11 +29,6 @@ OlderConfig(ci, cj) == ~CSM!NewerOrEqualConfig(ci, cj)
 \*
 \* Establishing election safety under reconfiguration.
 \*
-
-OnePrimaryPerTerm ==
-    \A s \in Server : state[s] = Primary =>
-        \A t \in Server :
-            (state[t] = Primary /\ currentTerm[s] = currentTerm[t]) => s = t
 
 PrimaryConfigTermEqualToCurrentTerm == 
     \A s \in Server : (state[s] = Primary) => (configTerm[s] = currentTerm[s])

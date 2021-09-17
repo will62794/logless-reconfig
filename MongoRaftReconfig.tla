@@ -31,14 +31,14 @@ QuorumsAt(i) == Quorums(config[i])
 Min(s) == CHOOSE x \in s : \A y \in s : x <= y
 Max(s) == CHOOSE x \in s : \A y \in s : x >= y
 
-\* Return the range of a given function.
-Range(f) == {f[x] : x \in DOMAIN f}
-
 \* Is a sequence empty.
 Empty(s) == Len(s) = 0
 
 GetTerm(xlog, index) == IF index = 0 THEN 0 ELSE xlog[index]
 LogTerm(i, index) == GetTerm(log[i], index)
+
+\* Is log entry e = <<index, term>> in the log of node 'i'.
+InLog(e, i) == \E x \in DOMAIN log[i] : x = e[1] /\ log[i][x] = e[2]
 
 -------------------------------------------------------------------------------------------
 
@@ -137,13 +137,26 @@ Next ==
     \/ JointNext
 
 Spec == Init /\ [][Next]_vars
+-----------------------------------------------------------------------------
 
 \*
-\* Correctness properties.
+\* Safety properties.
 \*
 
-OnePrimaryPerTerm == OSM!OnePrimaryPerTerm
-StateMachineSafety == OSM!StateMachineSafety
-LeaderCompleteness == OSM!LeaderCompleteness
+\* There can be at most one primary per term.
+OnePrimaryPerTerm == 
+    \A s,t \in Server :
+        (/\ state[s] = Primary 
+         /\ state[t] = Primary
+         /\ currentTerm[s] = currentTerm[t]) => (s = t)
+
+\* When a node gets elected as primary it contains all entries committed in previous terms.
+LeaderCompleteness == 
+    \A s \in Server : (state[s] = Primary) => 
+        \A c \in committed : (c.term <= currentTerm[s] => InLog(c.entry, s))
+
+\* If two entries are committed at the same index, they must be the same entry.
+StateMachineSafety == 
+    \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
 
 =============================================================================

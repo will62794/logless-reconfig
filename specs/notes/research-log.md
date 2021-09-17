@@ -307,3 +307,17 @@ This was interacting oddly with models whose state constraint sets `MaxLogLen=0`
 [Ind](https://github.com/will62794/logless-reconfig/blob/dcf172d0f08184df9bb607aa1954635dc2d989e2/specs/proofs/ian/mrr/MRRIndProof/Defs.tla#L236) is now proved to be inductive invariant for MongoRaftReconfig.  The entire proof is contained within the [MRRIndProof](https://github.com/will62794/logless-reconfig/tree/master/specs/proofs/ian/mrr/MRRIndProof) folder, and the top level theorem is [IndIsInductiveInvariant](https://github.com/will62794/logless-reconfig/blob/dcf172d0f08184df9bb607aa1954635dc2d989e2/specs/proofs/ian/mrr/MRRIndProof/IndProof.tla#L82).  Two additional notes:
 1. The MongoRaftReconfig transition relation needs to be synced with the latest version.  It's close but I believe there's at least a few small differences.  
 1. Ideally I would like to prove the three unproven [quorum lemmas](https://github.com/will62794/logless-reconfig/blob/dcf172d0f08184df9bb607aa1954635dc2d989e2/specs/proofs/ian/mrr/MRRIndProof/Lib.tla#L152) in Lib.tla.  They're obvious results but I still think they are worth trying to prove.  
+
+## 2021-09-16
+
+Will has been able to check the following proof modules locally with TLAPS from the Toolbox (i.e. they've gone green):
+
+- AuxLemmas
+- BasicQuorumsLib
+- ElectionSafetyLemmas
+- IndProof
+- MRRTheorems
+- LeaderCompletenessLemmas
+- LeaderCompletenessLemmasCtd
+- LogPropertiesLemmas
+- Lib (except for yellow QuorumsIdentical and QuorumsOverlapIdentical, but I think we are just assuming thm)
