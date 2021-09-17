@@ -4,12 +4,13 @@
 # Check all TLAPS proofs for establishing safety of MongoRaftReconfig.
 #
 
-tlapm -v --cleanfp --timing -I ../ AuxLemmas.tla
-tlapm -v --cleanfp --timing -I ../ BasicQuorumsLib.tla
-tlapm -v --cleanfp --timing -I ../ ElectionSafetyLemmas.tla
-tlapm -v --cleanfp --timing -I ../ IndProof.tla
-tlapm -v --cleanfp --timing -I ../ LeaderCompletenessLemmas.tla
-tlapm -v --cleanfp --timing -I ../ LeaderCompletenessLemmasCtd.tla
-tlapm -v --cleanfp --timing -I ../ Lib.tla
-tlapm -v --cleanfp --timing -I ../ LogPropertiesLemmas.tla
-tlapm -v --cleanfp --timing -I ../ MRRTheorems.tla
+tlapm --stretch 2 -v --cleanfp --timing -I ../ AuxLemmas.tla
+tlapm --stretch 2 -v --cleanfp --timing -I ../ BasicQuorumsLib.tla
+tlapm --stretch 2 -v --cleanfp --timing -I ../ ElectionSafetyLemmas.tla
+tlapm --stretch 2 -v --cleanfp --timing -I ../ IndProof.tla
+tlapm --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLemmas.tla
+tlapm --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLemmasCtd.tla
+tlapm --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLib.tla
+tlapm --stretch 2 -v --cleanfp --timing -I ../ Lib.tla
+tlapm --stretch 2 -v --cleanfp --timing -I ../ LogPropertiesLemmas.tla
+tlapm --stretch 2 -v --cleanfp --timing -I ../ MRRTheorems.tla

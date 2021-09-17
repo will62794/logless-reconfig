@@ -130,7 +130,7 @@ PROOF
             <3>7. PICK p \in Server : OSM!ClientRequest(p) BY <2>1
             <3>8. CASE s # p BY <3>4, <3>6, <3>7, <3>8, Zenon DEF OSM!ClientRequest, Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
             <3>9. CASE s = p \* <3>9 isn't used, clearly the CASE split isn't necessary
-                BY <3>4, <3>6, <3>7, <3>8 DEF OSM!ClientRequest, InLog, TypeOK,
+                BY Z3,<3>4, <3>6, <3>7, <3>8 DEF OSM!ClientRequest, InLog, TypeOK,
                     Ind, LogsLaterThanCommittedMustHaveCommitted, LeaderCompletenessGeneralized, CommittedEntryIndexesAreNonZero, CommittedTermMatchesEntry
             <3>. QED BY <3>8, <3>9
         <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
