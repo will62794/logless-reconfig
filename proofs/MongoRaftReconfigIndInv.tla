@@ -29,10 +29,6 @@ OlderConfig(ci, cj) == ~CSM!NewerOrEqualConfig(ci, cj)
 
 --------------------------------------------------------------------------------
 
-\*
-\* Establishing election safety under reconfiguration.
-\*
-
 PrimaryConfigTermEqualToCurrentTerm == 
     \A s \in Server : (state[s] = Primary) => (configTerm[s] = currentTerm[s])
 
@@ -61,16 +57,9 @@ NewerConfigDisablesTermsOfOlderNonDisabledConfigs ==
          /\ ~ConfigDisabled(t)) => 
             \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] >= configTerm[s]
 
-
-\*
-\* Establishing log invariants.
-\*
-
 EqualUpTo(log1, log2, i) ==
-    \*\A j \in 1..i : log1[j] = log2[j]
     \A j \in Nat : (j > 0 /\ j <= i) => log1[j] = log2[j]
 
-\* This is a core property of Raft, but MongoStaticRaft does not satisfy this
 LogMatching ==
     \A s,t \in Server :
         \A i \in (DOMAIN log[s] \cap DOMAIN log[t]) :
@@ -132,7 +121,6 @@ UniformLogEntriesInTerm ==
 \*         \* then the log on s at position 'it' must also be in term T.
 \*         (log[s][is] = log[t][it] /\ it < is) => (log[s][it] = log[s][is])
     
-
 CommittedEntryIndexesAreNonZero == \A c \in committed : c.entry[1] # 0
 
 \* Belongs in TypeOK, or considered a completely separate II
@@ -160,13 +148,22 @@ CommittedEntryIntersectsWithEveryActiveConfig ==
     \A s \in Server :
         ~ConfigDisabled(s) => (\A Q \in QuorumsAt(s) : \E n \in Q : InLog(c.entry, n))
 
-\* If a log contains an entry in term T, then it must also contain all entries
-\* committed in terms < T.
-LogsLaterThanCommittedMustHaveCommitted == 
-    \A s \in Server :
-    \A c \in committed :
-    \A i \in DOMAIN log[s] :
-        (c.term < log[s][i]) => InLog(c.entry, s)
+\* when a server's latest log term EXCEEDS a committed entry c's term, ALL commits
+\* with terms before or equal to c's must be in the server's log
+LogsLaterThanCommittedMustHaveCommitted ==
+    \A s \in Server : \A c \in committed :
+        (\E i \in DOMAIN log[s] : log[s][i] > c.term) =>
+            \A d \in committed :
+                d.term <= c.term => /\ Len(log[s]) >= d.entry[1]
+                                    /\ log[s][d.entry[1]] = d.term
+
+\* \* If a log contains an entry in term T, then it must also contain all entries
+\* \* committed in terms < T.
+\* LogsLaterThanCommittedMustHaveCommitted == 
+\*     \A s \in Server :
+\*     \A c \in committed :
+\*     \A i \in DOMAIN log[s] :
+\*         (c.term < log[s][i]) => InLog(c.entry, s)
                                     
 ActiveConfigSet == {s \in Server : ~ConfigDisabled(s)}
 
@@ -196,6 +193,9 @@ ConfigsNonempty ==
 
 --------------------------------------------------------------------------------
 
+\*
+\* The inductive invariant.
+\*
 Ind ==
     \*
     \* Establishing election safety under reconfiguration.
