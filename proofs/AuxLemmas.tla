@@ -1,6 +1,6 @@
 ----------------------------- MODULE AuxLemmas -----------------------------
 
-EXTENDS MongoRaftReconfig, Defs, Axioms, TypeOK, Lib
+EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, TypeOK, Lib
 
 \* began: 9/14
 \* finished: 9/14

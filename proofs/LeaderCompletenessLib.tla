@@ -1,6 +1,6 @@
 ----------------------------- MODULE LeaderCompletenessLib -----------------------------
 
-EXTENDS MongoRaftReconfig, Defs, Axioms, TypeOK, Lib
+EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, TypeOK, Lib
 
 LEMMA CommitEntryImpliesInActiveConfigSet ==
 ASSUME TypeOK, Ind,

@@ -1,6 +1,6 @@
 ----------------------------- MODULE ElectionSafetyLemmas -----------------------------
 
-EXTENDS MongoRaftReconfig, Defs, Axioms, TypeOK, Lib, BasicQuorumsLib
+EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, TypeOK, Lib, BasicQuorumsLib
 
 \* approximately 1-2 dafter 3-4 weeks of prep work
 \* completed 6/23

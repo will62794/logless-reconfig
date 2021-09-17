@@ -1,6 +1,6 @@
 ----------------------------- MODULE LeaderCompletenessLemmas -----------------------------
 
-EXTENDS MongoRaftReconfig, Defs, Axioms, TypeOK, Lib, LeaderCompletenessLib
+EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, TypeOK, Lib, LeaderCompletenessLib
 
 \* began: 8/29
 \* finished 8/29

@@ -1,6 +1,6 @@
 ----------------------------- MODULE LogLemmas -----------------------------
 
-EXTENDS MongoRaftReconfig, Defs, Axioms, TypeOK, Lib
+EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, TypeOK, Lib
 
 \* 2-4 hours
 LEMMA LogMatchingAndNext_ClientRequest ==

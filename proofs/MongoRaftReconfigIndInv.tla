@@ -1,4 +1,9 @@
------------------------------ MODULE Defs -----------------------------
+----------------------------- MODULE MongoRaftReconfigIndInv -----------------------------
+\*
+\* This module contains the definition of the inductive invariant used for 
+\* establishing safety of MongoRaftReconfig.
+\*
+
 EXTENDS MongoRaftReconfig
 
 \* The term of the last entry in a log, or 0 if the log is empty.
@@ -127,9 +132,6 @@ UniformLogEntriesInTerm ==
 \*         \* then the log on s at position 'it' must also be in term T.
 \*         (log[s][is] = log[t][it] /\ it < is) => (log[s][it] = log[s][is])
     
-\*
-\* Basic type requirements of 'committed' variable.
-\*
 
 CommittedEntryIndexesAreNonZero == \A c \in committed : c.entry[1] # 0
 

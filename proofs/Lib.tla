@@ -1,6 +1,6 @@
 ----------------------------- MODULE Lib -----------------------------
 
-EXTENDS SequenceTheorems, FunctionTheorems, FiniteSetTheorems, TLAPS, MongoRaftReconfig, Defs, Axioms, TypeOK
+EXTENDS SequenceTheorems, FunctionTheorems, FiniteSetTheorems, TLAPS, MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, TypeOK
 
 LEMMA IsNewerOrEqualConfigTransitivity ==
 ASSUME TypeOK,
