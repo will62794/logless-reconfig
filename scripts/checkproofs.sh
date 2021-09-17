@@ -9,7 +9,6 @@ tlapm --stretch 2 -v --cleanfp --timing -I ../ BasicQuorumsLib.tla
 tlapm --stretch 2 -v --cleanfp --timing -I ../ ElectionSafetyLemmas.tla
 tlapm --stretch 2 -v --cleanfp --timing -I ../ IndProof.tla
 tlapm --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLemmas.tla
-tlapm --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLemmasCtd.tla
 tlapm --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLib.tla
 tlapm --stretch 2 -v --cleanfp --timing -I ../ Lib.tla
 tlapm --stretch 2 -v --cleanfp --timing -I ../ LogPropertiesLemmas.tla
