@@ -1,7 +1,5 @@
 ----------------------------- MODULE Defs -----------------------------
-
 EXTENDS MongoRaftReconfig
-
 
 \* The term of the last entry in a log, or 0 if the log is empty.
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)]
@@ -108,6 +106,26 @@ UniformLogEntriesInTerm ==
     \A i \in DOMAIN log[s] : 
         (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i]) => 
             (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)
+
+\* \*
+\* \* If a log entry in term T exists, then some primary in term T must have
+\* \* created that log entry, and the corresponding log prefix must have only
+\* \* propagated to other servers via this primary. So, there cannot exist an
+\* \* entry in some other log in the same term that is in a conflicting position
+\* \* with entries in this term. For example, the following log state is not
+\* \* possible:
+\* \*
+\* \* n1: [1,2]
+\* \* n2: [2]
+\* \* 
+\* UniformLogEntriesInTerm ==
+\*     \A s,t \in Server :
+\*     \A is \in DOMAIN log[s] : 
+\*     \A it \in DOMAIN log[t] : 
+\*         \* If the log entry on server t at index 'it' has the same term,
+\*         \* as the entry on server s at 'is' and is at a lesser log index, 
+\*         \* then the log on s at position 'it' must also be in term T.
+\*         (log[s][is] = log[t][it] /\ it < is) => (log[s][it] = log[s][is])
     
 \*
 \* Basic type requirements of 'committed' variable.
@@ -119,45 +137,6 @@ CommittedEntryIndexesAreNonZero == \A c \in committed : c.entry[1] # 0
 CommittedTermMatchesEntry ==
     \A c \in committed : c.term = c.entry[2]
 
-\*
-\* Establishing additional config related invariants that
-\* help with leader completeness.
-\*
-
-\* For configs C=(v,t) and C'=(v+1,t), we know their quorums overlap, by explicit preconditions
-\* of reconfiguration.
-ConfigOverlapsWithDirectAncestor ==
-    \A s,t \in Server :
-        (/\ configVersion[s] = (configVersion[t] + 1)
-         /\ configTerm[s] = configTerm[t]) => QuorumsOverlap(config[s], config[t])
-
-NewestConfigHasLargestTerm == 
-    \A s \in ServersInNewestConfig :
-    \A t \in Server :
-        currentTerm[t] <= configTerm[s]
-
-\* The newest config should have some node that is currently primary or was
-\* the newest primary (after stepping down). This node should be in its own config.
-NewestConfigHasSomeNodeInConfig == 
-    \A s \in ServersInNewestConfig : 
-        (\E n \in config[s] :
-            /\ n \in config[n]
-            \* If this is node is or was primary in newest config,
-            \* it's term should be the same as the term of the newest config.
-            /\ currentTerm[n] = configTerm[s]
-            /\ CV(n) = CV(s))
-
-\* If two configs have the same version but different terms, one has a newer term,
-\* then they either have the same member set or the older config is disabled. The 
-\* latter is to address the case where these configs on divergent branches but have the
-\* same version.
-ConfigsWithSameVersionHaveSameMemberSet == 
-    \A s,t \in Server : 
-        (/\ configVersion[s] = configVersion[t]
-         /\ configTerm[s] > configTerm[t]) => 
-            \/ (config[s] = config[t])
-            \/ ConfigDisabled(t)
-
 \* If a config has been created in term T', then this must prevent any commits
 \* in configs in terms < T. Note that only primary nodes can commit writes in a 
 \* config.
@@ -166,10 +145,6 @@ CommitOfNewConfigPreventsCommitsInOldTerms ==
         (/\ configTerm[t] < configTerm[s]
          /\ state[t] = Primary) =>
             \A Q \in Quorums(config[t]) : \E n \in Q : currentTerm[n] > configTerm[t]
-
-\* 
-\* Establishing leader completeness invariant.
-\*
 
 CommittedEntryIntersectsWithNewestConfig ==
     \A c \in committed :
@@ -183,16 +158,13 @@ CommittedEntryIntersectsWithEveryActiveConfig ==
     \A s \in Server :
         ~ConfigDisabled(s) => (\A Q \in QuorumsAt(s) : \E n \in Q : InLog(c.entry, n))
 
-
-\* when a server's latest log term EXCEEDS a committed entry c's term, ALL commits
-\* with terms before or equal to c's must be in the server's log
-LogsLaterThanCommittedMustHaveCommitted ==
-    \A s \in Server : \A c \in committed :
-        (\E i \in DOMAIN log[s] : log[s][i] > c.term) =>
-            \A d \in committed :
-                d.term <= c.term => /\ Len(log[s]) >= d.entry[1]
-                                    /\ log[s][d.entry[1]] = d.term
-                                    
+\* If a log contains an entry in term T, then it must also contain all entries
+\* committed in terms < T.
+LogsLaterThanCommittedMustHaveCommitted == 
+    \A s \in Server :
+    \A c \in committed :
+    \A i \in DOMAIN log[s] :
+        (c.term < log[s][i]) => InLog(c.entry, s)
                                     
 ActiveConfigSet == {s \in Server : ~ConfigDisabled(s)}
 
@@ -222,7 +194,6 @@ ConfigsNonempty ==
 
 --------------------------------------------------------------------------------
 
-\*IndAlt == 
 Ind ==
     \*
     \* Establishing election safety under reconfiguration.
@@ -231,7 +202,6 @@ Ind ==
     /\ PrimaryConfigTermEqualToCurrentTerm
     /\ ConfigVersionAndTermUnique
     /\ PrimaryInTermContainsNewestConfigOfTerm
-    \* (alternate)
     /\ ActiveConfigsOverlap
     /\ ActiveConfigsSafeAtTerms
 
@@ -251,7 +221,9 @@ Ind ==
     /\ CommittedEntryIndexesAreNonZero
     /\ CommittedTermMatchesEntry
 
-    \* (alternate)
+    \*
+    \* Establishing leader completeness.
+    \*
     /\ LeaderCompleteness
     /\ LogsLaterThanCommittedMustHaveCommitted
     /\ ActiveConfigsOverlapWithCommittedEntry
@@ -266,8 +238,6 @@ TypeOK ==
     /\ config \in [Server -> SUBSET Server]
     /\ configVersion \in [Server -> Nat]
     /\ configTerm \in [Server -> Nat]
-    \* For checking MongoRaftReconfig with logs.
     /\ committed \in SUBSET [ entry : Nat \X Nat, term : Nat ]
-    \*/\ elections \in SUBSET [ leader : Server, term : Nat ]
 
 =============================================================================
