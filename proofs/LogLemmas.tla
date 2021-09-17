@@ -1,4 +1,4 @@
------------------------------ MODULE LogPropertiesLemmas -----------------------------
+----------------------------- MODULE LogLemmas -----------------------------
 
 EXTENDS MongoRaftReconfig, Defs, Axioms, TypeOK, Lib
 

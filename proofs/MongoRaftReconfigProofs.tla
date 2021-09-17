@@ -1,5 +1,5 @@
 ----------------------------- MODULE MongoRaftReconfigProofs -----------------------------
-EXTENDS MongoRaftReconfig, Defs, IndProof, Axioms, TypeOK, ElectionSafetyLemmas, LogPropertiesLemmas,
+EXTENDS MongoRaftReconfig, Defs, IndProof, Axioms, TypeOK, ElectionSafetyLemmas, LogLemmas,
         LeaderCompletenessLemmas, Lib
 
 \*
