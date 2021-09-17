@@ -12,4 +12,4 @@ tlapm --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLemmas.tla
 tlapm --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLib.tla
 tlapm --stretch 2 -v --cleanfp --timing -I ../ Lib.tla
 tlapm --stretch 2 -v --cleanfp --timing -I ../ LogPropertiesLemmas.tla
-tlapm --stretch 2 -v --cleanfp --timing -I ../ MRRTheorems.tla
+tlapm --stretch 2 -v --cleanfp --timing -I ../ MongoRaftReconfigProofs.tla
