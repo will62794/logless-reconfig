@@ -1,6 +1,6 @@
 # MongoRaftReconfig TLAPS Safety Proofs
 
-This directory contains the TLAPS safety proofs for the MongoRaftReconfig  protocol. The two high level safety properties that are proven are *LeaderCompleteness* and *StateMachineSafety*. The statements of the theorems establishing these properties are given in *MongoRaftReconfigProofs.tla*. The statement of the properties themselves are contained in *MongoRaftReconfig.tla*. The proofs of safety rely on an inductive invariant which is stated formally in *MongoRaftReconfigIndInv.tla*.
+This directory contains the TLAPS safety proofs for the MongoRaftReconfig  protocol. The two high level safety properties that are proven are *LeaderCompleteness* and *StateMachineSafety*. The statements of the theorems establishing these properties are given in [`MongoRaftReconfigProofs.tla`](MongoRaftReconfigProofs.tla). The statement of the properties themselves are contained in [`MongoRaftReconfig.tla`](../MongoRaftReconfig.tla). The proofs of safety rely on an inductive invariant which is stated formally in [`MongoRaftReconfigIndInv.tla`](MongoRaftReconfigIndInv.tla).
 
 ## Checking the Proofs
 
