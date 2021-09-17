@@ -1,7 +1,7 @@
 ----------------------------- MODULE MRRTheorems -----------------------------
 
 EXTENDS MongoRaftReconfig, Defs, IndProof, Axioms, TypeOK, ElectionSafetyLemmas, LogPropertiesLemmas,
-        LeaderCompletenessLemmas, LeaderCompletenessLemmasCtd, Lib
+        LeaderCompletenessLemmas, Lib
 
 MRRSpec == /\ TypeOK
            /\ Init

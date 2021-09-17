@@ -1,7 +1,7 @@
 ----------------------------- MODULE IndProof -----------------------------
 
 EXTENDS MongoRaftReconfig, Defs, Axioms, TypeOK, ElectionSafetyLemmas, LogPropertiesLemmas,
-        LeaderCompletenessLemmas, LeaderCompletenessLemmasCtd, AuxLemmas, Lib
+        LeaderCompletenessLemmas, AuxLemmas, Lib
 
 LEMMA IndAndNext ==
 ASSUME TypeOK, Ind, Next
