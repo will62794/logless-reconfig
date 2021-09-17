@@ -1,10 +1,7 @@
 
 # Formal Verification of Logless Reconfiguration in MongoDB
 
-This repository contains a TLA+ formal specification of *MongoRaftReconfig*, a novel logless dynamic reconfiguration protocol designed for and implemented in the MongoDB distributed replication system.
-
-<!-- TODO: Include these sentences once TLAPS proofs are organized. -->
-<!-- It also includes a formally stated inductive invariant for establishing its high level safety properties along with a machine checked TLAPS proof of these safety proofs. -->
+This repository contains a TLA+ formal specification of *MongoRaftReconfig*, a novel logless dynamic reconfiguration protocol designed for and implemented in the MongoDB distributed replication system. It also includes a formally stated inductive invariant for establishing its high level safety properties along with a machine checked TLAPS safety proof.
 
 The overall reconfiguration protocol is defined in the [MongoRaftReconfig](specs/MongoRaftReconfig.tla) TLA+ specification. The protocol is formally described as the composition of two subprotocols: (1) [MongoStaticRaft](specs/MongoStaticRaft.tla), the static MongoDB replication protocol, and (2) [MongoLoglessDynamicRaft](specs/MongoLoglessDynamicRaft.tla), which manages the configuration state of the replica set in a separate, logless replicated state machine. Note that our specifications are written at a deliberately high level of abstraction, ignoring some lower level details of the protocol and system model. In practice,
 we have found this abstraction level most useful for understanding
@@ -28,8 +25,9 @@ This will save the results of the execution, along with auxiliary information ab
 ```
 These models impose state constraints on both protocols to make the reachable state space finite. Complete verification time, however, will vary depending on the speed of your local machine.
 
-<!-- TODO -->
-<!-- ## Inductive Invariant and TLAPS Proofs -->
+## TLAPS Safety Proofs
+
+TLAPS proofs of the safety properties of MongoRaftReconfig are provided in the [`proofs`](proofs) sub-directory. The statement of the main, high level theorems for establishing safety are given in [`proofs/MongoRaftReconfigProofs.tla`](proofs/MongoRaftReconfigProofs.tla). The main inductive invariant used to establish these safety properties is stated as `Ind` in the `Defs.tla` file. More information on how to inspect and check these proofs using the TLA+ proof system tools is provided in the README in the [`proofs`](proofs) directory.
 
 
 
