@@ -4,7 +4,7 @@ This directory contains the TLAPS safety proofs for the MongoRaftReconfig  proto
 
 ## Checking the Proofs
 
-To check the proofs in this directory, you must install TLAPS, the TLA+ proof system. Installation instructions can be found [here](https://tla.msr-inria.inria.fr/tlaps/content/Download/Binaries.html). Once TLAPS is installed correctly, you can either utilize the graphical user interface of the TLA+ Toolbox to check the proofs, or you can check the proofs using the command line version TLAPS. Instructions for both are provided below.
+To check the proofs in this directory, you must install TLAPS, the TLA+ proof system. Installation instructions can be found [here](https://tla.msr-inria.inria.fr/tlaps/content/Download/Binaries.html). Once TLAPS is installed correctly, you can either utilize the graphical user interface of the TLA+ Toolbox to check the proofs, or you can check the proofs using the command line version of TLAPS. Instructions for both are given below.
 
 ### Using the Command Line
 
