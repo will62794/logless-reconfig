@@ -357,7 +357,7 @@ tlapm --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLemmas.tla
 tlapm --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLemmasCtd.tla
 tlapm --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLemmasLib.tla
 tlapm --stretch 2 -v --cleanfp --timing -I ../ Lib.tla
-tlapm --stretch 2 -v --cleanfp --timing -I ../ LogPropertiesLemmas.tla
+tlapm --toolbox 0 0 --stretch 3 -v --cleanfp --timing -I ../ LogPropertiesLemmas.tla
 tlapm --toolbox 0 0 --stretch 3 -v --cleanfp --timing -I ../ MRRTheorems.tla
 ```
 
@@ -371,6 +371,6 @@ tlapm --toolbox 0 0 --stretch 3 -v --cleanfp --timing -I ../ MRRTheorems.tla
 | LeaderCompletenessLemmasCtd.tla  | 331  |
 | LeaderCompletenessLib.tla  | 241  |
 | Lib.tla  | 128  |
-| LogPropertiesLemmas.tla  | TO |
+| LogPropertiesLemmas.tla  | 669 |
 | MRRTheorems.tla  | 110  |
 
