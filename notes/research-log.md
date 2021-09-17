@@ -373,4 +373,4 @@ tlapm --toolbox 0 0 --stretch 3 -v --cleanfp --timing -I ../ MRRTheorems.tla
 | Lib.tla  | 128  |
 | LogPropertiesLemmas.tla  | 669 |
 | MRRTheorems.tla  | 110  |
-
+| **Total** | 2310 | 
