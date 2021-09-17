@@ -321,3 +321,30 @@ Will has been able to check the following proof modules locally with TLAPS from 
 - LeaderCompletenessLemmasCtd
 - LogPropertiesLemmas
 - Lib (except for yellow QuorumsIdentical and QuorumsOverlapIdentical, but I think we are just assuming thm)
+
+We can also check each module containing proofs from the command line using TLAPS. This helps to give a more precise sense of how long a set of theorems takes to prove from scratch for TLAPS on a given machine. Here is an example command to check the proofs in a module from scratch (removing any existing fingerprints), and have it report timing statistics:
+```
+tlapm -v --cleanfp --timing -I ../ IndProof.tla
+```
+and an abbreviated sample output showing timing statistics:
+```
+(* created new "IndProof.tlaps/IndProof.thy" *)
+(* fingerprints written in "IndProof.tlaps/fingerprints" *)
+(*      operation | time (seconds) *)
+(* ---------------+--------------- *)
+(*        parsing | 0.300884       *)
+(*       analysis | 0.398562       *)
+(*     generation | 0.000000       *)
+(* simplification | 0.000042       *)
+(*     formatting | 0.000000       *)
+(*    interaction | 80.257432      *)
+(*       checking | 0.000000       *)
+(*     fp_loading | 0.000000       *)
+(*      fp_saving | 0.000000       *)
+(*     fp_compute | 0.000000       *)
+(*          other | 0.046104       *)
+(* ---------------+--------------- *)
+(*          total | 81.003029      *)
+```
+
+
