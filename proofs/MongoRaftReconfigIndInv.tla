@@ -197,6 +197,9 @@ ConfigsNonempty ==
 \* The inductive invariant.
 \*
 Ind ==
+    \* Must establish type correctness.
+    /\ TypeOK
+
     \*
     \* Establishing election safety under reconfiguration.
     \*
@@ -232,14 +235,5 @@ Ind ==
     /\ NewerConfigsDisablePrimaryCommitsInOlderTerms
     
     /\ ConfigsNonempty
-
-TypeOK ==
-    /\ currentTerm \in [Server -> Nat]
-    /\ state \in [Server -> {Secondary, Primary}]
-    /\ log \in [Server -> Seq(Nat)]
-    /\ config \in [Server -> SUBSET Server]
-    /\ configVersion \in [Server -> Nat]
-    /\ configTerm \in [Server -> Nat]
-    /\ committed \in SUBSET [ entry : Nat \X Nat, term : Nat ]
 
 =============================================================================

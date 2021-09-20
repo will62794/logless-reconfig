@@ -3,7 +3,7 @@
 EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, TypeOK, Lib
 
 LEMMA CommitEntryImpliesInActiveConfigSet ==
-ASSUME TypeOK, Ind,
+ASSUME Ind,
        NEW p \in Server,
        NEW Q \in Quorums(config[p]),
        OSM!CommitEntry(p, Q)
@@ -22,7 +22,7 @@ PROOF
     <1>. QED BY <1>5 DEF OSM!CommitEntry, OSM!ImmediatelyCommitted, TypeOK
 
 LEMMA CommitEntryImpliesCurrentTermGreaterThanConfigTerms ==
-ASSUME TypeOK, Ind,
+ASSUME Ind,
        NEW p \in Server,
        NEW Q \in Quorums(config[p]),
        OSM!CommitEntry(p, Q)
@@ -51,7 +51,7 @@ PROOF
     <1>. QED BY <1>3 DEF Q
 
 LEMMA DifferentLogEntriesImplyUpperBoundary ==
-ASSUME TypeOK, Ind,
+ASSUME Ind,
        NEW s \in Server,
        NEW upper \in DOMAIN log[s],
        NEW lower \in DOMAIN log[s],
@@ -91,7 +91,7 @@ PROOF
     <1>. QED BY <1>2, <1>3, <1>8, <1>9, Z3 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
 
 LEMMA EqualLastTermImpliesEqualAtIdx ==
-ASSUME TypeOK, Ind,
+ASSUME Ind,
        NEW s \in Server,
        NEW t \in Server,
        LastTerm(log[s]) = LastTerm(log[t]),
@@ -118,7 +118,7 @@ PROOF
     <1>. QED BY <1>3, <1>4, <1>5 DEF LastTerm, TypeOK
 
 LEMMA ElectedLeadersHaveAllCommits ==
-ASSUME TypeOK, Ind,
+ASSUME Ind,
        NEW p \in Server,
        NEW Q \in Quorums(config[p]),
        OSM!BecomeLeader(p, Q),
@@ -148,7 +148,7 @@ PROVE \A c \in committed : InLog(c.entry, p)
     <1>. QED BY <1>3, <1>4 DEF OSM!BecomeLeader, OSM!CanVoteForOplog, OSM!LastTerm, LastTerm
 
 LEMMA CommitImpliesInActiveConfigSet ==
-ASSUME TypeOK, Ind,
+ASSUME Ind,
        NEW p \in Server,
        NEW pQ \in Quorums(config[p]),
        OSM!CommitEntry(p, pQ)
@@ -175,7 +175,7 @@ PROOF
     <1>. QED BY <1>7 DEF OSM!CommitEntry, OSM!ImmediatelyCommitted, TypeOK
 
 LEMMA ReconfigImpliesCommitTermsSmallerOrEqual ==
-ASSUME TypeOK, Ind,
+ASSUME Ind,
        NEW p \in Server,
        NEW newConfig \in SUBSET Server,
        OplogCommitment(p),
@@ -201,7 +201,7 @@ PROOF
     <1>. QED BY <1>4, <1>8 DEF TypeOK
 
 COROLLARY ReconfigImpliesHasAllCommits ==
-ASSUME TypeOK, Ind,
+ASSUME Ind,
        NEW p \in Server,
        NEW newConfig \in SUBSET Server,
        OplogCommitment(p),
@@ -211,7 +211,7 @@ BY ReconfigImpliesCommitTermsSmallerOrEqual DEF CSM!Reconfig,
     Ind, LeaderCompleteness, CommittedTermMatchesEntry, InLog, TypeOK
 
 LEMMA ReconfigImpliesHasQuorumWithAllCommits ==
-ASSUME TypeOK, Ind,
+ASSUME Ind,
        NEW p \in Server,
        NEW newConfig \in SUBSET Server,
        OplogCommitment(p),
@@ -276,7 +276,7 @@ PROVE \A c \in committed : \A Q \in Quorums(newConfig) : \E n \in Q : InLog(c.en
 
 \* likely won't be used
 LEMMA ReconfigImpliesHasQuorumWithAllCommitsInCurrentConfig ==
-ASSUME TypeOK, Ind,
+ASSUME Ind,
        NEW p \in Server,
        NEW newConfig \in SUBSET Server,
        OplogCommitment(p),

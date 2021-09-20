@@ -61,7 +61,7 @@ PROOF
     <1>. QED BY <1>3, ServerIsNonempty DEF P
 
 LEMMA ActiveConfigSetNonempty ==
-ASSUME TypeOK, Ind
+ASSUME Ind
 PROVE ActiveConfigSet # {}
 PROOF
     <1>1. SUFFICES ASSUME \A s \in Server : ConfigDisabled(s)
@@ -76,13 +76,13 @@ PROOF
     <1>. QED BY <1>2, <1>3, ServerHasLargestConfig, NewerIsNotSymmetric DEF Quorums, TypeOK
 
 LEMMA CommitsAreLogEntries ==
-ASSUME TypeOK, Ind
+ASSUME Ind
 PROVE \A c \in committed : \E s \in Server : InLog(c.entry, s)
 BY ActiveConfigSetNonempty DEF Ind, ActiveConfigsOverlapWithCommittedEntry, Quorums,
     ActiveConfigSet, ConfigDisabled, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, TypeOK
 
 LEMMA IndImpliesStateMachineSafety ==
-ASSUME TypeOK, Ind
+ASSUME Ind
 PROVE StateMachineSafety
 PROOF
     <1>1. SUFFICES ASSUME TRUE

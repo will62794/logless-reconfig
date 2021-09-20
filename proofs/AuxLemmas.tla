@@ -6,7 +6,7 @@ EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, TypeOK, Lib
 \* finished: 9/14
 \* approx 2 min
 LEMMA ConfigsNonemptyAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE ConfigsNonempty'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars

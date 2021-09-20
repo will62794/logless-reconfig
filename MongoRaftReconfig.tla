@@ -137,6 +137,17 @@ Next ==
     \/ JointNext
 
 Spec == Init /\ [][Next]_vars
+
+\* Statement of type correctness.
+TypeOK ==
+    /\ currentTerm \in [Server -> Nat]
+    /\ state \in [Server -> {Secondary, Primary}]
+    /\ log \in [Server -> Seq(Nat)]
+    /\ config \in [Server -> SUBSET Server]
+    /\ configVersion \in [Server -> Nat]
+    /\ configTerm \in [Server -> Nat]
+    /\ committed \in SUBSET [ entry : Nat \X Nat, term : Nat ]
+
 -----------------------------------------------------------------------------
 
 \*

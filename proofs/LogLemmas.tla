@@ -4,7 +4,7 @@ EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, TypeOK, Lib
 
 \* 2-4 hours
 LEMMA LogMatchingAndNext_ClientRequest ==
-ASSUME TypeOK, Ind, Next,
+ASSUME Ind, Next,
        NEW s \in Server,
        NEW t \in Server,
        OSM!ClientRequest(s),
@@ -40,7 +40,7 @@ PROOF
     <4>. QED BY <4>3, <4>4
 
 LEMMA LogMatchingAndNext_GetEntries ==
-ASSUME TypeOK, Ind, Next,
+ASSUME Ind, Next,
        NEW s \in Server,
        NEW t \in Server,
        OSM!GetEntries(s, t),
@@ -61,7 +61,7 @@ PROOF
     <1>. QED BY <1>1, <1>2, <1>3 DEF OSM!GetEntries, TypeOK
 
 LEMMA LogMatchingAndNext_GetEntriesOneOutside ==
-ASSUME TypeOK, Ind, Next,
+ASSUME Ind, Next,
        NEW s \in Server,
        NEW t \in Server,
        NEW u \in Server,
@@ -87,7 +87,7 @@ PROOF
 \* finished: 8/26
 \* took a few hours, maybe 2-5
 LEMMA LogMatchingAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE LogMatching'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
@@ -145,7 +145,7 @@ PROOF
 \* finished: 8/26
 \* about 45 min
 LEMMA TermsOfEntriesGrowMonotonicallyAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE TermsOfEntriesGrowMonotonically'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
@@ -196,7 +196,7 @@ PROOF
 
 \* never turned out to be useful.
 LEMMA PrimaryHasEntriesItCreatedAlt ==
-ASSUME TypeOK, PrimaryHasEntriesItCreated
+ASSUME PrimaryHasEntriesItCreated
 PROVE \A s,t \in Server : state[s] = Primary
         => \A k \in DOMAIN log[t] : (log[t][k] = currentTerm[s]) => InLog(<<k,log[t][k]>>, s)
 PROOF BY DEF TypeOK, PrimaryHasEntriesItCreated
@@ -204,7 +204,7 @@ PROOF BY DEF TypeOK, PrimaryHasEntriesItCreated
 \* began: 8/26
 \* finished: 8/27
 LEMMA PrimaryHasEntriesItCreatedAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE PrimaryHasEntriesItCreated'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
@@ -324,7 +324,7 @@ PROOF
 \* finished: 8/27
 \* approx 20 min
 LEMMA CurrentTermAtLeastAsLargeAsLogTermsForPrimaryAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE CurrentTermAtLeastAsLargeAsLogTermsForPrimary'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
@@ -367,7 +367,7 @@ PROOF
 \* finished: 8/27
 \* approx 3 hours
 LEMMA LogEntryInTermImpliesConfigInTermAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE LogEntryInTermImpliesConfigInTerm'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
@@ -440,7 +440,7 @@ PROOF
 \*   for all local log term boundaries, the boundary is in fact global
 \* 
 LEMMA UniformLogEntriesInTermAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE UniformLogEntriesInTerm'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars

@@ -6,7 +6,7 @@ EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, TypeOK, Lib, LeaderC
 \* finished 8/29
 \* approx 3 min
 LEMMA CommittedEntryIndexesAreNonZeroAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE CommittedEntryIndexesAreNonZero'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
@@ -33,7 +33,7 @@ PROOF
 \* finished 8/29
 \* approx 3 min
 LEMMA CommittedTermMatchesEntryAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE CommittedTermMatchesEntry'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
@@ -66,7 +66,7 @@ PROOF
 \* I'm not sure if it's an issue with just isabelle + long files; either way I refactored
 \* the project into separate files and everything works.
 LEMMA LeaderCompletenessAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE LeaderCompleteness'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
@@ -110,7 +110,7 @@ PROOF
 \* I decided to do this one last because I had a feeling it might be the toughest
 \* turns out it wasn't too tough at all
 LEMMA LogsLaterThanCommittedMustHaveCommittedAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE LogsLaterThanCommittedMustHaveCommitted'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
@@ -262,7 +262,7 @@ PROOF
 \* were likely the most work for this one
 \* several zero days for this proof
 LEMMA ActiveConfigsOverlapWithCommittedEntryAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE ActiveConfigsOverlapWithCommittedEntry'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
@@ -448,7 +448,7 @@ PROOF
 \* began: 9/10
 \* finished 9/11
 LEMMA NewerConfigsDisablePrimaryCommitsInOlderTermsAndNext ==
-ASSUME TypeOK, Ind, Next
+ASSUME Ind, Next
 PROVE NewerConfigsDisablePrimaryCommitsInOlderTerms'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
