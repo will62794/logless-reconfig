@@ -407,3 +407,11 @@ tlapm --toolbox 0 0 --stretch 2 -v --cleanfp --timing -I ../ TypeOK.tla
 | **Total** | 2164 | 
 
 2164 seconds = 36 minutes
+
+## 2021-09-20
+
+To zip up the Git repo:
+
+```bash
+git archive --format=zip --output=../repo.zip HEAD
+```
