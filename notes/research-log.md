@@ -374,3 +374,36 @@ tlapm --toolbox 0 0 --stretch 3 -v --cleanfp --timing -I ../ MRRTheorems.tla
 | LogPropertiesLemmas.tla  | 669 |
 | MRRTheorems.tla  | 110  |
 | **Total** | 2310 | 
+
+## 2021-09-19
+
+Proof checking times with latest version of the repo, using these commands on M1 Macbook Air:
+
+```bash
+tlapm --toolbox 0 0 --stretch 2 -v --cleanfp --timing -I ../ AuxLemmas.tla
+tlapm --toolbox 0 0 --stretch 2 -v --cleanfp --timing -I ../ BasicQuorumsLib.tla
+tlapm --toolbox 0 0 --stretch 2 -v --cleanfp --timing -I ../ ElectionSafetyLemmas.tla
+tlapm --toolbox 0 0 --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLemmas.tla
+tlapm --toolbox 0 0 --stretch 2 -v --cleanfp --timing -I ../ LeaderCompletenessLib.tla
+tlapm --toolbox 0 0 --stretch 2 -v --cleanfp --timing -I ../ Lib.tla
+tlapm --toolbox 0 0 --stretch 2 -v --cleanfp --timing -I ../ LogLemmas.tla
+tlapm --toolbox 0 0 --stretch 2 -v --cleanfp --timing -I ../ MongoRaftReconfigProofs.tla
+tlapm --toolbox 0 0 --stretch 2 -v --cleanfp --timing -I ../ StateMachineSafetyLemmas.tla
+tlapm --toolbox 0 0 --stretch 2 -v --cleanfp --timing -I ../ TypeOK.tla
+```
+
+| Module  | Time (seconds) |
+| ------------- | ------------- |
+| AuxLemmas.tla  | 14  |
+| BasicQuorumsLib.tla  | 16  |
+| ElectionSafetyLemmas.tla  | 438  |
+| LeaderCompletenessLemmas.tla  | 575 |
+| LeaderCompletenessLib.tla  | 224 |
+| Lib.tla  | 115 |
+| LogLemmas.tla  | 615 |
+| MongoRaftReconfigProofs.tla  | 86  |
+| StateMachineSafetyLemma.tla  | 67  |
+| TypeOK.tla  | 14  |
+| **Total** | 2164 | 
+
+2164 seconds = 36 minutes
