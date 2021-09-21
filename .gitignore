@@ -22,3 +22,4 @@ tla2tools.jar
 **/*.toolbox/
 **/*.synctex.gz
 cex-tikz/
+archive/
