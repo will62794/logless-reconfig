@@ -140,7 +140,7 @@ ASSUME TRUE
 PROVE MRRSpec => []Ind
 BY IndIsInductiveInvariant, PTL DEF MRRSpec
 
-LEMMA MRRImpliesLeaderCompleteness ==
+THEOREM MRRImpliesLeaderCompleteness ==
 ASSUME TRUE
 PROVE MRRSpec => []LeaderCompleteness
 BY MRRImpliesInd, PTL DEF Ind
