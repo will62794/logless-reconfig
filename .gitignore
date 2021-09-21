@@ -23,3 +23,4 @@ tla2tools.jar
 **/*.synctex.gz
 cex-tikz/
 archive/
+checkproofs.log
