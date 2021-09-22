@@ -114,7 +114,6 @@ PROOF
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
             BY <2>3 DEF Ind, LogMatching, EqualUpTo, OSM!RollbackEntries, TypeOK
         <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
-            \* no idea why TLAPS needs me to break this out
             <3>1. UNCHANGED log BY <2>4 DEF OSM!CommitEntry, TypeOK
             <3>. QED BY <3>1 DEF Ind, LogMatching, EqualUpTo
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
@@ -305,7 +304,6 @@ PROOF
                     <5>1. currentTerm[s] = currentTerm'[s] BY <3>1, <3>4, <3>5, <3>7, <4>q, <4>1, <4>3 DEF OSM!BecomeLeader, TypeOK
                     <5>2. k \in DOMAIN log[t] BY <3>1, <3>4, <3>7, <4>3 DEF OSM!BecomeLeader, TypeOK
                     <5>3. log[t][k] = log'[t][k]
-                        \* truly obnoxious that I need to split this one up
                         <6>1. CASE UNCHANGED log BY <6>1, <3>1, <3>4, <3>5, <3>7, <4>3 DEF OSM!BecomeLeader, TypeOK
                         <6>2. CASE k < Len(log'[t]) /\ log' = [log EXCEPT ![p] = Append(log[p], currentTerm[p]+1)]
                             BY <3>1, <3>4, <3>5, <3>7, <4>3, <6>2 DEF OSM!BecomeLeader, TypeOK
@@ -384,7 +382,6 @@ PROOF
             <3>1. PICK s,t \in Server : OSM!GetEntries(s, t) BY <2>2
             <3>2. \A i \in DOMAIN log'[s] : i <= Len(log'[s]) => \E u \in Server : configTerm'[u] >= log'[s][i]
                 <4>1. \A i \in DOMAIN log'[s] : i < Len(log'[s]) => \E u \in Server : configTerm[u] >= log[s][i]
-                    \* absolutely ridiculous that i need to spell this out
                     <5>1. \A i \in DOMAIN log'[s] : i < Len(log'[s]) => s \in Server /\ i \in DOMAIN log[s]
                         BY <3>1 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, LogEntryInTermImpliesConfigInTerm
                     <5>. QED BY <3>1, <5>1 DEF OSM!GetEntries, OSM!Empty, TypeOK, Ind, LogEntryInTermImpliesConfigInTerm
@@ -431,7 +428,7 @@ PROOF
 
 \* began: 8/27
 \* finished: 8/29 @ 1am (so basically 8/28...)
-\* this one was terrible and technical.  approx all day for 2 days straight
+\* approx all day for 2 days straight
 \* UniformLogEntriesInTerm notes:
 \* DEF boundary == an index i in a server s' log where log[s][i] # log[s][i-1]
 \* DEF local boundary == a boundary for a single server
@@ -460,16 +457,6 @@ PROOF
                   \*PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)'
                   PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
                   OBVIOUS
-            
-            \* this proof really ought to be cleaned up.  here's a first attempt..
-            (*
-            <3>6. \A u \in Server : (u # p) => log'[u] = log[u] BY <3>1 DEF OSM!ClientRequest, TypeOK
-            <3>7. \A j \in DOMAIN log'[p] : (j < Len(log'[p])) => log[p][j] = log'[p][j] BY <3>1 DEF OSM!ClientRequest, TypeOK
-            <3>8. log'[p][Len(log'[p])] = currentTerm[p] BY <3>1 DEF OSM!ClientRequest, TypeOK
-            <3>9. \A u \in Server : ~\E k \in DOMAIN log[u] : log[u][k] = currentTerm[p] /\ ~InLog(<<k,log[u][k]>>, p)
-                BY <3>1 DEF OSM!ClientRequest, TypeOK, Ind, PrimaryHasEntriesItCreated, InLog
-            <3>. QED BY <3>1, <3>6, <3>7, <3>8, <3>9 DEF OSM!ClientRequest, TypeOK, Ind, UniformLogEntriesInTerm, InLog*)
-            
             <3>6. CASE s = p
                 <4>1. CASE i = Len(log'[p])
                     <5>1. SUFFICES ASSUME (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])',

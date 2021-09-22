@@ -188,7 +188,6 @@ PROOF
     <1>3. PICK d \in committed : d.term = currentTerm[p] BY DEF OplogCommitment
     <1>.  DEFINE k == d.entry[1]
     <1>4. PICK Q \in Quorums(config[p]) : \A s \in Q : (log[s][k] = log[p][k] /\ currentTerm[s] = currentTerm[p])
-        \* thanks tlaps for making me spell this out...
         <2>1. \E Q \in Quorums(config[p]) : \A s \in Q :
                     \E i \in DOMAIN log[s] : (i = k /\ log[s][k] = log[p][k] /\ currentTerm[s] = currentTerm[p])
             BY <1>3 DEF OplogCommitment, IsCommitted, Ind, TypeOK

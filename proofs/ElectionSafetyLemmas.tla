@@ -68,7 +68,6 @@ PROOF
                 <4>5. \E n \in Q : currentTerm[n] >= configTerm[t] BY <3>2, <4>1, <4>4 DEF Ind, ActiveConfigsSafeAtTerms
                 <4>6. \E n \in Q : currentTerm[n] > currentTerm[s] BY <3>2, <4>1, <4>2, <4>3, <4>5 DEF Quorums, Ind, TypeOK
                 <4>. QED BY <3>2, <4>1, <4>6 DEF CSM!BecomeLeader, CSM!CanVoteForConfig, Quorums, Ind, TypeOK
-            \* basically a copy pasta job from the case above
             <3>. CASE \E Q \in Quorums(config[t]) : OSM!BecomeLeader(t, Q) /\ CSM!BecomeLeader(t, Q)
                 <4>1. PICK Q \in Quorums(config[t]) : OSM!BecomeLeader(t, Q) /\ CSM!BecomeLeader(t, Q) OBVIOUS
                 <4>2. currentTerm[s] > currentTerm[t]

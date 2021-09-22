@@ -357,7 +357,6 @@ ASSUME TypeOK, Ind, Next,
        CSM!SendConfig(u, v)
 PROVE \A n \in ActiveConfigSet' : n # v => n \in ActiveConfigSet
 PROOF
-    \* this took so much longer than it needed to...
     <4>1. TAKE n \in ActiveConfigSet'
     <4>2. SUFFICES ASSUME n # v
           PROVE n \in ActiveConfigSet BY <4>1

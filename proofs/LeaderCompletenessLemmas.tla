@@ -107,8 +107,6 @@ PROOF
 
 \* began: 9/11
 \* finished 9/12
-\* I decided to do this one last because I had a feeling it might be the toughest
-\* turns out it wasn't too tough at all
 LEMMA LogsLaterThanCommittedMustHaveCommittedAndNext ==
 ASSUME Ind, Next
 PROVE LogsLaterThanCommittedMustHaveCommitted'
@@ -166,7 +164,6 @@ PROOF
                     <5>6. j \in DOMAIN log'[s]
                         <6>1. log[v][j] < log[v][i] BY <3>6, <3>7, <3>9, <5>1, <5>3, <5>5 DEF OSM!GetEntries, OSM!Empty, TypeOK
                         <6>2. j < i
-                            \* why was this such a struggle??
                             <7>1. SUFFICES ASSUME j >= i
                                   PROVE FALSE BY <5>2, <5>5 DEF TypeOK
                             <7>2. log[v][j] >= log[v][i] BY <5>2, <5>5, <7>1 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
@@ -200,7 +197,6 @@ PROOF
                 <4>4. j \in DOMAIN log'[s]
                     <5>1. log[s][j] < log[s][i] BY <3>6, <3>7, <3>9, <4>1, <4>2, <4>3 DEF OSM!RollbackEntries, TypeOK
                     <5>2. j < i
-                        \* copy pasta job, may not have been as much of a struggle as above but its not worth figuring that out
                         <6>1. SUFFICES ASSUME j >= i
                               PROVE FALSE BY <4>1, <4>3 DEF TypeOK
                         <6>2. log[s][j] >= log[s][i] BY <4>1, <4>3, <6>1 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
@@ -267,7 +263,6 @@ PROVE ActiveConfigsOverlapWithCommittedEntry'
 PROOF
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
         <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
-            \* absolutely ridiculous that I need to spell this out
             <3>1. SUFFICES ASSUME TRUE
                   PROVE \A c \in committed' : \A s \in ActiveConfigSet' :
                             \A Q \in Quorums(config[s])' : \E n \in Q : InLog(c.entry, n)'
@@ -284,7 +279,6 @@ PROOF
             <3>9. InLog(c.entry, n)' BY <3>2, <3>4, <3>6, <3>7, <3>8 DEF OSM!ClientRequest, Quorums, InLog, TypeOK
             <3>. QED BY <3>9 DEF InLog
         <2>2. CASE \E s, t \in Server : OSM!GetEntries(s, t)
-            \* thanks tlaps, can't believe i have to spell it out again
             <3>1. SUFFICES ASSUME TRUE
                   PROVE \A c \in committed' : \A s \in ActiveConfigSet' :
                             \A Q \in Quorums(config[s])' : \E n \in Q : InLog(c.entry, n)'
