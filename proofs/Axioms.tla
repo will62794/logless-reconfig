@@ -1,6 +1,6 @@
 ----------------------------- MODULE Axioms -----------------------------
 
-EXTENDS MongoRaftReconfig
+EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv
 
 AXIOM PrimaryAndSecondaryAreDifferent == Primary # Secondary
 AXIOM ServerIsFinite == IsFiniteSet(Server)
