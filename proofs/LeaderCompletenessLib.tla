@@ -87,7 +87,7 @@ PROOF
               /\ upper > 0
               /\ P(upper)
               /\ \A n \in 2..upper : (P(n) => P(n-1))
-            BY <1>3, <1>5, <1>6 DEF TypeOK
+            BY <1>ok, <1>3, <1>5, <1>6 DEF TypeOK
         <2>. QED BY <2>1, SeqDownwardInduction, Isa DEF TypeOK
     <1>8. log[s][1] = log[s][upper] BY <1>7 DEF P
     <1>9. 1 \in DOMAIN log[s] /\ upper \in DOMAIN log[s] BY <1>ok DEF TypeOK
