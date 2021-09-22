@@ -96,7 +96,7 @@ PROOF
               PROVE FALSE OBVIOUS
         <2>2. c1.entry[2] = c2.entry[2] BY <2>1 DEF Ind, CommittedTermMatchesEntry
         <2>3. c1.entry[1] = c2.entry[1] BY <1>3
-        <2>4. c1 = c2 BY <2>1, <2>2, <2>3, Z3T(10) DEF Ind, TypeOK
+        <2>4. c1 = c2 BY <2>1, <2>2, <2>3, Z3T(15) DEF Ind, TypeOK
         <2>. QED BY <1>3, <2>4
     <1>5. PICK s1 \in Server : InLog(c1.entry, s1) BY CommitsAreLogEntries
     <1>6. PICK s2 \in Server : InLog(c2.entry, s2) BY CommitsAreLogEntries
