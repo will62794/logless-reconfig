@@ -149,19 +149,6 @@ PROOF
     <1>3. \A u \in Server : CSM!NewerOrEqualConfig(CV(u)', CV(u)) BY <1>1, <1>2 DEF CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, TypeOK
     <1>. QED BY <1>1, <1>2, <1>3
 
-\* they key to proving these will be to prove that Server = CSM!Server /\ Server = OSM!Server
-LEMMA QuorumsIdentical ==
-ASSUME TypeOK
-PROVE \A s \in Server :
-            /\ Quorums(config[s]) = CSM!Quorums(config[s])
-            /\ Quorums(config[s]) = OSM!Quorums(config[s])
-        
-LEMMA QuorumsOverlapIdentical ==
-ASSUME TypeOK
-PROVE \A conf1,conf2 \in SUBSET Server :
-        QuorumsOverlap(conf1,conf2) <=> CSM!QuorumsOverlap(conf1,conf2)
-\*PROOF BY ServerIsFinite, ConfigsAreFinite DEF QuorumsOverlap, CSM!QuorumsOverlap, Quorums, CSM!Quorums, TypeOK
-
 LEMMA QuorumsOverlapIsCommutative ==
 ASSUME TypeOK
 PROVE \A conf1,conf2 \in SUBSET Server :
