@@ -162,8 +162,8 @@ ASSUME Ind, Next,
        <<configVersion'[s],configTerm'[s]>> = <<configVersion'[t],configTerm'[t]>>
 PROVE config'[s] = config'[t]
 PROOF
-    <1>1. \A n \in Server : currentTerm[s] >= configTerm[n] BY ElectedLeadersCurrentTermGreaterThanConfigTerms
-    <1>. QED BY <1>1, TypeOKAndNext DEF CSM!BecomeLeader, TypeOK
+    <1>1. \A n \in Server : currentTerm[s] >= configTerm[n] BY ElectedLeadersCurrentTermGreaterThanConfigTerms DEF Ind
+    <1>. QED BY <1>1, TypeOKAndNext DEF CSM!BecomeLeader, Ind, TypeOK
 
 \* approx 1 day
 \* completed 6/29
