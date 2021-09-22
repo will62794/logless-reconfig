@@ -71,9 +71,9 @@ PROOF
     <1>3. \A s \in Server : Quorums(config[s]) # {}
         <2>.  TAKE s \in Server
         <2>1. config[s] # {} BY DEF Ind, ConfigsNonempty
-        <2>2. IsFiniteSet(config[s]) BY FS_Subset, ServerIsFinite DEF TypeOK
+        <2>2. IsFiniteSet(config[s]) BY FS_Subset, ServerIsFinite DEF Ind, TypeOK
         <2>. QED BY <2>1, <2>2, QuorumsExistForNonEmptySets
-    <1>. QED BY <1>2, <1>3, ServerHasLargestConfig, NewerIsNotSymmetric DEF Quorums, TypeOK
+    <1>. QED BY <1>2, <1>3, ServerHasLargestConfig, NewerIsNotSymmetric DEF Quorums, Ind, TypeOK
 
 LEMMA CommitsAreLogEntries ==
 ASSUME Ind
@@ -96,7 +96,7 @@ PROOF
               PROVE FALSE OBVIOUS
         <2>2. c1.entry[2] = c2.entry[2] BY <2>1 DEF Ind, CommittedTermMatchesEntry
         <2>3. c1.entry[1] = c2.entry[1] BY <1>3
-        <2>4. c1 = c2 BY <2>1, <2>2, <2>3, Z3 DEF TypeOK
+        <2>4. c1 = c2 BY <2>1, <2>2, <2>3, Z3T(10) DEF Ind, TypeOK
         <2>. QED BY <1>3, <2>4
     <1>5. PICK s1 \in Server : InLog(c1.entry, s1) BY CommitsAreLogEntries
     <1>6. PICK s2 \in Server : InLog(c2.entry, s2) BY CommitsAreLogEntries
@@ -106,7 +106,7 @@ PROOF
         <2>1. \E i \in DOMAIN log[s1] : log[s1][i] = c1.term BY <1>5 DEF Ind, CommittedTermMatchesEntry, InLog, TypeOK
         <2>2. \E i \in DOMAIN log[s1] : log[s1][i] > c2.term BY <1>9, <2>1 DEF TypeOK
         <2>3. Len(log[s1]) >= c2.entry[1] /\ log[s1][c2.entry[1]] = c2.term
-            <3>1. c2.term <= c2.term BY DEF TypeOK
+            <3>1. c2.term <= c2.term BY DEF Ind, TypeOK
             <3>. QED BY <1>5, <2>2, <3>1 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
         <2>4. log[s1][c1.entry[1]] = c2.term BY <1>3, <2>3 DEF Ind, CommittedEntryIndexesAreNonZero, TypeOK
         <2>. QED BY <1>4, <1>7, <2>4 DEF TypeOK
@@ -114,9 +114,9 @@ PROOF
         <2>1. \E i \in DOMAIN log[s2] : log[s2][i] = c2.term BY <1>6 DEF Ind, CommittedTermMatchesEntry, InLog, TypeOK
         <2>2. \E i \in DOMAIN log[s2] : log[s2][i] > c1.term BY <1>10, <2>1 DEF TypeOK
         <2>3. Len(log[s2]) >= c1.entry[1] /\ log[s2][c1.entry[1]] = c1.term
-            <3>1. c1.term <= c1.term BY DEF TypeOK
+            <3>1. c1.term <= c1.term BY DEF Ind, TypeOK
             <3>. QED BY <1>6, <2>2, <3>1 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
         <2>4. log[s2][c2.entry[1]] = c1.term BY <1>3, <2>3 DEF Ind, CommittedEntryIndexesAreNonZero, TypeOK
         <2>. QED BY <1>4, <1>8, <2>4 DEF TypeOK
-    <1>. QED BY <1>4, <1>9, <1>10 DEF TypeOK
+    <1>. QED BY <1>4, <1>9, <1>10 DEF Ind, TypeOK
 ====
