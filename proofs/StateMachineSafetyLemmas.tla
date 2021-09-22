@@ -36,9 +36,10 @@ PROVE CSM!NewerOrEqualConfig(CV(s), CV(t))
 BY DEF CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, TypeOK
 
 LEMMA ServerHasLargestConfig ==
-ASSUME TypeOK, Ind
+ASSUME Ind
 PROVE \E s \in Server : \A t \in Server : CSM!NewerOrEqualConfig(CV(s), CV(t))
 PROOF
+    <1>ok. TypeOK BY DEF Ind
     <1>.  DEFINE P(S) == \/ S = {}
                          \/ \E s \in S : \A t \in S : CSM!NewerOrEqualConfig(CV(s), CV(t))
     <1>.  HIDE DEF P
@@ -50,9 +51,9 @@ PROOF
                 <3>1. PICK s \in T : \A t \in T : CSM!NewerOrEqualConfig(CV(s), CV(t)) BY <1>2, <2>2 DEF P
                 <3>2. CASE CSM!NewerOrEqualConfig(CV(s), CV(x)) BY <3>1, <3>2, NewerOrEqualConfigTransitivity DEF P
                 <3>3. CASE ~CSM!NewerOrEqualConfig(CV(s), CV(x))
-                    <4>1. CSM!NewerConfig(CV(x), CV(s)) BY <1>2, <3>3, NewerIsNotSymmetric
+                    <4>1. CSM!NewerConfig(CV(x), CV(s)) BY <1>ok, <1>2, <3>3, NewerIsNotSymmetric
                     <4>2. \A t \in T : CSM!NewerOrEqualConfig(CV(x), CV(t))
-                        BY <1>2, <3>1, <4>1, NewerConfigTransitivity, NewerConfigImpliesNewerOrEqual
+                        BY <1>ok, <1>2, <3>1, <4>1, NewerConfigTransitivity, NewerConfigImpliesNewerOrEqual
                     <4>3. CSM!NewerOrEqualConfig(CV(x), CV(x)) BY DEF CSM!NewerOrEqualConfig, CSM!NewerConfig, CV
                     <4>. QED BY <4>2, <4>3 DEF P
                 <3>. QED BY <3>2, <3>3, NewerIsNotSymmetric
@@ -64,6 +65,7 @@ LEMMA ActiveConfigSetNonempty ==
 ASSUME Ind
 PROVE ActiveConfigSet # {}
 PROOF
+    <1>ok. TypeOK BY DEF Ind
     <1>1. SUFFICES ASSUME \A s \in Server : ConfigDisabled(s)
                    PROVE FALSE BY DEF ActiveConfigSet
     <1>2. \A s \in Server : \A Q \in Quorums(config[s]) : \E n \in Q : CSM!NewerConfig(CV(n), CV(s))
@@ -71,9 +73,9 @@ PROOF
     <1>3. \A s \in Server : Quorums(config[s]) # {}
         <2>.  TAKE s \in Server
         <2>1. config[s] # {} BY DEF Ind, ConfigsNonempty
-        <2>2. IsFiniteSet(config[s]) BY FS_Subset, ServerIsFinite DEF Ind, TypeOK
+        <2>2. IsFiniteSet(config[s]) BY <1>ok, FS_Subset, ServerIsFinite DEF TypeOK
         <2>. QED BY <2>1, <2>2, QuorumsExistForNonEmptySets
-    <1>. QED BY <1>2, <1>3, ServerHasLargestConfig, NewerIsNotSymmetric DEF Quorums, Ind, TypeOK
+    <1>. QED BY <1>ok, <1>2, <1>3, ServerHasLargestConfig, NewerIsNotSymmetric DEF Quorums, TypeOK
 
 LEMMA CommitsAreLogEntries ==
 ASSUME Ind
@@ -85,6 +87,7 @@ LEMMA IndImpliesStateMachineSafety ==
 ASSUME Ind
 PROVE StateMachineSafety
 PROOF
+    <1>ok. TypeOK BY DEF Ind
     <1>1. SUFFICES ASSUME TRUE
           PROVE \A c1, c2 \in committed : (c1.entry[1] = c2.entry[1]) => (c1 = c2)
           BY DEF StateMachineSafety
@@ -96,7 +99,7 @@ PROOF
               PROVE FALSE OBVIOUS
         <2>2. c1.entry[2] = c2.entry[2] BY <2>1 DEF Ind, CommittedTermMatchesEntry
         <2>3. c1.entry[1] = c2.entry[1] BY <1>3
-        <2>4. c1 = c2 BY <2>1, <2>2, <2>3, Z3T(15) DEF Ind, TypeOK
+        <2>4. c1 = c2 BY <1>ok, <2>1, <2>2, <2>3, Z3 DEF TypeOK
         <2>. QED BY <1>3, <2>4
     <1>5. PICK s1 \in Server : InLog(c1.entry, s1) BY CommitsAreLogEntries
     <1>6. PICK s2 \in Server : InLog(c2.entry, s2) BY CommitsAreLogEntries

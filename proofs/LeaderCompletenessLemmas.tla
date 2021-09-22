@@ -105,6 +105,7 @@ LEMMA LogsLaterThanCommittedMustHaveCommittedAndNext ==
 ASSUME Ind, Next
 PROVE LogsLaterThanCommittedMustHaveCommitted'
 PROOF
+    <1>ok. TypeOK BY DEF Ind
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
         <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
             <3>1. SUFFICES ASSUME TRUE
@@ -156,12 +157,12 @@ PROOF
                     <5>5. PICK j \in DOMAIN log[v] : (log[v][j] = d.term /\ j = d.entry[1])
                         BY <5>1, <5>4 DEF Ind, CommittedEntryIndexesAreNonZero, TypeOK
                     <5>6. j \in DOMAIN log'[s]
-                        <6>1. log[v][j] < log[v][i] BY <3>6, <3>7, <3>9, <5>1, <5>3, <5>5 DEF OSM!GetEntries, OSM!Empty, Ind, TypeOK
+                        <6>1. log[v][j] < log[v][i] BY <1>ok, <3>6, <3>7, <3>9, <5>1, <5>3, <5>5 DEF OSM!GetEntries, OSM!Empty, TypeOK
                         <6>2. j < i
                             <7>1. SUFFICES ASSUME j >= i
-                                  PROVE FALSE BY <5>2, <5>5 DEF Ind, TypeOK
+                                  PROVE FALSE BY <1>ok, <5>2, <5>5 DEF TypeOK
                             <7>2. log[v][j] >= log[v][i] BY <5>2, <5>5, <7>1 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
-                            <7>. QED BY <3>7, <5>2, <5>5, <6>1, <7>2 DEF Ind, TypeOK
+                            <7>. QED BY <1>ok, <3>7, <5>2, <5>5, <6>1, <7>2 DEF TypeOK
                         <6>. QED BY <3>7, <3>9, <4>2, <5>1, <5>2, <5>4, <5>5, <6>2 DEF Ind, CommittedEntryIndexesAreNonZero, OSM!GetEntries, OSM!Empty, TypeOK
                     <5>7. log'[s][j] = log[v][j] BY <3>7, <3>9, <5>4, <5>5, <5>6 DEF Ind, LogMatching, EqualUpTo, OSM!GetEntries, OSM!Empty, TypeOK
                     <5>. QED BY <3>7, <3>9, <5>1, <5>5, <5>6, <5>7 DEF OSM!GetEntries, OSM!Empty, TypeOK
@@ -189,12 +190,12 @@ PROOF
                 <4>3. PICK j \in DOMAIN log[s] : (log[s][j] = d.term /\ j = d.entry[1])
                     BY <3>7, <3>9, <4>2 DEF Ind, CommittedEntryIndexesAreNonZero, OSM!RollbackEntries, TypeOK
                 <4>4. j \in DOMAIN log'[s]
-                    <5>1. log[s][j] < log[s][i] BY <3>6, <3>7, <3>9, <4>1, <4>2, <4>3 DEF OSM!RollbackEntries, Ind, TypeOK
+                    <5>1. log[s][j] < log[s][i] BY <1>ok, <3>6, <3>7, <3>9, <4>1, <4>2, <4>3 DEF OSM!RollbackEntries, TypeOK
                     <5>2. j < i
                         <6>1. SUFFICES ASSUME j >= i
-                              PROVE FALSE BY <4>1, <4>3 DEF Ind, TypeOK
+                              PROVE FALSE BY <1>ok, <4>1, <4>3 DEF TypeOK
                         <6>2. log[s][j] >= log[s][i] BY <4>1, <4>3, <6>1 DEF Ind, TermsOfEntriesGrowMonotonically, TypeOK
-                        <6>. QED BY <3>7, <4>1, <4>3, <5>1, <6>2 DEF OSM!RollbackEntries, Ind, TypeOK
+                        <6>. QED BY <1>ok, <3>7, <4>1, <4>3, <5>1, <6>2 DEF OSM!RollbackEntries, TypeOK
                     <5>. QED BY <3>7, <3>9, <4>1, <4>3, <5>1, <5>2 DEF Ind, CommittedEntryIndexesAreNonZero, OSM!RollbackEntries, TypeOK
                 <4>. QED BY <3>4, <3>7, <3>9, <4>2, <4>3, <4>4 DEF OSM!RollbackEntries, TypeOK
             <3>. QED BY <3>8, <3>9
@@ -214,7 +215,7 @@ PROOF
             <3>7. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!CommitEntry(p, Q) BY <2>4, QuorumsIdentical DEF OSM!QuorumsAt, Ind
             <3>8. CASE d \in committed
                 <4>1. i \in DOMAIN log[s] BY <3>4, <3>7 DEF OSM!CommitEntry, TypeOK
-                <4>2. log[s][i] > d.term BY <3>4, <3>6, <3>7 DEF OSM!CommitEntry, Ind, TypeOK
+                <4>2. log[s][i] > d.term BY <1>ok, <3>4, <3>6, <3>7 DEF OSM!CommitEntry, TypeOK
                 <4>3. Len(log[s]) >= d.entry[1] /\ log[s][d.entry[1]] = d.term
                     BY <3>8, <4>1, <4>2 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
                 <4>. QED BY <3>7, <4>3 DEF OSM!CommitEntry, TypeOK
@@ -224,13 +225,13 @@ PROOF
                 <4>q. PICK Q \in Quorums(config[p]) : OSM!CommitEntry(p, Q) BY <3>7
                 <4>1. d = [entry |-> <<pLen, currentTerm[p]>>, term |-> currentTerm[p]] BY <3>7, <3>9 DEF OSM!CommitEntry, TypeOK
                 <4>2. log[p][pLen] = d.term BY <3>7, <4>1 DEF OSM!CommitEntry, TypeOK
-                <4>3. log[s][i] > d.term BY <3>4, <3>6, <3>7 DEF OSM!CommitEntry, Ind, TypeOK
+                <4>3. log[s][i] > d.term BY <1>ok, <3>4, <3>6, <3>7 DEF OSM!CommitEntry, TypeOK
                 <4>4. PICK t \in Server : configTerm[t] > log[p][pLen]
                     <5>1. \E t \in Server : configTerm[t] >= log[s][i] BY <3>4, <3>7 DEF Ind, LogEntryInTermImpliesConfigInTerm, OSM!CommitEntry, TypeOK
-                    <5>. QED BY <3>7, <4>2, <4>3, <5>1 DEF OSM!CommitEntry, Ind, TypeOK
+                    <5>. QED BY <1>ok, <3>7, <4>2, <4>3, <5>1 DEF OSM!CommitEntry, TypeOK
                 <4>5. PICK n \in Q : currentTerm[n] >= configTerm[t] BY <4>q, <4>4, CommitEntryImpliesInActiveConfigSet DEF Ind, ActiveConfigsSafeAtTerms
                 <4>6. currentTerm[n] > currentTerm[p]
-                    <5>1. currentTerm[n] > log[p][pLen] BY <4>q, <4>4, <4>5 DEF OSM!CommitEntry, Quorums, Ind, TypeOK
+                    <5>1. currentTerm[n] > log[p][pLen] BY <1>ok, <4>q, <4>4, <4>5 DEF OSM!CommitEntry, Quorums, TypeOK
                     <5>. QED BY <4>q, <4>1, <5>1 DEF OSM!CommitEntry, Quorums, TypeOK
                 <4>. QED BY <4>q, <4>1, <4>6 DEF OSM!CommitEntry, OSM!ImmediatelyCommitted, Quorums, TypeOK
             <3>. QED BY <3>8, <3>9
@@ -255,6 +256,7 @@ LEMMA ActiveConfigsOverlapWithCommittedEntryAndNext ==
 ASSUME Ind, Next
 PROVE ActiveConfigsOverlapWithCommittedEntry'
 PROOF
+    <1>ok. TypeOK BY DEF Ind
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
         <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
             <3>1. SUFFICES ASSUME TRUE
@@ -302,8 +304,8 @@ PROOF
             <3>7. c \in committed /\ u \in ActiveConfigSet /\ Q \in Quorums(config[u])
                 BY <3>2, <3>3, <3>4, <3>5 DEF OSM!RollbackEntries, Quorums, TypeOK
             <3>8. PICK n \in Q : InLog(c.entry, n) BY <3>1, <3>7 DEF Ind, ActiveConfigsOverlapWithCommittedEntry, TypeOK
-            <3>n. n \in Server BY <3>2, <3>5, <3>6, <3>8 DEF OSM!RollbackEntries,
-                ActiveConfigSet, ConfigDisabled, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, Quorums, Ind, TypeOK
+            <3>n. n \in Server BY <1>ok, <3>2, <3>5, <3>6, <3>8 DEF OSM!RollbackEntries,
+                ActiveConfigSet, ConfigDisabled, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, Quorums, TypeOK
             <3>9. (n = s) => InLog(c.entry, n)'
                 \* proof by contradiction.  if the committed entry is rolled back then it must have been the last entry of n's
                 \* log before the rollback.  thus t must have the committed entry in its log because LastTerm(log[n]) < LastTerm(log[t]).
@@ -318,7 +320,7 @@ PROOF
                     <5>3. Len(log[t]) >= c.entry[1] /\ log[t][c.entry[1]] = c.term
                         BY <4>1, <5>1, <5>2 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
                     <5>. QED BY <3>2, <3>4, <4>1, <5>3 DEF OSM!RollbackEntries, Ind, CommittedTermMatchesEntry, CommittedEntryIndexesAreNonZero, InLog, TypeOK
-                <4>4. log[t][c.entry[1]] = log[n][c.entry[1]] BY <4>2, <4>3 DEF LastTerm, InLog, Ind, TypeOK
+                <4>4. log[t][c.entry[1]] = log[n][c.entry[1]] BY <1>ok, <4>2, <4>3 DEF LastTerm, InLog, TypeOK
                 <4>5. Len(log[n]) <= Len(log[t]) /\ \A i \in DOMAIN log[n] : log[n][i] = log[t][i]
                     <5>.  DEFINE nLastIdx == Len(log[n])
                     <5>1. nLastIdx = c.entry[1] BY <4>2
@@ -379,7 +381,7 @@ PROOF
             <3>8. CASE s = p
                 <4>1. \A Q \in Quorums(newConfig) : \E n \in Q : InLog(c.entry, n)
                     BY <3>2, <3>5, <3>8, ReconfigImpliesHasQuorumWithAllCommits
-                <4>. QED BY <1>2, <3>2, <3>8, <4>1 DEF osmVars, CSM!Reconfig, Ind, TypeOK, Quorums, InLog
+                <4>. QED BY <1>ok, <1>2, <3>2, <3>8, <4>1 DEF osmVars, CSM!Reconfig, TypeOK, Quorums, InLog
             <3>. QED BY <3>7, <3>8
         <2>2. CASE \E s,t \in Server : CSM!SendConfig(s, t)
             <3>1. SUFFICES ASSUME TRUE
@@ -397,10 +399,10 @@ PROOF
                 <4>. QED BY <1>2, <3>2, <3>6, <4>2 DEF osmVars, CSM!SendConfig, InLog, TypeOK
             <3>7. CASE u = t
                 <4>1. s \in ActiveConfigSet
-                    BY <3>2, <3>4, <3>7 DEF CSM!SendConfig, CSM!IsNewerConfig, ActiveConfigSet, ConfigDisabled, CSM!NewerConfig, CV, Quorums, Ind, TypeOK
+                    BY <1>ok, <3>2, <3>4, <3>7 DEF CSM!SendConfig, CSM!IsNewerConfig, ActiveConfigSet, ConfigDisabled, CSM!NewerConfig, CV, Quorums, TypeOK
                 <4>2. \A Q \in Quorums(config[s]) : \E n \in Q : InLog(c.entry, n)
                     BY <3>5, <4>1 DEF ActiveConfigSet, ConfigDisabled, Ind, ActiveConfigsOverlapWithCommittedEntry, TypeOK
-                <4>. QED BY <1>2, <3>2, <3>6, <4>2 DEF osmVars, CSM!SendConfig, InLog, Ind, TypeOK
+                <4>. QED BY <1>ok, <1>2, <3>2, <3>6, <4>2 DEF osmVars, CSM!SendConfig, InLog, TypeOK
             <3>. QED BY <3>6, <3>7
         <2>. QED BY <1>2, <2>1, <2>2 DEF CSMNext
     <1>3. CASE JointNext
@@ -439,6 +441,7 @@ LEMMA NewerConfigsDisablePrimaryCommitsInOlderTermsAndNext ==
 ASSUME Ind, Next
 PROVE NewerConfigsDisablePrimaryCommitsInOlderTerms'
 PROOF
+    <1>ok. TypeOK BY DEF Ind
     <1>1. CASE OSMNext /\ UNCHANGED csmVars
         <2>1. CASE \E s \in Server : OSM!ClientRequest(s)
             BY <1>1, <2>1 DEF csmVars, OSM!ClientRequest, Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, TypeOK
@@ -461,13 +464,13 @@ PROOF
             <3>4. PICK p \in Server, newConfig \in SUBSET Server : OplogCommitment(p) /\ CSM!Reconfig(p, newConfig) BY <2>1
             <3>5. CASE t = p
                 <4>1. \A u \in Server : currentTerm[p] >= configTerm[u] BY <3>4, ReconfigImpliesCurrentTermGreaterThanConfigTerms DEF Ind
-                <4>2. \A u \in Server : currentTerm'[p] >= configTerm'[u] BY <3>4, <4>1 DEF CSM!Reconfig, Ind, TypeOK
+                <4>2. \A u \in Server : currentTerm'[p] >= configTerm'[u] BY <1>ok, <3>4, <4>1 DEF CSM!Reconfig, TypeOK
                 <4>. QED BY <1>2, <3>4, <3>5, <4>2 DEF osmVars, CSM!Reconfig, Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, TypeOK
             <3>6. CASE t # p
                 <4>1. SUFFICES ASSUME state'[t] = Primary, currentTerm'[t] < configTerm'[s]
                       PROVE \A Q \in Quorums(config'[t]) : \E n \in Q : currentTerm'[n] > currentTerm'[t] OBVIOUS
                 <4>2. state[t] = Primary BY <3>4, <4>1 DEF CSM!Reconfig
-                <4>3. currentTerm[t] < configTerm[s] BY <3>4, <4>1, ReconfigImpliesConfigTermUnchanged DEF CSM!Reconfig, Ind, TypeOK
+                <4>3. currentTerm[t] < configTerm[s] BY <3>4, <4>1, ReconfigImpliesConfigTermUnchanged DEF CSM!Reconfig, TypeOK
                 <4>4. TAKE Q \in Quorums(config'[t])
                 <4>5. Q \in Quorums(config[t]) BY <3>4, <3>6, <4>4 DEF CSM!Reconfig, Quorums, TypeOK
                 <4>6. \E n \in Q : currentTerm[n] > currentTerm[t] BY <4>2, <4>3, <4>5 DEF Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, TypeOK
@@ -488,12 +491,12 @@ PROOF
             <3>4. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!BecomeLeader(p, Q) /\ CSM!BecomeLeader(p, Q) BY <2>1
             <3>5. CASE t = p
                 <4>1. \A u \in Server : currentTerm[p] >= configTerm[u] BY <3>4, ElectedLeadersCurrentTermGreaterThanConfigTerms DEF Ind
-                <4>2. \A u \in Server : currentTerm'[p] >= configTerm'[u] BY <3>4, <4>1 DEF CSM!BecomeLeader, Ind, TypeOK
+                <4>2. \A u \in Server : currentTerm'[p] >= configTerm'[u] BY <1>ok, <3>4, <4>1 DEF CSM!BecomeLeader, TypeOK
                 <4>. QED BY <1>2, <3>4, <3>5, <4>2 DEF osmVars, CSM!BecomeLeader, Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, TypeOK
             <3>6. CASE t # p
                 <4>1. SUFFICES ASSUME state'[t] = Primary, currentTerm'[t] < configTerm'[s]
                       PROVE \A Q \in Quorums(config'[t]) : \E n \in Q : currentTerm'[n] > currentTerm'[t] OBVIOUS
-                <4>2. state[t] = Primary BY <3>4, <3>6, <4>1 DEF CSM!BecomeLeader, Ind, TypeOK
+                <4>2. state[t] = Primary BY <1>ok, <3>4, <3>6, <4>1 DEF CSM!BecomeLeader, TypeOK
                 <4>3. currentTerm[t] <= currentTerm[p]
                     BY <3>4, <3>6, <4>1, <4>2, ElectedLeadersCurrentTermGreaterThanConfigTerms, Zenon
                         DEF Ind, PrimaryConfigTermEqualToCurrentTerm, CSM!BecomeLeader, TypeOK
@@ -505,7 +508,7 @@ PROOF
                     <5>3. \A Q \in Quorums(config[t]) : Q \cap pQ # {}
                         BY <3>4, <4>4, <5>1, ElectedLeadersInActiveConfigSet DEF Ind, ActiveConfigsOverlap, QuorumsOverlap, Quorums, TypeOK
                     <5>4. \A u \in pQ : currentTerm'[u] > currentTerm[t]
-                        BY <3>4, <4>3, <5>1, ElectedLeadersCurrentTermGreaterThanConfigTerms DEF CSM!BecomeLeader, Quorums, Ind, TypeOK
+                        BY <1>ok, <3>4, <4>3, <5>1, ElectedLeadersCurrentTermGreaterThanConfigTerms DEF CSM!BecomeLeader, Quorums, TypeOK
                     <5>5. \A Q \in Quorums(config[t]) : \E u \in Q : currentTerm'[u] > currentTerm'[t]
                         <6>1. \A Q \in Quorums(config[t]) : \E u \in Q : u \in pQ BY <3>4, <5>1, <5>3 DEF Quorums, TypeOK
                         <6>2. \A Q \in Quorums(config[t]) : \E u \in Q : currentTerm'[u] > currentTerm[t]
@@ -518,16 +521,16 @@ PROOF
                     <5>2. Q \in Quorums(config[t]) BY <3>4, <3>6, <4>1 DEF CSM!BecomeLeader, Quorums, TypeOK
                     <5>3. PICK n \in Q : currentTerm[t] < configTerm[n]
                         <6>1. PICK n \in Q : CSM!NewerConfig(CV(n), CV(t)) BY <4>5, <5>2 DEF ActiveConfigSet, ConfigDisabled, Quorums
-                        <6>2. configTerm[t] < configTerm[n] BY <4>2, <5>2, <6>1, ConfigNewerThanPrimaryImpliesConfigTermIsNewer DEF Quorums, Ind, TypeOK
+                        <6>2. configTerm[t] < configTerm[n] BY <1>ok, <4>2, <5>2, <6>1, ConfigNewerThanPrimaryImpliesConfigTermIsNewer DEF Quorums, TypeOK
                         <6>. QED BY <4>2, <6>2 DEF Ind, PrimaryConfigTermEqualToCurrentTerm
-                    <5>4. currentTerm[p] >= configTerm[n] BY <3>4, <5>2, <5>3, ElectedLeadersCurrentTermGreaterThanConfigTerms DEF Quorums, Ind, TypeOK
-                    <5>5. currentTerm[p] > currentTerm[t] BY <3>4, <5>2, <5>3, <5>4 DEF CSM!BecomeLeader, Quorums, Ind, TypeOK
+                    <5>4. currentTerm[p] >= configTerm[n] BY <1>ok, <3>4, <5>2, <5>3, ElectedLeadersCurrentTermGreaterThanConfigTerms DEF Quorums, TypeOK
+                    <5>5. currentTerm[p] > currentTerm[t] BY <1>ok, <3>4, <5>2, <5>3, <5>4 DEF CSM!BecomeLeader, Quorums, TypeOK
                     <5>6. PICK m \in Q : currentTerm[m] > currentTerm[t]
                         BY <4>2, <5>2, <5>3 DEF Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, Quorums, TypeOK
                     <5>7. currentTerm[m] > currentTerm[t] BY <5>5, <5>6
-                    <5>8. currentTerm'[m] >= currentTerm[m] BY <3>4, <5>2, <5>6 DEF CSM!BecomeLeader, CSM!CanVoteForConfig, Quorums, Ind, TypeOK
+                    <5>8. currentTerm'[m] >= currentTerm[m] BY <1>ok, <3>4, <5>2, <5>6 DEF CSM!BecomeLeader, CSM!CanVoteForConfig, Quorums, TypeOK
                     <5>9. currentTerm'[t] = currentTerm[t] BY <3>4, <3>6, <4>1, <5>1, PrimaryAndSecondaryAreDifferent DEF CSM!BecomeLeader, TypeOK
-                    <5>. QED BY <3>4, <3>6, <5>2, <5>7, <5>8, <5>9 DEF CSM!BecomeLeader, Quorums, Ind, TypeOK
+                    <5>. QED BY <1>ok, <3>4, <3>6, <5>2, <5>7, <5>8, <5>9 DEF CSM!BecomeLeader, Quorums, TypeOK
                 <4>. QED BY <4>4, <4>5
             <3>. QED BY <3>5, <3>6
         <2>2. CASE \E s,t \in Server : OSM!UpdateTerms(s,t) /\ CSM!UpdateTerms(s,t)
@@ -541,7 +544,7 @@ PROOF
             <3>4. SUFFICES ASSUME state'[t] = Primary, currentTerm'[t] < configTerm'[s]
                   PROVE \A Q \in Quorums(config'[t]) : \E n \in Q : currentTerm'[n] > currentTerm'[t] OBVIOUS
             <3>5. PICK u,v \in Server : OSM!UpdateTerms(u,v) /\ CSM!UpdateTerms(u,v) BY <2>2
-            <3>6. t # v BY <3>4, <3>5, PrimaryAndSecondaryAreDifferent DEF CSM!UpdateTerms, CSM!UpdateTermsExpr, Ind, TypeOK
+            <3>6. t # v BY <1>ok, <3>4, <3>5, PrimaryAndSecondaryAreDifferent DEF CSM!UpdateTerms, CSM!UpdateTermsExpr, TypeOK
             <3>. QED BY <3>4, <3>5, <3>6, Z3 DEF OSM!UpdateTerms, OSM!UpdateTermsExpr, CSM!UpdateTerms, CSM!UpdateTermsExpr, Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, TypeOK
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
