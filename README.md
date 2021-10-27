@@ -8,9 +8,7 @@ The overall reconfiguration protocol is defined in the [MongoRaftReconfig](Mongo
 - [MongoStaticRaft](MongoStaticRaft.tla): the static MongoDB replication protocol
 - [MongoLoglessDynamicRaft](MongoLoglessDynamicRaft.tla): the protocol for managing reconfiguration
 
-Note that the specifications are written at a deliberately high level of abstraction, ignoring some lower level details of the protocol and system model. In practice, we have found this abstraction level most useful for understanding
-and communicating the essential behaviors and safety characteristics of the protocol, while
-also serving to make automated verification via model checking more feasible.
+Note that the specifications are written at a deliberately high level of abstraction, ignoring some lower level details of the protocol and system model. In practice, we have found this abstraction level most useful for understanding and communicating the essential behaviors and safety characteristics of the protocol, while also serving to make automated verification via model checking more feasible.
 
 
 ## Model Checking
