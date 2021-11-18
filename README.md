@@ -21,9 +21,9 @@ This will save the results of the execution, along with auxiliary information ab
 
 ```bash
 # Check MongoRaftReconfig.
-./modelcheck.sh models/MCMongoRaftReconfig_4Servers-L2-T2-CV3.cfg MCMongoRaftReconfig 4
+./modelcheck.sh models/MCMongoRaftReconfig-4Servers-L2-T3-CV3.cfg MCMongoRaftReconfig 4
 # Check MongoLoglessDynamicRaft.
-./modelcheck.sh models/MCMongoLoglessDynamicRaft-4Servers-T4-CV4.cfg MCMongoLoglessDynamicRaft 4
+./modelcheck.sh models/MCMongoLoglessDynamicRaft-5Servers-T4-CV4.cfg MCMongoLoglessDynamicRaft 4
 ```
 These models impose state constraints on both protocols to make the reachable state space finite. Complete verification time, however, will vary depending on the speed of your local machine.
 
