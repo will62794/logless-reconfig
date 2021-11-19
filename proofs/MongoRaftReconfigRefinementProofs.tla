@@ -1,5 +1,5 @@
 ---- MODULE MongoRaftReconfigRefinementProofs ----
-EXTENDS TLC, MongoRaftReconfig
+EXTENDS TLC, MongoRaftReconfig, TLAPS
 
 \*
 \* Refinement proof of MongoRaftReconfig => MongoLoglessDynamicRaft.
