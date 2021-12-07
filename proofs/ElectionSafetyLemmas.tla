@@ -18,7 +18,7 @@ PROOF
             BY <1>1, <2>2 DEF OSM!GetEntries, Ind, OnePrimaryPerTerm
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
             BY <1>1, <2>3 DEF OSM!RollbackEntries, Ind, OnePrimaryPerTerm
-        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
             BY <1>1, <2>4 DEF OSM!CommitEntry, Ind, OnePrimaryPerTerm
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
     <1>2. CASE CSMNext /\ UNCHANGED osmVars
@@ -122,7 +122,7 @@ PROOF
             BY <1>1, <2>2 DEF OSM!GetEntries, Ind, PrimaryConfigTermEqualToCurrentTerm, csmVars
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
             BY <1>1, <2>3 DEF OSM!RollbackEntries, Ind, PrimaryConfigTermEqualToCurrentTerm, csmVars
-        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
             BY <1>1, <2>4 DEF OSM!CommitEntry, Ind, PrimaryConfigTermEqualToCurrentTerm, csmVars
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
     <1>2. CASE CSMNext /\ UNCHANGED osmVars
@@ -182,7 +182,7 @@ PROOF
             BY <1>1, <2>2 DEF OSM!GetEntries, Ind, ConfigVersionAndTermUnique, csmVars
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
             BY <1>1, <2>3 DEF OSM!RollbackEntries, Ind, ConfigVersionAndTermUnique, csmVars
-        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
             BY <1>1, <2>4 DEF OSM!CommitEntry, Ind, ConfigVersionAndTermUnique, csmVars
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
     <1>2. CASE CSMNext /\ UNCHANGED osmVars
@@ -245,7 +245,7 @@ PROOF
             BY <1>1, <2>2 DEF OSM!GetEntries, Ind, PrimaryInTermContainsNewestConfigOfTerm, csmVars
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
             BY <1>1, <2>3 DEF OSM!RollbackEntries, Ind, PrimaryInTermContainsNewestConfigOfTerm, csmVars
-        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
             BY <1>1, <2>4 DEF OSM!CommitEntry, Ind, PrimaryInTermContainsNewestConfigOfTerm, csmVars
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
     <1>2. CASE CSMNext /\ UNCHANGED osmVars
@@ -316,7 +316,7 @@ PROOF
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
             BY <1>1, <2>3 DEF OSM!RollbackEntries, Ind, ActiveConfigsOverlap, csmVars,
                 QuorumsOverlap, Quorums, ActiveConfigSet, ConfigDisabled, CSM!NewerConfig, CV
-        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
             BY <1>1, <2>4 DEF OSM!CommitEntry, Ind, ActiveConfigsOverlap, csmVars,
                 QuorumsOverlap, Quorums, ActiveConfigSet, ConfigDisabled, CSM!NewerConfig, CV
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
@@ -386,7 +386,7 @@ PROOF
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
             BY <1>1, <2>3 DEF csmVars, OSM!RollbackEntries, Ind, ActiveConfigsSafeAtTerms,
                 ActiveConfigSet, ConfigDisabled, CSM!NewerConfig, CV, Quorums, TypeOK
-        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
             BY <1>1, <2>4 DEF csmVars, OSM!CommitEntry, Ind, ActiveConfigsSafeAtTerms,
                 ActiveConfigSet, ConfigDisabled, CSM!NewerConfig, CV, Quorums, TypeOK
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext

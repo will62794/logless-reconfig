@@ -3,7 +3,7 @@
 \* Basic, static version of MongoDB Raft protocol. No reconfiguration is allowed.
 \*
 
-EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
+EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC, Defs
 
 CONSTANTS Server
 CONSTANTS Secondary, Primary, Nil
@@ -21,8 +21,8 @@ vars == <<currentTerm, state, log, committed, config>>
 \* Helper operators.
 \*
 
-\* Is a sequence empty.
-Empty(s) == Len(s) = 0
+\* TODO: Delete after cleanup complete.
+QuorumsAt(i) == TRUE
 
 \* Is log entry e = <<index, term>> in the log of node 'i'.
 InLog(e, i) == \E x \in DOMAIN log[i] : x = e[1] /\ log[i][x] = e[2]
@@ -32,10 +32,6 @@ LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)]
 LastEntry(xlog) == <<Len(xlog),xlog[Len(xlog)]>>
 GetTerm(xlog, index) == IF index = 0 THEN 0 ELSE xlog[index]
 LogTerm(i, index) == GetTerm(log[i], index)
-
-\* The set of all quorums in a given set.
-Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
-QuorumsAt(i) == Quorums(config[i])
 
 IsPrefix(s, t) ==
   (**************************************************************************)
@@ -168,8 +164,8 @@ Next ==
     \/ \E s \in Server : ClientRequest(s)
     \/ \E s, t \in Server : GetEntries(s, t)
     \/ \E s, t \in Server : RollbackEntries(s, t)
-    \/ \E s \in Server : \E Q \in QuorumsAt(s) : BecomeLeader(s, Q)
-    \/ \E s \in Server :  \E Q \in QuorumsAt(s) : CommitEntry(s, Q)
+    \/ \E s \in Server : \E Q \in Quorums(config[s]) : BecomeLeader(s, Q)
+    \/ \E s \in Server :  \E Q \in Quorums(config[s]) : CommitEntry(s, Q)
     \/ \E s,t \in Server : UpdateTerms(s, t)
 
 Spec == Init /\ [][Next]_vars

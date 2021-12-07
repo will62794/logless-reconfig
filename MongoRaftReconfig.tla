@@ -4,7 +4,7 @@
 \* MongoDB replication protocol that allows for logless, dynamic reconfiguration.
 \*
 
-EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
+EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC, Defs
 
 CONSTANTS Server
 CONSTANTS Secondary, Primary, Nil
@@ -23,16 +23,8 @@ vars == <<currentTerm, state, log, configVersion, configTerm, config, log, commi
 \* Helper operators.
 \*
 
-\* The set of all quorums of a given set.
-Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
-
-QuorumsAt(i) == Quorums(config[i])
-
-Min(s) == CHOOSE x \in s : \A y \in s : x <= y
-Max(s) == CHOOSE x \in s : \A y \in s : x >= y
-
-\* Is a sequence empty.
-Empty(s) == Len(s) = 0
+\* TODO: Delete after cleanup complete.
+QuorumsAt(i) == TRUE
 
 GetTerm(xlog, index) == IF index = 0 THEN 0 ELSE xlog[index]
 LogTerm(i, index) == GetTerm(log[i], index)
@@ -78,7 +70,7 @@ OSMNext ==
     \/ \E s \in Server : OSM!ClientRequest(s)
     \/ \E s, t \in Server : OSM!GetEntries(s, t)
     \/ \E s, t \in Server : OSM!RollbackEntries(s, t)
-    \/ \E s \in Server :  \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+    \/ \E s \in Server :  \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
 
 \* Check whether the entry at "index" on "primary" is committed in the primary's current config.
 IsCommitted(index, primary) ==

@@ -4,7 +4,7 @@
 \* in MongoDB replication.
 \*
 
-EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC
+EXTENDS Naturals, Integers, FiniteSets, Sequences, TLC, Defs
 
 CONSTANTS Server
 CONSTANTS Secondary, Primary, Nil
@@ -21,19 +21,9 @@ vars == <<currentTerm, state, configVersion, configTerm, config>>
 \* Helper operators.
 \*
 
-\* The set of all quorums of a given set.
-Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
-
-QuorumsAt(i) == Quorums(config[i])
-
-Min(s) == CHOOSE x \in s : \A y \in s : x <= y
-Max(s) == CHOOSE x \in s : \A y \in s : x >= y
-
-\* Return the range of a given function.
-Range(f) == {f[x] : x \in DOMAIN f}
-
-\* Is a sequence empty.
-Empty(s) == Len(s) = 0
+\* TODO: Delete after cleanup complete.
+QuorumsAt(i) == TRUE
+\* QuorumsAt(i) == Quorums(config[i])
 
 \* Is the config of node i considered 'newer' than the config of node j. This is the condition for
 \* node j to accept the config of node i.
@@ -63,9 +53,6 @@ CanVoteForConfig(i, j, term) ==
     /\ currentTerm[i] < term
     /\ IsNewerOrEqualConfig(j, i)
     
-\* Do all quorums of set x and set y share at least one overlapping node.
-QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
-
 \* A quorum of servers in the config of server i have i's config.
 ConfigQuorumCheck(i) ==
     \E Q \in Quorums(config[i]) : \A t \in Q : 

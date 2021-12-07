@@ -10,8 +10,6 @@ EXTENDS MongoRaftReconfig
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)]
 LastEntry(xlog) == <<Len(xlog),xlog[Len(xlog)]>>
 
-QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
-
 \* (configVersion, term) pair of node i.
 CV(i) == <<configVersion[i], configTerm[i]>>
 

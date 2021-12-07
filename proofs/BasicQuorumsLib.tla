@@ -2,6 +2,10 @@
 
 EXTENDS SequenceTheorems, FunctionTheorems, FiniteSetTheorems, TLAPS, MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms
 
+LEMMA ConfigsAreFinite ==
+ASSUME TRUE
+PROVE \A s \in Server : IsFiniteSet(config[s])
+
 LEMMA QuorumsExistForNonEmptySets ==
 ASSUME NEW S, IsFiniteSet(S), S # {}
 PROVE Quorums(S) # {}
