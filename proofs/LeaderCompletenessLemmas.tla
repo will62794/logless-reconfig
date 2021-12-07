@@ -16,7 +16,7 @@ PROOF
             BY <2>2 DEF OSM!GetEntries, Ind, CommittedEntryIndexesAreNonZero, TypeOK
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
             BY <2>3 DEF OSM!RollbackEntries, Ind, CommittedEntryIndexesAreNonZero, TypeOK
-        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
             BY <2>4 DEF OSM!CommitEntry, Ind, CommittedEntryIndexesAreNonZero, TypeOK
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
     <1>2. CASE CSMNext /\ UNCHANGED osmVars
@@ -43,7 +43,7 @@ PROOF
             BY <2>2 DEF OSM!GetEntries, Ind, CommittedTermMatchesEntry, TypeOK
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
             BY <2>3 DEF OSM!RollbackEntries, Ind, CommittedTermMatchesEntry, TypeOK
-        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
             BY <2>4 DEF OSM!CommitEntry, Ind, CommittedTermMatchesEntry, TypeOK
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
     <1>2. CASE CSMNext /\ UNCHANGED osmVars
@@ -70,8 +70,8 @@ PROOF
             BY <2>2 DEF OSM!GetEntries, Ind, LeaderCompleteness, InLog, TypeOK
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
             BY <2>3, PrimaryAndSecondaryAreDifferent, Z3 DEF OSM!RollbackEntries, Ind, LeaderCompleteness, InLog, TypeOK
-        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
-            <3>1. PICK p \in Server : \E Q \in OSM!QuorumsAt(p) : OSM!CommitEntry(p, Q) BY <2>4
+        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
+            <3>1. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!CommitEntry(p, Q) BY <2>4
             <3>2. \A s \in Server : currentTerm[p] >= configTerm[s]
                 BY <3>1, QuorumsIdentical, CommitEntryImpliesCurrentTermGreaterThanConfigTerms DEF OSM!QuorumsAt, Ind
             <3>3. \A s \in Server : (state[s] = Primary /\ s # p) => currentTerm[s] < currentTerm[p]
@@ -199,7 +199,7 @@ PROOF
                     <5>. QED BY <3>7, <3>9, <4>1, <4>3, <5>1, <5>2 DEF Ind, CommittedEntryIndexesAreNonZero, OSM!RollbackEntries, TypeOK
                 <4>. QED BY <3>4, <3>7, <3>9, <4>2, <4>3, <4>4 DEF OSM!RollbackEntries, TypeOK
             <3>. QED BY <3>8, <3>9
-        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
             <3>1. SUFFICES ASSUME TRUE
                   PROVE (\A s \in Server : \A c \in committed :
                             (\E i \in DOMAIN log[s] : log[s][i] > c.term) =>
@@ -333,12 +333,12 @@ PROOF
                 <4>. QED BY <3>2, <3>n, <4>1, <4>6 DEF OSM!RollbackEntries, OSM!CanRollback, OSM!IsPrefix, TypeOK
             <3>10. (n # s) => InLog(c.entry, n)' BY <3>2, <3>4, <3>6, <3>7, <3>8 DEF OSM!RollbackEntries, Quorums, InLog, TypeOK
             <3>. QED BY <3>9, <3>10 DEF InLog
-        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
             <3>1. SUFFICES ASSUME TRUE
                   PROVE \A c \in committed' : \A s \in ActiveConfigSet' :
                             \A Q \in Quorums(config[s])' : \E n \in Q : InLog(c.entry, n)'
                   BY DEF ActiveConfigsOverlapWithCommittedEntry
-            <3>2. PICK p \in Server : \E Q \in OSM!QuorumsAt(p) : OSM!CommitEntry(p, Q) BY <2>4
+            <3>2. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!CommitEntry(p, Q) BY <2>4
             <3>3. PICK pQ \in Quorums(config[p]) : OSM!CommitEntry(p, pQ) BY <3>2, QuorumsIdentical DEF OSM!QuorumsAt, Ind
             <3>4. TAKE c \in committed'
             <3>5. TAKE s \in ActiveConfigSet'
@@ -449,7 +449,7 @@ PROOF
             BY <1>1, <2>2 DEF csmVars, OSM!GetEntries, Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, TypeOK
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
             BY <1>1, <2>3 DEF csmVars, OSM!RollbackEntries, Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, TypeOK
-        <2>4. CASE \E s \in Server : \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q)
+        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
             BY <1>1, <2>4 DEF csmVars, OSM!CommitEntry, Ind, NewerConfigsDisablePrimaryCommitsInOlderTerms, TypeOK
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
     <1>2. CASE CSMNext /\ UNCHANGED osmVars
