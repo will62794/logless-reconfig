@@ -52,6 +52,7 @@ As explained in the prior section, the TLAPS proofs contained in this repository
 - `AuxLemmas.tla` (13 secs.)
 - `Lib.tla` (115 secs.)
 - `TypeOK.tla` (14 secs.)
+- `Assumptions.tla` (1 secs.)
 
 Next to each file we give an estimate of how long it takes to check the proofs in the file, which is taken from from a run of proof checking on a 2020 M1 Macbook Air with 8 CPU cores. The sum of the proof checking times listed above is 2271 seconds, which is approximately 38 minutes. Note that TLAPS will utilize all available CPU cores by default. Proof checking can be a fairly computationally expensive task, so we recommend doing this on a machine that is relatively unloaded with other tasks. The exact time it takes to check the proofs will vary based on the speed of your local machine, but we were generally able to check all proofs in less than 1 hour using relatively modern laptop machines. 
 
