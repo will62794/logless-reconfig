@@ -490,9 +490,6 @@ PROOF
                 <4>1. currentTerm'[n] = currentTerm[n] BY <3>p, <3>q, <3>n, <3>9 DEF CSM!BecomeLeader, TypeOK
                 <4>2. CASE s # p BY <1>ok, <3>p, <3>7, <4>1, <4>2 DEF CSM!BecomeLeader, TypeOK
                 <4>3. CASE s = p
-                    \* this case is very interesting because we rely on the currentTerm update \A q \in pQ, in particular
-                    \* \A q \in pQ : q # p, I wouldn't expect the update on currentTerm to be atomic but it is in this
-                    \* protocol.  see <5>4.
                     <5>1. s \in ActiveConfigSet BY <3>p, <4>3, ElectedLeadersInActiveConfigSet DEF Ind
                     <5>2. QuorumsOverlap(config[t], config[s]) BY <3>4, <5>1 DEF Ind, ActiveConfigsOverlap
                     <5>3. PICK q \in pQ : q \in Q BY <3>6, <3>p, <3>q, <4>3, <5>2 DEF QuorumsOverlap

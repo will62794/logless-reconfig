@@ -220,7 +220,7 @@ PROOF
                     BY <3>8, <4>1, <4>2 DEF Ind, LogsLaterThanCommittedMustHaveCommitted, TypeOK
                 <4>. QED BY <3>7, <4>3 DEF OSM!CommitEntry, TypeOK
             <3>9. CASE d \notin committed
-                \* interestingly enough, this case is not possible.  proof by contradiction
+                \* this case is not possible.  proof by contradiction
                 <4>.  DEFINE pLen == Len(log[p])
                 <4>q. PICK Q \in Quorums(config[p]) : OSM!CommitEntry(p, Q) BY <3>7
                 <4>1. d = [entry |-> <<pLen, currentTerm[p]>>, term |-> currentTerm[p]] BY <3>7, <3>9 DEF OSM!CommitEntry, TypeOK
@@ -251,7 +251,6 @@ PROOF
 \* finished 9/9
 \* ReconfigImpliesCommitTermsSmallerOrEqual and ReconfigImpliesHasQuorumWithAllCommits
 \* were likely the most work for this one
-\* several zero days for this proof
 LEMMA ActiveConfigsOverlapWithCommittedEntryAndNext ==
 ASSUME Ind, Next
 PROVE ActiveConfigsOverlapWithCommittedEntry'

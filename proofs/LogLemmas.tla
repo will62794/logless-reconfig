@@ -85,7 +85,7 @@ PROOF
         <2>. QED BY <2>2, <2>3
     <1>. QED BY <1>ok, <1>1, <1>2, <1>3 DEF OSM!GetEntries, TypeOK
 
-\* began: 8/26 (kinda on 8/24 at like 11pm but not really)
+\* began: 8/26
 \* finished: 8/26
 \* took a few hours, maybe 2-5
 LEMMA LogMatchingAndNext ==
@@ -196,13 +196,6 @@ PROOF
             BY <2>2 DEF Ind, TermsOfEntriesGrowMonotonically, OSM!UpdateTerms, TypeOK
         <2>. QED BY <1>3, <2>1, <2>2 DEF JointNext
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
-
-\* never turned out to be useful.
-LEMMA PrimaryHasEntriesItCreatedAlt ==
-ASSUME PrimaryHasEntriesItCreated
-PROVE \A s,t \in Server : state[s] = Primary
-        => \A k \in DOMAIN log[t] : (log[t][k] = currentTerm[s]) => InLog(<<k,log[t][k]>>, s)
-PROOF BY DEF TypeOK, PrimaryHasEntriesItCreated
 
 \* began: 8/26
 \* finished: 8/27
@@ -434,8 +427,7 @@ PROOF
     <1>. QED BY <1>1, <1>2, <1>3 DEF Next
 
 \* began: 8/27
-\* finished: 8/29 @ 1am (so basically 8/28...)
-\* approx all day for 2 days straight
+\* finished: 8/29
 \* UniformLogEntriesInTerm notes:
 \* DEF boundary == an index i in a server s' log where log[s][i] # log[s][i-1]
 \* DEF local boundary == a boundary for a single server
@@ -462,7 +454,6 @@ PROOF
             \* this is unneeded, but it helps me to clearly see the proof goal
             \* after DeMorgan'ing the 2nd part of the 'implies' we see the local (s) to global (\A t) boundary stipulation
             <3>f. SUFFICES ASSUME TRUE
-                  \*PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (~\E k \in DOMAIN log[t] : log[t][k] = log[s][i] /\ k < i)'
                   PROVE (\A j \in DOMAIN log[s] : (j < i) => log[s][j] # log[s][i])' => (\A j \in DOMAIN log[t] : (j < i) => log[t][j] # log[s][i])'
                   OBVIOUS
             <3>6. CASE s = p
