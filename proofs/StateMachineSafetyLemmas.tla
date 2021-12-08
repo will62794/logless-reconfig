@@ -1,5 +1,5 @@
 ---- MODULE StateMachineSafetyLemmas ----
-EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, TypeOK, Lib
+EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Assumptions, TypeOK, Lib
 
 LEMMA FS_InductionInServer == 
   ASSUME NEW S, IsFiniteSet(S), S \in SUBSET Server,

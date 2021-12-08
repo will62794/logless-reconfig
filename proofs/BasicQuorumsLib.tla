@@ -1,6 +1,6 @@
 ----------------------------- MODULE BasicQuorumsLib -----------------------------
 
-EXTENDS SequenceTheorems, FunctionTheorems, FiniteSetTheorems, TLAPS, MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms
+EXTENDS SequenceTheorems, FunctionTheorems, FiniteSetTheorems, TLAPS, MongoRaftReconfig, MongoRaftReconfigIndInv, Assumptions
 
 LEMMA QuorumsExistForNonEmptySets ==
 ASSUME NEW S, IsFiniteSet(S), S # {}

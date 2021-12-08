@@ -5,7 +5,7 @@
 
 function prooflines {
     cat proofs/AuxLemmas.tla \
-        proofs/Axioms.tla \
+        proofs/Assumptions.tla \
         proofs/BasicQuorumsLib.tla \
         proofs/ElectionSafetyLemmas.tla \
         proofs/LeaderCompletenessLemmas.tla \

@@ -6,7 +6,7 @@
 \* module.
 \*
 
-EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, TypeOK, ElectionSafetyLemmas, LogLemmas,
+EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Assumptions, TypeOK, ElectionSafetyLemmas, LogLemmas,
         LeaderCompletenessLemmas, StateMachineSafetyLemmas, Lib, AuxLemmas
 
 \*

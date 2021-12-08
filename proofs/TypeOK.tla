@@ -1,6 +1,6 @@
 ----------------------------- MODULE TypeOK -----------------------------
 
-EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms, BasicQuorumsLib
+EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv, Assumptions, BasicQuorumsLib
 
 LEMMA InitImpliesTypeOK ==
 ASSUME Init

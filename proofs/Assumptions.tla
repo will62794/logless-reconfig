@@ -1,6 +1,9 @@
------------------------------ MODULE Axioms -----------------------------
-
+----------------------------- MODULE Assumptions -----------------------------
 EXTENDS MongoRaftReconfig, MongoRaftReconfigIndInv
+
+\*
+\* Some very basic assumptions/lemmas that are necessary for reasoning about the protocol.
+\*
 
 ASSUME PrimaryAndSecondaryAreDifferent == Primary # Secondary
 ASSUME ServerIsFinite == IsFiniteSet(Server)
