@@ -18,7 +18,7 @@ PROOF
             BY <1>1, <2>2 DEF OSM!GetEntries, TypeOK, csmVars
         <2>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t)
             BY <1>1, <2>3 DEF OSM!RollbackEntries, TypeOK, csmVars
-        <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
+        <2>4. CASE \E s \in Server : \E Q \in OSM!Quorums(config[s]) : OSM!CommitEntry(s, Q)
             BY <1>1, <2>4 DEF OSM!CommitEntry, TypeOK, csmVars
         <2>. QED BY <1>1, <2>1, <2>2, <2>3, <2>4 DEF OSMNext
     <1>2. CASE CSMNext /\ UNCHANGED osmVars

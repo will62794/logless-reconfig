@@ -2,10 +2,6 @@
 
 EXTENDS SequenceTheorems, FunctionTheorems, FiniteSetTheorems, TLAPS, MongoRaftReconfig, MongoRaftReconfigIndInv, Axioms
 
-LEMMA ConfigsAreFinite ==
-ASSUME TRUE
-PROVE \A s \in Server : IsFiniteSet(config[s])
-
 LEMMA QuorumsExistForNonEmptySets ==
 ASSUME NEW S, IsFiniteSet(S), S # {}
 PROVE Quorums(S) # {}
@@ -13,18 +9,17 @@ PROOF BY FS_EmptySet, FS_CardinalityType DEF Quorums
 
 LEMMA QuorumsAreServerSubsets ==
 ASSUME TypeOK, NEW s \in Server
-PROVE QuorumsAt(s) \subseteq SUBSET Server
+PROVE Quorums(config[s]) \subseteq SUBSET Server
 PROOF BY DEF QuorumsAt, Quorums, TypeOK
 
 LEMMA StaticQuorumsOverlap ==
-ASSUME \*TypeOK,
-       NEW cfg \in SUBSET Server,
+ASSUME NEW cfg \in SUBSET Server,
        NEW Q1 \in Quorums(cfg),
        NEW Q2 \in Quorums(cfg)
 PROVE Q1 \cap Q2 # {}
 PROOF
     <1>. IsFiniteSet(cfg)
-        BY FS_Subset, ServerIsFinite, ConfigsAreFinite\* DEF TypeOK
+        BY FS_Subset, ServerIsFinite
     <1>. IsFiniteSet(Q1) /\ IsFiniteSet(Q2)
         BY QuorumsAreServerSubsets, ServerIsFinite, FS_Subset DEF Quorums
     <1>. IsFiniteSet(Q1 \cap Q2)
@@ -48,8 +43,7 @@ PROOF
     <1>5. QED BY <1>4, FS_EmptySet
 
 COROLLARY ConfigQuorumsOverlap ==
-ASSUME \*TypeOK,
-       NEW cfg \in SUBSET Server
+ASSUME NEW cfg \in SUBSET Server
 PROVE QuorumsOverlap(cfg, cfg)
 PROOF BY StaticQuorumsOverlap DEF QuorumsOverlap
 
