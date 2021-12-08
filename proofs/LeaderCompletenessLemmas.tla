@@ -73,7 +73,7 @@ PROOF
         <2>4. CASE \E s \in Server : \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q)
             <3>1. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!CommitEntry(p, Q) BY <2>4
             <3>2. \A s \in Server : currentTerm[p] >= configTerm[s]
-                BY <3>1, QuorumsIdentical, CommitEntryImpliesCurrentTermGreaterThanConfigTerms DEF OSM!QuorumsAt, Ind
+                BY <3>1, QuorumsIdentical, CommitEntryImpliesCurrentTermGreaterThanConfigTerms DEF Ind
             <3>3. \A s \in Server : (state[s] = Primary /\ s # p) => currentTerm[s] < currentTerm[p]
                 BY <3>1, <3>2 DEF OSM!CommitEntry, Ind, OnePrimaryPerTerm, PrimaryConfigTermEqualToCurrentTerm, TypeOK
             <3>. QED BY <3>1, <3>3 DEF OSM!CommitEntry, Ind, LeaderCompleteness, InLog, OnePrimaryPerTerm, TypeOK
@@ -212,7 +212,7 @@ PROOF
             <3>5. TAKE d \in committed'
             <3>6. SUFFICES ASSUME d.term <= c.term
                   PROVE Len(log'[s]) >= d.entry[1] /\ log'[s][d.entry[1]] = d.term OBVIOUS
-            <3>7. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!CommitEntry(p, Q) BY <2>4, QuorumsIdentical DEF OSM!QuorumsAt, Ind
+            <3>7. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!CommitEntry(p, Q) BY <2>4, QuorumsIdentical DEF Ind
             <3>8. CASE d \in committed
                 <4>1. i \in DOMAIN log[s] BY <3>4, <3>7 DEF OSM!CommitEntry, TypeOK
                 <4>2. log[s][i] > d.term BY <1>ok, <3>4, <3>6, <3>7 DEF OSM!CommitEntry, TypeOK
@@ -338,7 +338,7 @@ PROOF
                             \A Q \in Quorums(config[s])' : \E n \in Q : InLog(c.entry, n)'
                   BY DEF ActiveConfigsOverlapWithCommittedEntry
             <3>2. PICK p \in Server : \E Q \in Quorums(config[p]) : OSM!CommitEntry(p, Q) BY <2>4
-            <3>3. PICK pQ \in Quorums(config[p]) : OSM!CommitEntry(p, pQ) BY <3>2, QuorumsIdentical DEF OSM!QuorumsAt, Ind
+            <3>3. PICK pQ \in Quorums(config[p]) : OSM!CommitEntry(p, pQ) BY <3>2, QuorumsIdentical DEF Ind
             <3>4. TAKE c \in committed'
             <3>5. TAKE s \in ActiveConfigSet'
             <3>6. TAKE sQ \in Quorums(config[s])'

@@ -216,7 +216,7 @@ ASSUME TypeOK,
        NEW newConfig \in SUBSET Server,
        CSM!Reconfig(s, newConfig)
 PROVE s \in ActiveConfigSet
-PROOF BY QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigQuorumCheck, CSM!QuorumsAt,
+PROOF BY QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigQuorumCheck,
             ActiveConfigSet, ConfigDisabled, CSM!NewerConfig, CV, Quorums, TypeOK
 
 LEMMA ReconfigImpliesCurrentTermGreaterThanConfigTerms ==
@@ -229,7 +229,7 @@ PROOF
     <1>1. s \in ActiveConfigSet BY ReconfigImpliesInActiveConfigSet DEF Ind
     <1>2. TAKE t \in Server
     <1>3. PICK Q \in Quorums(config[s]) : \A n \in Q : currentTerm[n] = currentTerm[s]
-        BY QuorumsIdentical DEF CSM!Reconfig, CSM!TermQuorumCheck, CSM!QuorumsAt, Ind
+        BY QuorumsIdentical DEF CSM!Reconfig, CSM!TermQuorumCheck, Ind
     <1>4. PICK n \in Q : currentTerm[n] >= configTerm[t] BY <1>1, <1>3 DEF Ind, ActiveConfigsSafeAtTerms
     <1>5. currentTerm[s] = currentTerm[n] BY <1>3
     <1>. QED BY <1>4, <1>5 DEF Quorums
@@ -254,7 +254,7 @@ PROVE \A n \in ActiveConfigSet' : n \in ActiveConfigSet
     <4>2. PICK Q \in Quorums(config[n])' : \A q \in Q : ~CSM!NewerConfig(CV(q), CV(n))' BY <4>1 DEF ActiveConfigSet, ConfigDisabled
     <4>. CASE n = p
         <5>1. \E nQ \in Quorums(config[n]) : \A q \in nQ : CV(n) = CV(q)
-            BY <4>ok, QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigQuorumCheck, CSM!QuorumsAt, Quorums, CV
+            BY <4>ok, QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigQuorumCheck, Quorums, CV
         <5>. QED BY <4>ok, <5>1 DEF ActiveConfigSet, ConfigDisabled, CSM!NewerOrEqualConfig, CSM!NewerConfig, CV, CSM!Reconfig, TypeOK
     <4>. CASE n # p
         <5>1. Q \in Quorums(config[n])
@@ -308,7 +308,7 @@ PROOF
     <4>. s \in Server BY DEF ActiveConfigSet, ConfigDisabled
     <4>1. PICK Q \in Quorums(config[s]) : \A n \in Q : ~CSM!NewerConfig(CV(n), CV(s)) BY DEF ActiveConfigSet, ConfigDisabled
     <4>2. PICK pQ \in Quorums(config[p]) : \A q \in pQ : CV(q) = CV(p)
-        BY <4>ok, QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigQuorumCheck, CSM!QuorumsAt, CV, TypeOK
+        BY <4>ok, QuorumsIdentical DEF CSM!Reconfig, CSM!ConfigQuorumCheck, CV, TypeOK
     <4>3. PICK q \in pQ : ~CSM!NewerConfig(CV(q), CV(s))
         BY <4>1, <4>2, ReconfigImpliesInActiveConfigSet DEF Ind, ActiveConfigsOverlap, QuorumsOverlap
     <4>4. CSM!NewerOrEqualConfig(CV(s), CV(q))

@@ -21,9 +21,6 @@ vars == <<currentTerm, state, log, committed, config>>
 \* Helper operators.
 \*
 
-\* TODO: Delete after cleanup complete.
-QuorumsAt(i) == TRUE
-
 \* Is log entry e = <<index, term>> in the log of node 'i'.
 InLog(e, i) == \E x \in DOMAIN log[i] : x = e[1] /\ log[i][x] = e[2]
 

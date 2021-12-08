@@ -23,9 +23,6 @@ vars == <<currentTerm, state, log, configVersion, configTerm, config, log, commi
 \* Helper operators.
 \*
 
-\* TODO: Delete after cleanup complete.
-QuorumsAt(i) == TRUE
-
 GetTerm(xlog, index) == IF index = 0 THEN 0 ELSE xlog[index]
 LogTerm(i, index) == GetTerm(log[i], index)
 

@@ -21,10 +21,6 @@ vars == <<currentTerm, state, configVersion, configTerm, config>>
 \* Helper operators.
 \*
 
-\* TODO: Delete after cleanup complete.
-QuorumsAt(i) == TRUE
-\* QuorumsAt(i) == Quorums(config[i])
-
 \* Is the config of node i considered 'newer' than the config of node j. This is the condition for
 \* node j to accept the config of node i.
 IsNewerConfig(i, j) ==

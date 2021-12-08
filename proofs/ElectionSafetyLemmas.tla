@@ -403,7 +403,7 @@ PROOF
             <3>5. CASE t # p
                 <4>1. config'[t] = config[t] /\ config'[t] = config[p] BY <3>p, <3>4, <3>5 DEF CSM!Reconfig, TypeOK
                 <4>2. PICK pQ \in Quorums(config[p]) : \A n \in pQ : currentTerm[n] = currentTerm[p]
-                    BY <3>p, QuorumsIdentical DEF CSM!Reconfig, CSM!TermQuorumCheck, CSM!QuorumsAt, Ind
+                    BY <3>p, QuorumsIdentical DEF CSM!Reconfig, CSM!TermQuorumCheck, Ind
                 <4>3. TAKE tQ \in Quorums(config'[t])
                 <4>4. tQ \in Quorums(config[t]) BY <4>1, <4>3
                 <4>5. QuorumsOverlap(config[t], config[p])
@@ -415,7 +415,7 @@ PROOF
                 <4>. QED BY <3>1, <3>2, <3>3, <4>3, <4>8
             <3>6. CASE t = p
                 <4>1. PICK pQ \in Quorums(config[p]) : \A n \in pQ : currentTerm[n] = currentTerm[p]
-                    BY <3>p, QuorumsIdentical DEF CSM!Reconfig, CSM!TermQuorumCheck, CSM!QuorumsAt, Ind
+                    BY <3>p, QuorumsIdentical DEF CSM!Reconfig, CSM!TermQuorumCheck, Ind
                 <4>2. config'[t] = newConfig BY <1>ok, <3>p, <3>6 DEF CSM!Reconfig, TypeOK
                 <4>3. TAKE tQ \in Quorums(config'[t])
                 <4>4. QuorumsOverlap(config[p], newConfig) BY <1>ok, <3>p, <4>1, <4>2, <4>3, QuorumsOverlapIdentical DEF CSM!Reconfig, TypeOK

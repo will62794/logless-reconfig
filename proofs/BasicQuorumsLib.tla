@@ -10,7 +10,7 @@ PROOF BY FS_EmptySet, FS_CardinalityType DEF Quorums
 LEMMA QuorumsAreServerSubsets ==
 ASSUME TypeOK, NEW s \in Server
 PROVE Quorums(config[s]) \subseteq SUBSET Server
-PROOF BY DEF QuorumsAt, Quorums, TypeOK
+PROOF BY DEF Quorums, TypeOK
 
 LEMMA StaticQuorumsOverlap ==
 ASSUME NEW cfg \in SUBSET Server,
@@ -25,7 +25,7 @@ PROOF
     <1>. IsFiniteSet(Q1 \cap Q2)
         BY FS_Intersection
     <1>1. Q1 \in SUBSET cfg /\ Q2 \in SUBSET cfg
-        BY QuorumsAreServerSubsets DEF QuorumsAt, Quorums, TypeOK
+        BY QuorumsAreServerSubsets DEF Quorums, TypeOK
     <1>2. Cardinality(Q1) + Cardinality(Q2) <= Cardinality(cfg) + Cardinality(Q1 \cap Q2)
         <2>1. Cardinality(Q1 \cup Q2) = Cardinality(Q1) + Cardinality(Q2) - Cardinality(Q1 \cap Q2)
             BY FS_Union
@@ -34,7 +34,7 @@ PROOF
         <2>3. QED BY <2>1, <2>2, FS_CardinalityType
     <1>3. Cardinality(Q1) + Cardinality(Q2) < Cardinality(Q1) + Cardinality(Q2) + Cardinality(Q1 \cap Q2)
         <2>1. Cardinality(Q1) * 2 > Cardinality(cfg) /\ Cardinality(Q2) * 2 > Cardinality(cfg)
-            BY <1>1 DEF QuorumsAt, Quorums, TypeOK
+            BY <1>1 DEF Quorums, TypeOK
         <2>2. Cardinality(Q1) + Cardinality(Q2) > Cardinality(cfg)
             BY <2>1, FS_CardinalityType, ServerIsFinite
         <2>3. QED BY <2>2, <1>2, FS_CardinalityType
