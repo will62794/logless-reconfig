@@ -31,7 +31,7 @@ THEOREM MRRNextRefinesMLDRNext == [Next]_vars => [IMLDR!Next]_IMLDR!vars
                 BY <3>2 DEF OSM!GetEntries, csmVars
             <3>3. CASE \E s, t \in Server : OSM!RollbackEntries(s, t) /\ UNCHANGED csmVars
                 BY <3>3 DEF OSM!RollbackEntries, csmVars
-            <3>4. CASE \E s \in Server :  \E Q \in OSM!QuorumsAt(s) : OSM!CommitEntry(s, Q) /\ UNCHANGED csmVars
+            <3>4. CASE \E s \in Server :  \E Q \in Quorums(config[s]) : OSM!CommitEntry(s, Q) /\ UNCHANGED csmVars
                 BY <3>4 DEF OSM!CommitEntry, csmVars
             <3>5. QED BY <2>1,<3>1,<3>2,<3>3,<3>4 DEF OSMNext
         <2>2. CASE CSMNext /\ UNCHANGED osmVars
@@ -40,7 +40,7 @@ THEOREM MRRNextRefinesMLDRNext == [Next]_vars => [IMLDR!Next]_IMLDR!vars
                     BY <3>1 
                     DEF CSM!Reconfig, IMLDR!Reconfig, CSM!ConfigQuorumCheck, CSM!TermQuorumCheck, CSM!QuorumsOverlap,
                         IMLDR!ConfigQuorumCheck, IMLDR!TermQuorumCheck, IMLDR!QuorumsOverlap, CSM!Quorums, IMLDR!Quorums, 
-                        Quorums, IMLDR!QuorumsAt, CSM!QuorumsAt, IsCommitted, osmVars, CSM!Cardinality, IMLDR!Cardinality
+                        Quorums, IsCommitted, osmVars, CSM!Cardinality, IMLDR!Cardinality
             <3>2. CASE \E s,t \in Server : CSM!SendConfig(s, t) /\ UNCHANGED osmVars
                     BY <3>2 DEF CSM!SendConfig, IMLDR!SendConfig, IMLDR!IsNewerConfig, CSM!IsNewerConfig                    
             <3>3. QED BY <2>2,<3>2,<3>1 DEF CSMNext, osmVars
