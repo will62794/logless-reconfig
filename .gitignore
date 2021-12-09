@@ -3,6 +3,8 @@
 *.toolbox/*.log
 *.toolbox/*.pdf
 *.toolbox/*.tex
+*.tex
+*.dvi
 *.toolbox/*___Reconfig*_SnapShot*.launch
 *.toolbox/*___Inductive*_SnapShot*.launch
 *.toolbox/**/*.tla
