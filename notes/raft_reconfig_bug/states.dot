@@ -1,0 +1,91 @@
+strict digraph DiskGraph {
+nodesep=0.35;
+subgraph cluster_graph {
+color="white";
+-1379466623488414390 [label="Q = {}",style = filled]
+-1379466623488414390 -> 4973092614618128577 [label="",color="black",fontcolor="black"];
+4973092614618128577 [label="Q = {s1}"];
+-1379466623488414390 -> 8875553052747699036 [label="",color="black",fontcolor="black"];
+8875553052747699036 [label="Q = {s2}"];
+-1379466623488414390 -> 7982947607994727895 [label="",color="black",fontcolor="black"];
+7982947607994727895 [label="Q = {s3}"];
+-1379466623488414390 -> 536814883088790630 [label="",color="black",fontcolor="black"];
+536814883088790630 [label="Q = {s4}"];
+4973092614618128577 -> -2824644315829447927 [label="",color="black",fontcolor="black"];
+-2824644315829447927 [label="Q = {s1, s2}"];
+4973092614618128577 -> -3663198901087388286 [label="",color="black",fontcolor="black"];
+-3663198901087388286 [label="Q = {s1, s3}"];
+4973092614618128577 -> -6587725270388067277 [label="",color="black",fontcolor="black"];
+-6587725270388067277 [label="Q = {s1, s4}"];
+4973092614618128577 -> -1379466623488414390 [label="",color="black",fontcolor="black"];
+8875553052747699036 -> -2824644315829447927 [label="",color="black",fontcolor="black"];
+8875553052747699036 -> 1578676454917650522 [label="",color="black",fontcolor="black"];
+1578676454917650522 [label="Q = {s2, s3}"];
+8875553052747699036 -> 8958384340301099499 [label="",color="black",fontcolor="black"];
+8958384340301099499 [label="Q = {s2, s4}"];
+8875553052747699036 -> -1379466623488414390 [label="",color="black",fontcolor="black"];
+7982947607994727895 -> -3663198901087388286 [label="",color="black",fontcolor="black"];
+7982947607994727895 -> 1578676454917650522 [label="",color="black",fontcolor="black"];
+7982947607994727895 -> -6113513403071362892 [label="",color="black",fontcolor="black"];
+-6113513403071362892 [label="Q = {s3, s4}"];
+7982947607994727895 -> -1379466623488414390 [label="",color="black",fontcolor="black"];
+536814883088790630 -> -6587725270388067277 [label="",color="black",fontcolor="black"];
+536814883088790630 -> 8958384340301099499 [label="",color="black",fontcolor="black"];
+536814883088790630 -> -6113513403071362892 [label="",color="black",fontcolor="black"];
+536814883088790630 -> -1379466623488414390 [label="",color="black",fontcolor="black"];
+-2824644315829447927 -> 4821665891323188677 [label="",color="black",fontcolor="black"];
+4821665891323188677 [label="Q = {s1, s2, s3}"];
+-2824644315829447927 -> 3122113105440382068 [label="",color="black",fontcolor="black"];
+3122113105440382068 [label="Q = {s1, s2, s4}"];
+-2824644315829447927 -> 8875553052747699036 [label="",color="black",fontcolor="black"];
+-2824644315829447927 -> 4973092614618128577 [label="",color="black",fontcolor="black"];
+-3663198901087388286 -> 4821665891323188677 [label="",color="black",fontcolor="black"];
+-3663198901087388286 -> -276683611940608725 [label="",color="black",fontcolor="black"];
+-276683611940608725 [label="Q = {s1, s3, s4}"];
+-3663198901087388286 -> 7982947607994727895 [label="",color="black",fontcolor="black"];
+-3663198901087388286 -> 4973092614618128577 [label="",color="black",fontcolor="black"];
+-6587725270388067277 -> 3122113105440382068 [label="",color="black",fontcolor="black"];
+-6587725270388067277 -> -276683611940608725 [label="",color="black",fontcolor="black"];
+-6587725270388067277 -> 536814883088790630 [label="",color="black",fontcolor="black"];
+-6587725270388067277 -> 4973092614618128577 [label="",color="black",fontcolor="black"];
+1578676454917650522 -> 4821665891323188677 [label="",color="black",fontcolor="black"];
+1578676454917650522 -> 4631703908352772359 [label="",color="black",fontcolor="black"];
+4631703908352772359 [label="Q = {s2, s3, s4}"];
+1578676454917650522 -> 7982947607994727895 [label="",color="black",fontcolor="black"];
+1578676454917650522 -> 8875553052747699036 [label="",color="black",fontcolor="black"];
+8958384340301099499 -> 3122113105440382068 [label="",color="black",fontcolor="black"];
+8958384340301099499 -> 4631703908352772359 [label="",color="black",fontcolor="black"];
+8958384340301099499 -> 536814883088790630 [label="",color="black",fontcolor="black"];
+8958384340301099499 -> 8875553052747699036 [label="",color="black",fontcolor="black"];
+-6113513403071362892 -> -276683611940608725 [label="",color="black",fontcolor="black"];
+-6113513403071362892 -> 4631703908352772359 [label="",color="black",fontcolor="black"];
+-6113513403071362892 -> 536814883088790630 [label="",color="black",fontcolor="black"];
+-6113513403071362892 -> 7982947607994727895 [label="",color="black",fontcolor="black"];
+4821665891323188677 -> 443846711588827631 [label="",color="black",fontcolor="black"];
+443846711588827631 [label="Q = {s1, s2, s3, s4}"];
+4821665891323188677 -> 1578676454917650522 [label="",color="black",fontcolor="black"];
+4821665891323188677 -> -3663198901087388286 [label="",color="black",fontcolor="black"];
+4821665891323188677 -> -2824644315829447927 [label="",color="black",fontcolor="black"];
+3122113105440382068 -> 443846711588827631 [label="",color="black",fontcolor="black"];
+3122113105440382068 -> 8958384340301099499 [label="",color="black",fontcolor="black"];
+3122113105440382068 -> -6587725270388067277 [label="",color="black",fontcolor="black"];
+3122113105440382068 -> -2824644315829447927 [label="",color="black",fontcolor="black"];
+-276683611940608725 -> 443846711588827631 [label="",color="black",fontcolor="black"];
+-276683611940608725 -> -6113513403071362892 [label="",color="black",fontcolor="black"];
+-276683611940608725 -> -6587725270388067277 [label="",color="black",fontcolor="black"];
+-276683611940608725 -> -3663198901087388286 [label="",color="black",fontcolor="black"];
+4631703908352772359 -> 443846711588827631 [label="",color="black",fontcolor="black"];
+4631703908352772359 -> -6113513403071362892 [label="",color="black",fontcolor="black"];
+4631703908352772359 -> 8958384340301099499 [label="",color="black",fontcolor="black"];
+4631703908352772359 -> 1578676454917650522 [label="",color="black",fontcolor="black"];
+443846711588827631 -> 4631703908352772359 [label="",color="black",fontcolor="black"];
+443846711588827631 -> -276683611940608725 [label="",color="black",fontcolor="black"];
+443846711588827631 -> 3122113105440382068 [label="",color="black",fontcolor="black"];
+443846711588827631 -> 4821665891323188677 [label="",color="black",fontcolor="black"];
+{rank = same; -1379466623488414390;}
+{rank = same; 8875553052747699036;7982947607994727895;536814883088790630;4973092614618128577;}
+{rank = same; 8958384340301099499;-6587725270388067277;-2824644315829447927;-6113513403071362892;-3663198901087388286;1578676454917650522;}
+{rank = same; -276683611940608725;4821665891323188677;3122113105440382068;4631703908352772359;}
+{rank = same; 443846711588827631;}
+}
+}
