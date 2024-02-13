@@ -2,90 +2,518 @@ strict digraph DiskGraph {
 nodesep=0.35;
 subgraph cluster_graph {
 color="white";
--1379466623488414390 [label="Q = {}",style = filled]
--1379466623488414390 -> 4973092614618128577 [label="",color="black",fontcolor="black"];
-4973092614618128577 [label="Q = {s1}"];
--1379466623488414390 -> 8875553052747699036 [label="",color="black",fontcolor="black"];
-8875553052747699036 [label="Q = {s2}"];
--1379466623488414390 -> 7982947607994727895 [label="",color="black",fontcolor="black"];
-7982947607994727895 [label="Q = {s3}"];
--1379466623488414390 -> 536814883088790630 [label="",color="black",fontcolor="black"];
-536814883088790630 [label="Q = {s4}"];
-4973092614618128577 -> -2824644315829447927 [label="",color="black",fontcolor="black"];
--2824644315829447927 [label="Q = {s1, s2}"];
-4973092614618128577 -> -3663198901087388286 [label="",color="black",fontcolor="black"];
--3663198901087388286 [label="Q = {s1, s3}"];
-4973092614618128577 -> -6587725270388067277 [label="",color="black",fontcolor="black"];
--6587725270388067277 [label="Q = {s1, s4}"];
-4973092614618128577 -> -1379466623488414390 [label="",color="black",fontcolor="black"];
-8875553052747699036 -> -2824644315829447927 [label="",color="black",fontcolor="black"];
-8875553052747699036 -> 1578676454917650522 [label="",color="black",fontcolor="black"];
-1578676454917650522 [label="Q = {s2, s3}"];
-8875553052747699036 -> 8958384340301099499 [label="",color="black",fontcolor="black"];
-8958384340301099499 [label="Q = {s2, s4}"];
-8875553052747699036 -> -1379466623488414390 [label="",color="black",fontcolor="black"];
-7982947607994727895 -> -3663198901087388286 [label="",color="black",fontcolor="black"];
-7982947607994727895 -> 1578676454917650522 [label="",color="black",fontcolor="black"];
-7982947607994727895 -> -6113513403071362892 [label="",color="black",fontcolor="black"];
--6113513403071362892 [label="Q = {s3, s4}"];
-7982947607994727895 -> -1379466623488414390 [label="",color="black",fontcolor="black"];
-536814883088790630 -> -6587725270388067277 [label="",color="black",fontcolor="black"];
-536814883088790630 -> 8958384340301099499 [label="",color="black",fontcolor="black"];
-536814883088790630 -> -6113513403071362892 [label="",color="black",fontcolor="black"];
-536814883088790630 -> -1379466623488414390 [label="",color="black",fontcolor="black"];
--2824644315829447927 -> 4821665891323188677 [label="",color="black",fontcolor="black"];
-4821665891323188677 [label="Q = {s1, s2, s3}"];
--2824644315829447927 -> 3122113105440382068 [label="",color="black",fontcolor="black"];
-3122113105440382068 [label="Q = {s1, s2, s4}"];
--2824644315829447927 -> 8875553052747699036 [label="",color="black",fontcolor="black"];
--2824644315829447927 -> 4973092614618128577 [label="",color="black",fontcolor="black"];
--3663198901087388286 -> 4821665891323188677 [label="",color="black",fontcolor="black"];
--3663198901087388286 -> -276683611940608725 [label="",color="black",fontcolor="black"];
--276683611940608725 [label="Q = {s1, s3, s4}"];
--3663198901087388286 -> 7982947607994727895 [label="",color="black",fontcolor="black"];
--3663198901087388286 -> 4973092614618128577 [label="",color="black",fontcolor="black"];
--6587725270388067277 -> 3122113105440382068 [label="",color="black",fontcolor="black"];
--6587725270388067277 -> -276683611940608725 [label="",color="black",fontcolor="black"];
--6587725270388067277 -> 536814883088790630 [label="",color="black",fontcolor="black"];
--6587725270388067277 -> 4973092614618128577 [label="",color="black",fontcolor="black"];
-1578676454917650522 -> 4821665891323188677 [label="",color="black",fontcolor="black"];
-1578676454917650522 -> 4631703908352772359 [label="",color="black",fontcolor="black"];
-4631703908352772359 [label="Q = {s2, s3, s4}"];
-1578676454917650522 -> 7982947607994727895 [label="",color="black",fontcolor="black"];
-1578676454917650522 -> 8875553052747699036 [label="",color="black",fontcolor="black"];
-8958384340301099499 -> 3122113105440382068 [label="",color="black",fontcolor="black"];
-8958384340301099499 -> 4631703908352772359 [label="",color="black",fontcolor="black"];
-8958384340301099499 -> 536814883088790630 [label="",color="black",fontcolor="black"];
-8958384340301099499 -> 8875553052747699036 [label="",color="black",fontcolor="black"];
--6113513403071362892 -> -276683611940608725 [label="",color="black",fontcolor="black"];
--6113513403071362892 -> 4631703908352772359 [label="",color="black",fontcolor="black"];
--6113513403071362892 -> 536814883088790630 [label="",color="black",fontcolor="black"];
--6113513403071362892 -> 7982947607994727895 [label="",color="black",fontcolor="black"];
-4821665891323188677 -> 443846711588827631 [label="",color="black",fontcolor="black"];
-443846711588827631 [label="Q = {s1, s2, s3, s4}"];
-4821665891323188677 -> 1578676454917650522 [label="",color="black",fontcolor="black"];
-4821665891323188677 -> -3663198901087388286 [label="",color="black",fontcolor="black"];
-4821665891323188677 -> -2824644315829447927 [label="",color="black",fontcolor="black"];
-3122113105440382068 -> 443846711588827631 [label="",color="black",fontcolor="black"];
-3122113105440382068 -> 8958384340301099499 [label="",color="black",fontcolor="black"];
-3122113105440382068 -> -6587725270388067277 [label="",color="black",fontcolor="black"];
-3122113105440382068 -> -2824644315829447927 [label="",color="black",fontcolor="black"];
--276683611940608725 -> 443846711588827631 [label="",color="black",fontcolor="black"];
--276683611940608725 -> -6113513403071362892 [label="",color="black",fontcolor="black"];
--276683611940608725 -> -6587725270388067277 [label="",color="black",fontcolor="black"];
--276683611940608725 -> -3663198901087388286 [label="",color="black",fontcolor="black"];
-4631703908352772359 -> 443846711588827631 [label="",color="black",fontcolor="black"];
-4631703908352772359 -> -6113513403071362892 [label="",color="black",fontcolor="black"];
-4631703908352772359 -> 8958384340301099499 [label="",color="black",fontcolor="black"];
-4631703908352772359 -> 1578676454917650522 [label="",color="black",fontcolor="black"];
-443846711588827631 -> 4631703908352772359 [label="",color="black",fontcolor="black"];
-443846711588827631 -> -276683611940608725 [label="",color="black",fontcolor="black"];
-443846711588827631 -> 3122113105440382068 [label="",color="black",fontcolor="black"];
-443846711588827631 -> 4821665891323188677 [label="",color="black",fontcolor="black"];
-{rank = same; -1379466623488414390;}
-{rank = same; 8875553052747699036;7982947607994727895;536814883088790630;4973092614618128577;}
-{rank = same; 8958384340301099499;-6587725270388067277;-2824644315829447927;-6113513403071362892;-3663198901087388286;1578676454917650522;}
-{rank = same; -276683611940608725;4821665891323188677;3122113105440382068;4631703908352772359;}
-{rank = same; 443846711588827631;}
+-5897241680287429783 [label="Q = {}",style = filled]
+4677452993036435758 [label="Q = {{}}",style = filled]
+-1828135404211443536 [label="Q = {{s1}}",style = filled]
+4809910837343895664 [label="Q = {{s2}}",style = filled]
+-458462522092572169 [label="Q = {{s3}}",style = filled]
+-7482234524543606622 [label="Q = {{s1, s2}}",style = filled]
+2543067008213373221 [label="Q = {{s1, s3}}",style = filled]
+8313013233828251514 [label="Q = {{s2, s3}}",style = filled]
+-8202496112287400134 [label="Q = {{s1, s2, s3}}",style = filled]
+7054717814775879332 [label="Q = {{}, {s1}}",style = filled]
+-4213556583494304156 [label="Q = {{}, {s2}}",style = filled]
+9143848979403427811 [label="Q = {{}, {s3}}",style = filled]
+-7499876867742564635 [label="Q = {{}, {s1, s2}}",style = filled]
+3208848914957471586 [label="Q = {{}, {s1, s3}}",style = filled]
+8979922105585277245 [label="Q = {{}, {s2, s3}}",style = filled]
+5601960921324536914 [label="Q = {{}, {s1, s2, s3}}",style = filled]
+1567934424803968336 [label="Q = {{s1}, {s2}}",style = filled]
+-5863292391280806697 [label="Q = {{s1}, {s3}}",style = filled]
+-4355516848776852485 [label="Q = {{s1}, {s1, s2}}",style = filled]
+8713640848875960956 [label="Q = {{s1}, {s1, s3}}",style = filled]
+2952701827007851555 [label="Q = {{s1}, {s2, s3}}",style = filled]
+7290032104346206298 [label="Q = {{s1}, {s1, s2, s3}}",style = filled]
+518914508037485654 [label="Q = {{s2}, {s3}}",style = filled]
+8318561556932016949 [label="Q = {{s2}, {s1, s2}}",style = filled]
+-4030021250244949326 [label="Q = {{s2}, {s1, s3}}",style = filled]
+-7492453196032811795 [label="Q = {{s2}, {s2, s3}}",style = filled]
+3597752413633725869 [label="Q = {{s2}, {s1, s2, s3}}",style = filled]
+2079446205642904719 [label="Q = {{s3}, {s1, s2}}",style = filled]
+-6361149887541025528 [label="Q = {{s3}, {s1, s3}}",style = filled]
+-599067378130652329 [label="Q = {{s3}, {s2, s3}}",style = filled]
+166725488344774912 [label="Q = {{s3}, {s1, s2, s3}}",style = filled]
+4147452228527201306 [label="Q = {{s1, s2}, {s1, s3}}",style = filled]
+7609321224289815109 [label="Q = {{s1, s2}, {s2, s3}}",style = filled]
+1868666324023312146 [label="Q = {{s1, s2}, {s1, s2, s3}}",style = filled]
+446814799966545407 [label="Q = {{s1, s3}, {s2, s3}}",style = filled]
+3049866232902615999 [label="Q = {{s1, s3}, {s1, s2, s3}}",style = filled]
+-4546574454558577230 [label="Q = {{s2, s3}, {s1, s2, s3}}",style = filled]
+270209629662345203 [label="Q = {{}, {s1}, {s2}}",style = filled]
+-5125957748012284300 [label="Q = {{}, {s1}, {s3}}",style = filled]
+-2258470031052018826 [label="Q = {{}, {s1}, {s1, s2}}",style = filled]
+6614459467301886705 [label="Q = {{}, {s1}, {s1, s3}}",style = filled]
+854645246092971182 [label="Q = {{}, {s1}, {s2, s3}}",style = filled]
+8855831085276413719 [label="Q = {{}, {s1}, {s1, s2, s3}}",style = filled]
+1246964702353491701 [label="Q = {{}, {s2}, {s3}}",style = filled]
+5789133580702391224 [label="Q = {{}, {s2}, {s1, s2}}",style = filled]
+-1498527704520725953 [label="Q = {{}, {s2}, {s1, s3}}",style = filled]
+-4962086649462555552 [label="Q = {{}, {s2}, {s2, s3}}",style = filled]
+3323821600390626016 [label="Q = {{}, {s2}, {s1, s2, s3}}",style = filled]
+4611115057702188034 [label="Q = {{}, {s3}, {s1, s2}}",style = filled]
+-8890402424822184571 [label="Q = {{}, {s3}, {s1, s3}}",style = filled]
+-3131696515356732454 [label="Q = {{}, {s3}, {s2, s3}}",style = filled]
+2133876171345479245 [label="Q = {{}, {s3}, {s1, s2, s3}}",style = filled]
+2757306002569749335 [label="Q = {{}, {s1, s2}, {s1, s3}}",style = filled]
+8526690369031533832 [label="Q = {{}, {s1, s2}, {s2, s3}}",style = filled]
+1554140100929362555 [label="Q = {{}, {s1, s2}, {s1, s2, s3}}",style = filled]
+1872997518444878514 [label="Q = {{}, {s1, s3}, {s2, s3}}",style = filled]
+2750838458622666454 [label="Q = {{}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-3703948246664951589 [label="Q = {{}, {s2, s3}, {s1, s2, s3}}",style = filled]
+5621423372098060329 [label="Q = {{s1}, {s2}, {s3}}",style = filled]
+2897071694249384892 [label="Q = {{s1}, {s2}, {s1, s2}}",style = filled]
+-7829650937979721157 [label="Q = {{s1}, {s2}, {s1, s3}}",style = filled]
+-4377369709452149660 [label="Q = {{s1}, {s2}, {s2, s3}}",style = filled]
+8009014139271588011 [label="Q = {{s1}, {s2}, {s1, s2, s3}}",style = filled]
+5160753247510918150 [label="Q = {{s1}, {s3}, {s1, s2}}",style = filled]
+-216833504486619775 [label="Q = {{s1}, {s3}, {s1, s3}}",style = filled]
+-5986779695414602786 [label="Q = {{s1}, {s3}, {s2, s3}}",style = filled]
+6672118985735492614 [label="Q = {{s1}, {s3}, {s1, s2, s3}}",style = filled]
+7441854223608213788 [label="Q = {{s1}, {s1, s2}, {s1, s3}}",style = filled]
+3986194165687838531 [label="Q = {{s1}, {s1, s2}, {s2, s3}}",style = filled]
+308829722139555388 [label="Q = {{s1}, {s1, s2}, {s1, s2, s3}}",style = filled]
+6411741164407933177 [label="Q = {{s1}, {s1, s3}, {s2, s3}}",style = filled]
+4032047463099501201 [label="Q = {{s1}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-2503813929034406756 [label="Q = {{s1}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-5968762586804397557 [label="Q = {{s2}, {s3}, {s1, s2}}",style = filled]
+1606017751650478988 [label="Q = {{s2}, {s3}, {s1, s3}}",style = filled]
+5070683913525902803 [label="Q = {{s2}, {s3}, {s2, s3}}",style = filled]
+3333812165385567607 [label="Q = {{s2}, {s3}, {s1, s2, s3}}",style = filled]
+1556823396361279597 [label="Q = {{s2}, {s1, s2}, {s1, s3}}",style = filled]
+5011936996646915634 [label="Q = {{s2}, {s1, s2}, {s2, s3}}",style = filled]
+-295683354881325794 [label="Q = {{s2}, {s1, s2}, {s1, s2, s3}}",style = filled]
+3037432499635560840 [label="Q = {{s2}, {s1, s3}, {s2, s3}}",style = filled]
+-4010421663459444301 [label="Q = {{s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+2516387457981929406 [label="Q = {{s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-2058962624910731643 [label="Q = {{s3}, {s1, s2}, {s1, s3}}",style = filled]
+-5514076225418215206 [label="Q = {{s3}, {s1, s2}, {s2, s3}}",style = filled]
+-5872162444509817856 [label="Q = {{s3}, {s1, s2}, {s1, s2, s3}}",style = filled]
+-2535304470267203744 [label="Q = {{s3}, {s1, s3}, {s2, s3}}",style = filled]
+-7116680895026681683 [label="Q = {{s3}, {s1, s3}, {s1, s2, s3}}",style = filled]
+8613248498236982944 [label="Q = {{s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-6094871281071661898 [label="Q = {{s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+2809443042694106728 [label="Q = {{s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-3726383175693459355 [label="Q = {{s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-7409163630419414661 [label="Q = {{s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+7260015656918940831 [label="Q = {{}, {s1}, {s2}, {s3}}",style = filled]
+640751675351991126 [label="Q = {{}, {s1}, {s2}, {s1, s2}}",style = filled]
+-5510326839615196463 [label="Q = {{}, {s1}, {s2}, {s1, s3}}",style = filled]
+-2049020823741012850 [label="Q = {{}, {s1}, {s2}, {s2, s3}}",style = filled]
+8499731844076521669 [label="Q = {{}, {s1}, {s2}, {s1, s2, s3}}",style = filled]
+7444083668400844012 [label="Q = {{}, {s1}, {s3}, {s1, s2}}",style = filled]
+-2581204666315874965 [label="Q = {{}, {s1}, {s3}, {s1, s3}}",style = filled]
+-8342161237222634700 [label="Q = {{}, {s1}, {s3}, {s2, s3}}",style = filled]
+5064445273577337960 [label="Q = {{}, {s1}, {s3}, {s1, s2, s3}}",style = filled]
+9049526079805755762 [label="Q = {{}, {s1}, {s1, s2}, {s1, s3}}",style = filled]
+3279016904338048813 [label="Q = {{}, {s1}, {s1, s2}, {s2, s3}}",style = filled]
+-7965968090314543830 [label="Q = {{}, {s1}, {s1, s2}, {s1, s2, s3}}",style = filled]
+4768100787837741207 [label="Q = {{}, {s1}, {s1, s3}, {s2, s3}}",style = filled]
+-6715244130272931449 [label="Q = {{}, {s1}, {s1, s3}, {s1, s2, s3}}",style = filled]
+5222687634727059338 [label="Q = {{}, {s1}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-8216064257248951583 [label="Q = {{}, {s2}, {s3}, {s1, s2}}",style = filled]
+3934360164108104550 [label="Q = {{}, {s2}, {s3}, {s1, s3}}",style = filled]
+7390036714820658489 [label="Q = {{}, {s2}, {s3}, {s2, s3}}",style = filled]
+3788849421327949081 [label="Q = {{}, {s2}, {s3}, {s1, s2, s3}}",style = filled]
+1101785797360449539 [label="Q = {{}, {s2}, {s1, s2}, {s1, s3}}",style = filled]
+6871750714215624284 [label="Q = {{}, {s2}, {s1, s2}, {s2, s3}}",style = filled]
+7989272810890206728 [label="Q = {{}, {s2}, {s1, s2}, {s1, s2, s3}}",style = filled]
+3528436419991028198 [label="Q = {{}, {s2}, {s1, s3}, {s2, s3}}",style = filled]
+6728943516480070309 [label="Q = {{}, {s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-5199935960715670360 [label="Q = {{}, {s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-450994793389017365 [label="Q = {{}, {s3}, {s1, s2}, {s1, s3}}",style = filled]
+-6220959710466957132 [label="Q = {{}, {s3}, {s1, s2}, {s2, s3}}",style = filled]
+4304314908710522646 [label="Q = {{}, {s3}, {s1, s2}, {s1, s2, s3}}",style = filled]
+-4179220618633310450 [label="Q = {{}, {s3}, {s1, s3}, {s2, s3}}",style = filled]
+578260284555244475 [label="Q = {{}, {s3}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-2111489919337325130 [label="Q = {{}, {s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+4490289044487391136 [label="Q = {{}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+-4733110311326338808 [label="Q = {{}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+6117157744451690245 [label="Q = {{}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+108337486467780123 [label="Q = {{}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-1831568217330827016 [label="Q = {{s1}, {s2}, {s3}, {s1, s2}}",style = filled]
+6771158495847854463 [label="Q = {{s1}, {s2}, {s3}, {s1, s3}}",style = filled]
+1000067687235692320 [label="Q = {{s1}, {s2}, {s3}, {s2, s3}}",style = filled]
+-3333130553136512204 [label="Q = {{s1}, {s2}, {s3}, {s1, s2, s3}}",style = filled]
+-1558050536299485650 [label="Q = {{s1}, {s2}, {s1, s2}, {s1, s3}}",style = filled]
+-5010331760540143503 [label="Q = {{s1}, {s2}, {s1, s2}, {s2, s3}}",style = filled]
+3289274496107996822 [label="Q = {{s1}, {s2}, {s1, s2}, {s1, s2, s3}}",style = filled]
+-3036161548887023669 [label="Q = {{s1}, {s2}, {s1, s3}, {s2, s3}}",style = filled]
+2168556385262803515 [label="Q = {{s1}, {s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-816174921367702474 [label="Q = {{s1}, {s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+2060216017564559558 [label="Q = {{s1}, {s3}, {s1, s2}, {s1, s3}}",style = filled]
+5512497241491242649 [label="Q = {{s1}, {s3}, {s1, s2}, {s2, s3}}",style = filled]
+8701446418529990536 [label="Q = {{s1}, {s3}, {s1, s2}, {s1, s2, s3}}",style = filled]
+2533989404026982691 [label="Q = {{s1}, {s3}, {s1, s3}, {s2, s3}}",style = filled]
+5439262421995309861 [label="Q = {{s1}, {s3}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-6789110553653779160 [label="Q = {{s1}, {s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+9019292682689134398 [label="Q = {{s1}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+8272690401556144230 [label="Q = {{s1}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-7459474290187137429 [label="Q = {{s1}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-3666218752842965131 [label="Q = {{s1}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-2781267934943008607 [label="Q = {{s2}, {s3}, {s1, s2}, {s1, s3}}",style = filled]
+-8542771001947111682 [label="Q = {{s2}, {s3}, {s1, s2}, {s2, s3}}",style = filled]
+-1013397939116755782 [label="Q = {{s2}, {s3}, {s1, s2}, {s1, s2, s3}}",style = filled]
+-1811817118653935292 [label="Q = {{s2}, {s3}, {s1, s3}, {s2, s3}}",style = filled]
+-4444431877093242857 [label="Q = {{s2}, {s3}, {s1, s3}, {s1, s2, s3}}",style = filled]
+2947090766781638170 [label="Q = {{s2}, {s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-863311845699535860 [label="Q = {{s2}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+-745507288033225662 [label="Q = {{s2}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+2239259484220668495 [label="Q = {{s2}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+5365779966417070929 [label="Q = {{s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-8295324823739120926 [label="Q = {{s3}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+-8610823037314893730 [label="Q = {{s3}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+7076326684205340243 [label="Q = {{s3}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+3985773016360060749 [label="Q = {{s3}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+1252844489843602271 [label="Q = {{s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+1005547338513413425 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s2}}",style = filled]
+-5289652216366988106 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s3}}",style = filled]
+-1837352304585469207 [label="Q = {{}, {s1}, {s2}, {s3}, {s2, s3}}",style = filled]
+2883464792067026081 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s2, s3}}",style = filled]
+1430730513492937147 [label="Q = {{}, {s1}, {s2}, {s1, s2}, {s1, s3}}",style = filled]
+4885826530320162788 [label="Q = {{}, {s1}, {s2}, {s1, s2}, {s2, s3}}",style = filled]
+-7081473657490770226 [label="Q = {{}, {s1}, {s2}, {s1, s2}, {s1, s2, s3}}",style = filled]
+3199574098509279326 [label="Q = {{}, {s1}, {s2}, {s1, s3}, {s2, s3}}",style = filled]
+-5907572576292205981 [label="Q = {{}, {s1}, {s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+4949466693051524206 [label="Q = {{}, {s1}, {s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-1932867679923910829 [label="Q = {{}, {s1}, {s3}, {s1, s2}, {s1, s3}}",style = filled]
+-5387963696965496564 [label="Q = {{}, {s1}, {s3}, {s1, s2}, {s2, s3}}",style = filled]
+-3972759905962678320 [label="Q = {{}, {s1}, {s3}, {s1, s2}, {s1, s2, s3}}",style = filled]
+-2697443458331836746 [label="Q = {{}, {s1}, {s3}, {s1, s3}, {s2, s3}}",style = filled]
+-333142286851089539 [label="Q = {{}, {s1}, {s3}, {s1, s3}, {s1, s2, s3}}",style = filled]
+1284774301997823344 [label="Q = {{}, {s1}, {s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-3659559076288123034 [label="Q = {{}, {s1}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+2118330209019591057 [label="Q = {{}, {s1}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-589463940641957988 [label="Q = {{}, {s1}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-6722278323877738878 [label="Q = {{}, {s1}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+2367973199121319732 [label="Q = {{}, {s2}, {s3}, {s1, s2}, {s1, s3}}",style = filled]
+8127787390365536619 [label="Q = {{}, {s2}, {s3}, {s1, s2}, {s2, s3}}",style = filled]
+4752418498136253666 [label="Q = {{}, {s2}, {s3}, {s1, s2}, {s1, s2, s3}}",style = filled]
+2261204445715316433 [label="Q = {{}, {s2}, {s3}, {s1, s3}, {s2, s3}}",style = filled]
+8236626601783220303 [label="Q = {{}, {s2}, {s3}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-7423480364961139134 [label="Q = {{}, {s2}, {s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+4906868551052962900 [label="Q = {{}, {s2}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+-7346427490856972875 [label="Q = {{}, {s2}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+8122277868198388664 [label="Q = {{}, {s2}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+2728132988526965414 [label="Q = {{}, {s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+4394741953119507130 [label="Q = {{}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+-1789226350477401687 [label="Q = {{}, {s3}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+981639224311910308 [label="Q = {{}, {s3}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+6411750913498963642 [label="Q = {{}, {s3}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+5852967859702681437 [label="Q = {{}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+335173372565562887 [label="Q = {{s1}, {s2}, {s3}, {s1, s2}, {s1, s3}}",style = filled]
+6102886490018558040 [label="Q = {{s1}, {s2}, {s3}, {s1, s2}, {s2, s3}}",style = filled]
+-1860090672213609417 [label="Q = {{s1}, {s2}, {s3}, {s1, s2}, {s1, s2, s3}}",style = filled]
+4259019908170391522 [label="Q = {{s1}, {s2}, {s3}, {s1, s3}, {s2, s3}}",style = filled]
+-3057317067145688934 [label="Q = {{s1}, {s2}, {s3}, {s1, s3}, {s1, s2, s3}}",style = filled]
+4550366126713857687 [label="Q = {{s1}, {s2}, {s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-2034245077310325631 [label="Q = {{s1}, {s2}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+-5141062337249933573 [label="Q = {{s1}, {s2}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+5914168298930514166 [label="Q = {{s1}, {s2}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+537967313978587624 [label="Q = {{s1}, {s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-7268501282503441809 [label="Q = {{s1}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+-4215338424521135385 [label="Q = {{s1}, {s3}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+3401347708016510186 [label="Q = {{s1}, {s3}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+8813655969863964148 [label="Q = {{s1}, {s3}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+2052616227499352378 [label="Q = {{s1}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+1605699080749691223 [label="Q = {{s2}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+1729727205041664881 [label="Q = {{s2}, {s3}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-957817516029944452 [label="Q = {{s2}, {s3}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-6354226288010163102 [label="Q = {{s2}, {s3}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+3408465967049406531 [label="Q = {{s2}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-1809961790823900845 [label="Q = {{s3}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-3747109036233639876 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s2}, {s1, s3}}",style = filled]
+-7212355739937558941 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s2}, {s2, s3}}",style = filled]
+-2070967020168138327 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s2}, {s1, s2, s3}}",style = filled]
+-846032081719688743 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s3}, {s2, s3}}",style = filled]
+-3386731902081807100 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s3}, {s1, s2, s3}}",style = filled]
+4200722614300926729 [label="Q = {{}, {s1}, {s2}, {s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-1825862248570013409 [label="Q = {{}, {s1}, {s2}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+383296093530309146 [label="Q = {{}, {s1}, {s2}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-1160342703819559913 [label="Q = {{}, {s1}, {s2}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-5007505097093432055 [label="Q = {{}, {s1}, {s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-7040028350713313295 [label="Q = {{}, {s1}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+8680379077278019078 [label="Q = {{}, {s1}, {s3}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+-7871454909271998453 [label="Q = {{}, {s1}, {s3}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-4060382475652607723 [label="Q = {{}, {s1}, {s3}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+8053000871556231342 [label="Q = {{}, {s1}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+1379585664565458121 [label="Q = {{}, {s2}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+-6487501832529037424 [label="Q = {{}, {s2}, {s3}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+5711651494925441437 [label="Q = {{}, {s2}, {s3}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+1884679571354929283 [label="Q = {{}, {s2}, {s3}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+6697722951559866839 [label="Q = {{}, {s2}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-7683172427452299065 [label="Q = {{}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-7136417808747437023 [label="Q = {{s1}, {s2}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+-8934858161566540696 [label="Q = {{s1}, {s2}, {s3}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+7977315738575090277 [label="Q = {{s1}, {s2}, {s3}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+4310359042644075387 [label="Q = {{s1}, {s2}, {s3}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+3800173940648968327 [label="Q = {{s1}, {s2}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-211639516559990377 [label="Q = {{s1}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-5540406144425523308 [label="Q = {{s2}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-8880144718085495151 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}}",style = filled]
+-6139007067629419206 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s2}, {s1, s3}, {s1, s2, s3}}",style = filled]
+4645957969004145463 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s2}, {s2, s3}, {s1, s2, s3}}",style = filled]
+1521553634216966697 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-727786958499920609 [label="Q = {{}, {s1}, {s2}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+4344449123389727759 [label="Q = {{}, {s1}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+8234280487011959308 [label="Q = {{}, {s2}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+4915705118928143608 [label="Q = {{s1}, {s2}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+945387556498749030 [label="Q = {{}, {s1}, {s2}, {s3}, {s1, s2}, {s1, s3}, {s2, s3}, {s1, s2, s3}}",style = filled]
+-5897241680287429783 -> -5897241680287429783 [label="",color="black",fontcolor="black"];
+4677452993036435758 -> 4677452993036435758 [label="",color="black",fontcolor="black"];
+-1828135404211443536 -> -1828135404211443536 [label="",color="black",fontcolor="black"];
+4809910837343895664 -> 4809910837343895664 [label="",color="black",fontcolor="black"];
+-458462522092572169 -> -458462522092572169 [label="",color="black",fontcolor="black"];
+-7482234524543606622 -> -7482234524543606622 [label="",color="black",fontcolor="black"];
+2543067008213373221 -> 2543067008213373221 [label="",color="black",fontcolor="black"];
+8313013233828251514 -> 8313013233828251514 [label="",color="black",fontcolor="black"];
+-8202496112287400134 -> -8202496112287400134 [label="",color="black",fontcolor="black"];
+7054717814775879332 -> 7054717814775879332 [label="",color="black",fontcolor="black"];
+-4213556583494304156 -> -4213556583494304156 [label="",color="black",fontcolor="black"];
+9143848979403427811 -> 9143848979403427811 [label="",color="black",fontcolor="black"];
+-7499876867742564635 -> -7499876867742564635 [label="",color="black",fontcolor="black"];
+3208848914957471586 -> 3208848914957471586 [label="",color="black",fontcolor="black"];
+8979922105585277245 -> 8979922105585277245 [label="",color="black",fontcolor="black"];
+5601960921324536914 -> 5601960921324536914 [label="",color="black",fontcolor="black"];
+1567934424803968336 -> 1567934424803968336 [label="",color="black",fontcolor="black"];
+-5863292391280806697 -> -5863292391280806697 [label="",color="black",fontcolor="black"];
+-4355516848776852485 -> -4355516848776852485 [label="",color="black",fontcolor="black"];
+8713640848875960956 -> 8713640848875960956 [label="",color="black",fontcolor="black"];
+2952701827007851555 -> 2952701827007851555 [label="",color="black",fontcolor="black"];
+7290032104346206298 -> 7290032104346206298 [label="",color="black",fontcolor="black"];
+518914508037485654 -> 518914508037485654 [label="",color="black",fontcolor="black"];
+8318561556932016949 -> 8318561556932016949 [label="",color="black",fontcolor="black"];
+-4030021250244949326 -> -4030021250244949326 [label="",color="black",fontcolor="black"];
+-7492453196032811795 -> -7492453196032811795 [label="",color="black",fontcolor="black"];
+3597752413633725869 -> 3597752413633725869 [label="",color="black",fontcolor="black"];
+2079446205642904719 -> 2079446205642904719 [label="",color="black",fontcolor="black"];
+-6361149887541025528 -> -6361149887541025528 [label="",color="black",fontcolor="black"];
+-599067378130652329 -> -599067378130652329 [label="",color="black",fontcolor="black"];
+166725488344774912 -> 166725488344774912 [label="",color="black",fontcolor="black"];
+4147452228527201306 -> 4147452228527201306 [label="",color="black",fontcolor="black"];
+7609321224289815109 -> 7609321224289815109 [label="",color="black",fontcolor="black"];
+1868666324023312146 -> 1868666324023312146 [label="",color="black",fontcolor="black"];
+446814799966545407 -> 446814799966545407 [label="",color="black",fontcolor="black"];
+3049866232902615999 -> 3049866232902615999 [label="",color="black",fontcolor="black"];
+-4546574454558577230 -> -4546574454558577230 [label="",color="black",fontcolor="black"];
+270209629662345203 -> 270209629662345203 [label="",color="black",fontcolor="black"];
+-5125957748012284300 -> -5125957748012284300 [label="",color="black",fontcolor="black"];
+-2258470031052018826 -> -2258470031052018826 [label="",color="black",fontcolor="black"];
+6614459467301886705 -> 6614459467301886705 [label="",color="black",fontcolor="black"];
+854645246092971182 -> 854645246092971182 [label="",color="black",fontcolor="black"];
+8855831085276413719 -> 8855831085276413719 [label="",color="black",fontcolor="black"];
+1246964702353491701 -> 1246964702353491701 [label="",color="black",fontcolor="black"];
+5789133580702391224 -> 5789133580702391224 [label="",color="black",fontcolor="black"];
+-1498527704520725953 -> -1498527704520725953 [label="",color="black",fontcolor="black"];
+-4962086649462555552 -> -4962086649462555552 [label="",color="black",fontcolor="black"];
+3323821600390626016 -> 3323821600390626016 [label="",color="black",fontcolor="black"];
+4611115057702188034 -> 4611115057702188034 [label="",color="black",fontcolor="black"];
+-8890402424822184571 -> -8890402424822184571 [label="",color="black",fontcolor="black"];
+-3131696515356732454 -> -3131696515356732454 [label="",color="black",fontcolor="black"];
+2133876171345479245 -> 2133876171345479245 [label="",color="black",fontcolor="black"];
+2757306002569749335 -> 2757306002569749335 [label="",color="black",fontcolor="black"];
+8526690369031533832 -> 8526690369031533832 [label="",color="black",fontcolor="black"];
+1554140100929362555 -> 1554140100929362555 [label="",color="black",fontcolor="black"];
+1872997518444878514 -> 1872997518444878514 [label="",color="black",fontcolor="black"];
+2750838458622666454 -> 2750838458622666454 [label="",color="black",fontcolor="black"];
+-3703948246664951589 -> -3703948246664951589 [label="",color="black",fontcolor="black"];
+5621423372098060329 -> 5621423372098060329 [label="",color="black",fontcolor="black"];
+2897071694249384892 -> 2897071694249384892 [label="",color="black",fontcolor="black"];
+-7829650937979721157 -> -7829650937979721157 [label="",color="black",fontcolor="black"];
+-4377369709452149660 -> -4377369709452149660 [label="",color="black",fontcolor="black"];
+8009014139271588011 -> 8009014139271588011 [label="",color="black",fontcolor="black"];
+5160753247510918150 -> 5160753247510918150 [label="",color="black",fontcolor="black"];
+-216833504486619775 -> -216833504486619775 [label="",color="black",fontcolor="black"];
+-5986779695414602786 -> -5986779695414602786 [label="",color="black",fontcolor="black"];
+6672118985735492614 -> 6672118985735492614 [label="",color="black",fontcolor="black"];
+7441854223608213788 -> 7441854223608213788 [label="",color="black",fontcolor="black"];
+3986194165687838531 -> 3986194165687838531 [label="",color="black",fontcolor="black"];
+308829722139555388 -> 308829722139555388 [label="",color="black",fontcolor="black"];
+6411741164407933177 -> 6411741164407933177 [label="",color="black",fontcolor="black"];
+4032047463099501201 -> 4032047463099501201 [label="",color="black",fontcolor="black"];
+-2503813929034406756 -> -2503813929034406756 [label="",color="black",fontcolor="black"];
+-5968762586804397557 -> -5968762586804397557 [label="",color="black",fontcolor="black"];
+1606017751650478988 -> 1606017751650478988 [label="",color="black",fontcolor="black"];
+5070683913525902803 -> 5070683913525902803 [label="",color="black",fontcolor="black"];
+3333812165385567607 -> 3333812165385567607 [label="",color="black",fontcolor="black"];
+1556823396361279597 -> 1556823396361279597 [label="",color="black",fontcolor="black"];
+5011936996646915634 -> 5011936996646915634 [label="",color="black",fontcolor="black"];
+-295683354881325794 -> -295683354881325794 [label="",color="black",fontcolor="black"];
+3037432499635560840 -> 3037432499635560840 [label="",color="black",fontcolor="black"];
+-4010421663459444301 -> -4010421663459444301 [label="",color="black",fontcolor="black"];
+2516387457981929406 -> 2516387457981929406 [label="",color="black",fontcolor="black"];
+-2058962624910731643 -> -2058962624910731643 [label="",color="black",fontcolor="black"];
+-5514076225418215206 -> -5514076225418215206 [label="",color="black",fontcolor="black"];
+-5872162444509817856 -> -5872162444509817856 [label="",color="black",fontcolor="black"];
+-2535304470267203744 -> -2535304470267203744 [label="",color="black",fontcolor="black"];
+-7116680895026681683 -> -7116680895026681683 [label="",color="black",fontcolor="black"];
+8613248498236982944 -> 8613248498236982944 [label="",color="black",fontcolor="black"];
+-6094871281071661898 -> -6094871281071661898 [label="",color="black",fontcolor="black"];
+2809443042694106728 -> 2809443042694106728 [label="",color="black",fontcolor="black"];
+-3726383175693459355 -> -3726383175693459355 [label="",color="black",fontcolor="black"];
+-7409163630419414661 -> -7409163630419414661 [label="",color="black",fontcolor="black"];
+7260015656918940831 -> 7260015656918940831 [label="",color="black",fontcolor="black"];
+640751675351991126 -> 640751675351991126 [label="",color="black",fontcolor="black"];
+-5510326839615196463 -> -5510326839615196463 [label="",color="black",fontcolor="black"];
+-2049020823741012850 -> -2049020823741012850 [label="",color="black",fontcolor="black"];
+8499731844076521669 -> 8499731844076521669 [label="",color="black",fontcolor="black"];
+7444083668400844012 -> 7444083668400844012 [label="",color="black",fontcolor="black"];
+-2581204666315874965 -> -2581204666315874965 [label="",color="black",fontcolor="black"];
+-8342161237222634700 -> -8342161237222634700 [label="",color="black",fontcolor="black"];
+5064445273577337960 -> 5064445273577337960 [label="",color="black",fontcolor="black"];
+9049526079805755762 -> 9049526079805755762 [label="",color="black",fontcolor="black"];
+3279016904338048813 -> 3279016904338048813 [label="",color="black",fontcolor="black"];
+-7965968090314543830 -> -7965968090314543830 [label="",color="black",fontcolor="black"];
+4768100787837741207 -> 4768100787837741207 [label="",color="black",fontcolor="black"];
+-6715244130272931449 -> -6715244130272931449 [label="",color="black",fontcolor="black"];
+5222687634727059338 -> 5222687634727059338 [label="",color="black",fontcolor="black"];
+-8216064257248951583 -> -8216064257248951583 [label="",color="black",fontcolor="black"];
+3934360164108104550 -> 3934360164108104550 [label="",color="black",fontcolor="black"];
+7390036714820658489 -> 7390036714820658489 [label="",color="black",fontcolor="black"];
+3788849421327949081 -> 3788849421327949081 [label="",color="black",fontcolor="black"];
+1101785797360449539 -> 1101785797360449539 [label="",color="black",fontcolor="black"];
+6871750714215624284 -> 6871750714215624284 [label="",color="black",fontcolor="black"];
+7989272810890206728 -> 7989272810890206728 [label="",color="black",fontcolor="black"];
+3528436419991028198 -> 3528436419991028198 [label="",color="black",fontcolor="black"];
+6728943516480070309 -> 6728943516480070309 [label="",color="black",fontcolor="black"];
+-5199935960715670360 -> -5199935960715670360 [label="",color="black",fontcolor="black"];
+-450994793389017365 -> -450994793389017365 [label="",color="black",fontcolor="black"];
+-6220959710466957132 -> -6220959710466957132 [label="",color="black",fontcolor="black"];
+4304314908710522646 -> 4304314908710522646 [label="",color="black",fontcolor="black"];
+-4179220618633310450 -> -4179220618633310450 [label="",color="black",fontcolor="black"];
+578260284555244475 -> 578260284555244475 [label="",color="black",fontcolor="black"];
+-2111489919337325130 -> -2111489919337325130 [label="",color="black",fontcolor="black"];
+4490289044487391136 -> 4490289044487391136 [label="",color="black",fontcolor="black"];
+-4733110311326338808 -> -4733110311326338808 [label="",color="black",fontcolor="black"];
+6117157744451690245 -> 6117157744451690245 [label="",color="black",fontcolor="black"];
+108337486467780123 -> 108337486467780123 [label="",color="black",fontcolor="black"];
+-1831568217330827016 -> -1831568217330827016 [label="",color="black",fontcolor="black"];
+6771158495847854463 -> 6771158495847854463 [label="",color="black",fontcolor="black"];
+1000067687235692320 -> 1000067687235692320 [label="",color="black",fontcolor="black"];
+-3333130553136512204 -> -3333130553136512204 [label="",color="black",fontcolor="black"];
+-1558050536299485650 -> -1558050536299485650 [label="",color="black",fontcolor="black"];
+-5010331760540143503 -> -5010331760540143503 [label="",color="black",fontcolor="black"];
+3289274496107996822 -> 3289274496107996822 [label="",color="black",fontcolor="black"];
+-3036161548887023669 -> -3036161548887023669 [label="",color="black",fontcolor="black"];
+2168556385262803515 -> 2168556385262803515 [label="",color="black",fontcolor="black"];
+-816174921367702474 -> -816174921367702474 [label="",color="black",fontcolor="black"];
+2060216017564559558 -> 2060216017564559558 [label="",color="black",fontcolor="black"];
+5512497241491242649 -> 5512497241491242649 [label="",color="black",fontcolor="black"];
+8701446418529990536 -> 8701446418529990536 [label="",color="black",fontcolor="black"];
+2533989404026982691 -> 2533989404026982691 [label="",color="black",fontcolor="black"];
+5439262421995309861 -> 5439262421995309861 [label="",color="black",fontcolor="black"];
+-6789110553653779160 -> -6789110553653779160 [label="",color="black",fontcolor="black"];
+9019292682689134398 -> 9019292682689134398 [label="",color="black",fontcolor="black"];
+8272690401556144230 -> 8272690401556144230 [label="",color="black",fontcolor="black"];
+-7459474290187137429 -> -7459474290187137429 [label="",color="black",fontcolor="black"];
+-3666218752842965131 -> -3666218752842965131 [label="",color="black",fontcolor="black"];
+-2781267934943008607 -> -2781267934943008607 [label="",color="black",fontcolor="black"];
+-8542771001947111682 -> -8542771001947111682 [label="",color="black",fontcolor="black"];
+-1013397939116755782 -> -1013397939116755782 [label="",color="black",fontcolor="black"];
+-1811817118653935292 -> -1811817118653935292 [label="",color="black",fontcolor="black"];
+-4444431877093242857 -> -4444431877093242857 [label="",color="black",fontcolor="black"];
+2947090766781638170 -> 2947090766781638170 [label="",color="black",fontcolor="black"];
+-863311845699535860 -> -863311845699535860 [label="",color="black",fontcolor="black"];
+-745507288033225662 -> -745507288033225662 [label="",color="black",fontcolor="black"];
+2239259484220668495 -> 2239259484220668495 [label="",color="black",fontcolor="black"];
+5365779966417070929 -> 5365779966417070929 [label="",color="black",fontcolor="black"];
+-8295324823739120926 -> -8295324823739120926 [label="",color="black",fontcolor="black"];
+-8610823037314893730 -> -8610823037314893730 [label="",color="black",fontcolor="black"];
+7076326684205340243 -> 7076326684205340243 [label="",color="black",fontcolor="black"];
+3985773016360060749 -> 3985773016360060749 [label="",color="black",fontcolor="black"];
+1252844489843602271 -> 1252844489843602271 [label="",color="black",fontcolor="black"];
+1005547338513413425 -> 1005547338513413425 [label="",color="black",fontcolor="black"];
+-5289652216366988106 -> -5289652216366988106 [label="",color="black",fontcolor="black"];
+-1837352304585469207 -> -1837352304585469207 [label="",color="black",fontcolor="black"];
+2883464792067026081 -> 2883464792067026081 [label="",color="black",fontcolor="black"];
+1430730513492937147 -> 1430730513492937147 [label="",color="black",fontcolor="black"];
+4885826530320162788 -> 4885826530320162788 [label="",color="black",fontcolor="black"];
+-7081473657490770226 -> -7081473657490770226 [label="",color="black",fontcolor="black"];
+3199574098509279326 -> 3199574098509279326 [label="",color="black",fontcolor="black"];
+-5907572576292205981 -> -5907572576292205981 [label="",color="black",fontcolor="black"];
+4949466693051524206 -> 4949466693051524206 [label="",color="black",fontcolor="black"];
+-1932867679923910829 -> -1932867679923910829 [label="",color="black",fontcolor="black"];
+-5387963696965496564 -> -5387963696965496564 [label="",color="black",fontcolor="black"];
+-3972759905962678320 -> -3972759905962678320 [label="",color="black",fontcolor="black"];
+-2697443458331836746 -> -2697443458331836746 [label="",color="black",fontcolor="black"];
+-333142286851089539 -> -333142286851089539 [label="",color="black",fontcolor="black"];
+1284774301997823344 -> 1284774301997823344 [label="",color="black",fontcolor="black"];
+-3659559076288123034 -> -3659559076288123034 [label="",color="black",fontcolor="black"];
+2118330209019591057 -> 2118330209019591057 [label="",color="black",fontcolor="black"];
+-589463940641957988 -> -589463940641957988 [label="",color="black",fontcolor="black"];
+-6722278323877738878 -> -6722278323877738878 [label="",color="black",fontcolor="black"];
+2367973199121319732 -> 2367973199121319732 [label="",color="black",fontcolor="black"];
+8127787390365536619 -> 8127787390365536619 [label="",color="black",fontcolor="black"];
+4752418498136253666 -> 4752418498136253666 [label="",color="black",fontcolor="black"];
+2261204445715316433 -> 2261204445715316433 [label="",color="black",fontcolor="black"];
+8236626601783220303 -> 8236626601783220303 [label="",color="black",fontcolor="black"];
+-7423480364961139134 -> -7423480364961139134 [label="",color="black",fontcolor="black"];
+4906868551052962900 -> 4906868551052962900 [label="",color="black",fontcolor="black"];
+-7346427490856972875 -> -7346427490856972875 [label="",color="black",fontcolor="black"];
+8122277868198388664 -> 8122277868198388664 [label="",color="black",fontcolor="black"];
+2728132988526965414 -> 2728132988526965414 [label="",color="black",fontcolor="black"];
+4394741953119507130 -> 4394741953119507130 [label="",color="black",fontcolor="black"];
+-1789226350477401687 -> -1789226350477401687 [label="",color="black",fontcolor="black"];
+981639224311910308 -> 981639224311910308 [label="",color="black",fontcolor="black"];
+6411750913498963642 -> 6411750913498963642 [label="",color="black",fontcolor="black"];
+5852967859702681437 -> 5852967859702681437 [label="",color="black",fontcolor="black"];
+335173372565562887 -> 335173372565562887 [label="",color="black",fontcolor="black"];
+6102886490018558040 -> 6102886490018558040 [label="",color="black",fontcolor="black"];
+-1860090672213609417 -> -1860090672213609417 [label="",color="black",fontcolor="black"];
+4259019908170391522 -> 4259019908170391522 [label="",color="black",fontcolor="black"];
+-3057317067145688934 -> -3057317067145688934 [label="",color="black",fontcolor="black"];
+4550366126713857687 -> 4550366126713857687 [label="",color="black",fontcolor="black"];
+-2034245077310325631 -> -2034245077310325631 [label="",color="black",fontcolor="black"];
+-5141062337249933573 -> -5141062337249933573 [label="",color="black",fontcolor="black"];
+5914168298930514166 -> 5914168298930514166 [label="",color="black",fontcolor="black"];
+537967313978587624 -> 537967313978587624 [label="",color="black",fontcolor="black"];
+-7268501282503441809 -> -7268501282503441809 [label="",color="black",fontcolor="black"];
+-4215338424521135385 -> -4215338424521135385 [label="",color="black",fontcolor="black"];
+3401347708016510186 -> 3401347708016510186 [label="",color="black",fontcolor="black"];
+8813655969863964148 -> 8813655969863964148 [label="",color="black",fontcolor="black"];
+2052616227499352378 -> 2052616227499352378 [label="",color="black",fontcolor="black"];
+1605699080749691223 -> 1605699080749691223 [label="",color="black",fontcolor="black"];
+1729727205041664881 -> 1729727205041664881 [label="",color="black",fontcolor="black"];
+-957817516029944452 -> -957817516029944452 [label="",color="black",fontcolor="black"];
+-6354226288010163102 -> -6354226288010163102 [label="",color="black",fontcolor="black"];
+3408465967049406531 -> 3408465967049406531 [label="",color="black",fontcolor="black"];
+-1809961790823900845 -> -1809961790823900845 [label="",color="black",fontcolor="black"];
+-3747109036233639876 -> -3747109036233639876 [label="",color="black",fontcolor="black"];
+-7212355739937558941 -> -7212355739937558941 [label="",color="black",fontcolor="black"];
+-2070967020168138327 -> -2070967020168138327 [label="",color="black",fontcolor="black"];
+-846032081719688743 -> -846032081719688743 [label="",color="black",fontcolor="black"];
+-3386731902081807100 -> -3386731902081807100 [label="",color="black",fontcolor="black"];
+4200722614300926729 -> 4200722614300926729 [label="",color="black",fontcolor="black"];
+-1825862248570013409 -> -1825862248570013409 [label="",color="black",fontcolor="black"];
+383296093530309146 -> 383296093530309146 [label="",color="black",fontcolor="black"];
+-1160342703819559913 -> -1160342703819559913 [label="",color="black",fontcolor="black"];
+-5007505097093432055 -> -5007505097093432055 [label="",color="black",fontcolor="black"];
+-7040028350713313295 -> -7040028350713313295 [label="",color="black",fontcolor="black"];
+8680379077278019078 -> 8680379077278019078 [label="",color="black",fontcolor="black"];
+-7871454909271998453 -> -7871454909271998453 [label="",color="black",fontcolor="black"];
+-4060382475652607723 -> -4060382475652607723 [label="",color="black",fontcolor="black"];
+8053000871556231342 -> 8053000871556231342 [label="",color="black",fontcolor="black"];
+1379585664565458121 -> 1379585664565458121 [label="",color="black",fontcolor="black"];
+-6487501832529037424 -> -6487501832529037424 [label="",color="black",fontcolor="black"];
+5711651494925441437 -> 5711651494925441437 [label="",color="black",fontcolor="black"];
+1884679571354929283 -> 1884679571354929283 [label="",color="black",fontcolor="black"];
+6697722951559866839 -> 6697722951559866839 [label="",color="black",fontcolor="black"];
+-7683172427452299065 -> -7683172427452299065 [label="",color="black",fontcolor="black"];
+-7136417808747437023 -> -7136417808747437023 [label="",color="black",fontcolor="black"];
+-8934858161566540696 -> -8934858161566540696 [label="",color="black",fontcolor="black"];
+7977315738575090277 -> 7977315738575090277 [label="",color="black",fontcolor="black"];
+4310359042644075387 -> 4310359042644075387 [label="",color="black",fontcolor="black"];
+3800173940648968327 -> 3800173940648968327 [label="",color="black",fontcolor="black"];
+-211639516559990377 -> -211639516559990377 [label="",color="black",fontcolor="black"];
+-5540406144425523308 -> -5540406144425523308 [label="",color="black",fontcolor="black"];
+-8880144718085495151 -> -8880144718085495151 [label="",color="black",fontcolor="black"];
+-6139007067629419206 -> -6139007067629419206 [label="",color="black",fontcolor="black"];
+4645957969004145463 -> 4645957969004145463 [label="",color="black",fontcolor="black"];
+1521553634216966697 -> 1521553634216966697 [label="",color="black",fontcolor="black"];
+-727786958499920609 -> -727786958499920609 [label="",color="black",fontcolor="black"];
+4344449123389727759 -> 4344449123389727759 [label="",color="black",fontcolor="black"];
+8234280487011959308 -> 8234280487011959308 [label="",color="black",fontcolor="black"];
+4915705118928143608 -> 4915705118928143608 [label="",color="black",fontcolor="black"];
+945387556498749030 -> 945387556498749030 [label="",color="black",fontcolor="black"];
+{rank = same; 2952701827007851555;-1498527704520725953;4147452228527201306;1872997518444878514;6871750714215624284;9019292682689134398;-1809961790823900845;-5387963696965496564;6102886490018558040;3985773016360060749;446814799966545407;-3131696515356732454;-1831568217330827016;1729727205041664881;9143848979403427811;3333812165385567607;2757306002569749335;2516387457981929406;383296093530309146;8979922105585277245;2728132988526965414;4304314908710522646;8313013233828251514;-5125957748012284300;-7423480364961139134;-1828135404211443536;-6139007067629419206;8009014139271588011;8855831085276413719;2897071694249384892;-5872162444509817856;3788849421327949081;2533989404026982691;-1837352304585469207;3408465967049406531;7977315738575090277;-3057317067145688934;-3386731902081807100;-333142286851089539;7444083668400844012;8680379077278019078;5070683913525902803;2168556385262803515;6411750913498963642;3934360164108104550;3049866232902615999;5011936996646915634;7290032104346206298;2060216017564559558;-599067378130652329;-7212355739937558941;8499731844076521669;5365779966417070929;-1013397939116755782;-5199935960715670360;-4030021250244949326;854645246092971182;6117157744451690245;5852967859702681437;537967313978587624;4645957969004145463;-8295324823739120926;4768100787837741207;8127787390365536619;8236626601783220303;9049526079805755762;4490289044487391136;4885826530320162788;-1160342703819559913;270209629662345203;-6220959710466957132;2052616227499352378;-957817516029944452;-4010421663459444301;-7409163630419414661;-4213556583494304156;6771158495847854463;8701446418529990536;5789133580702391224;-7081473657490770226;-6722278323877738878;1884679571354929283;308829722139555388;1252844489843602271;-4733110311326338808;-2781267934943008607;518914508037485654;-5514076225418215206;-1558050536299485650;8318561556932016949;-863311845699535860;6728943516480070309;7441854223608213788;1554140100929362555;6411741164407933177;2883464792067026081;-7965968090314543830;-1811817118653935292;-3036161548887023669;-4546574454558577230;-2581204666315874965;-5986779695414602786;-8216064257248951583;-7871454909271998453;-816174921367702474;4550366126713857687;-8934858161566540696;1284774301997823344;3323821600390626016;4200722614300926729;-7829650937979721157;8813655969863964148;3597752413633725869;4677452993036435758;-3666218752842965131;-2049020823741012850;-6094871281071661898;5601960921324536914;108337486467780123;2543067008213373221;4752418498136253666;-2111489919337325130;3208848914957471586;1567934424803968336;5621423372098060329;-727786958499920609;6697722951559866839;2239259484220668495;4259019908170391522;4032047463099501201;981639224311910308;-1932867679923910829;7609321224289815109;5439262421995309861;8713640848875960956;-4962086649462555552;1101785797360449539;4310359042644075387;-5907572576292205981;-7268501282503441809;-8890402424822184571;-4215338424521135385;-7040028350713313295;8526690369031533832;3528436419991028198;8272690401556144230;-295683354881325794;335173372565562887;-2697443458331836746;3800173940648968327;-458462522092572169;-5141062337249933573;-6361149887541025528;1246964702353491701;4915705118928143608;-8880144718085495151;-6715244130272931449;-3747109036233639876;7989272810890206728;-7492453196032811795;6614459467301886705;8122277868198388664;2750838458622666454;-846032081719688743;2947090766781638170;4344449123389727759;-7683172427452299065;-5540406144425523308;8613248498236982944;-5289652216366988106;2809443042694106728;640751675351991126;166725488344774912;7076326684205340243;7054717814775879332;3037432499635560840;5160753247510918150;-2034245077310325631;7390036714820658489;-3659559076288123034;-1825862248570013409;8234280487011959308;2133876171345479245;5512497241491242649;1556823396361279597;-5897241680287429783;2118330209019591057;-6487501832529037424;-211639516559990377;1606017751650478988;4611115057702188034;1000067687235692320;-7459474290187137429;3401347708016510186;1605699080749691223;4949466693051524206;1379585664565458121;-4060382475652607723;-6789110553653779160;-4355516848776852485;-2503813929034406756;-1789226350477401687;-5863292391280806697;2261204445715316433;6672118985735492614;3199574098509279326;-745507288033225662;-4179220618633310450;-3333130553136512204;945387556498749030;4906868551052962900;-7482234524543606622;-450994793389017365;578260284555244475;-8202496112287400134;2367973199121319732;1430730513492937147;3279016904338048813;-7499876867742564635;-216833504486619775;-589463940641957988;1868666324023312146;5711651494925441437;-2070967020168138327;-3972759905962678320;8053000871556231342;-1860090672213609417;-8342161237222634700;-5968762586804397557;3289274496107996822;1005547338513413425;-7136417808747437023;-5510326839615196463;-8610823037314893730;-4377369709452149660;-6354226288010163102;-3726383175693459355;-7116680895026681683;-2258470031052018826;-5007505097093432055;3986194165687838531;-3703948246664951589;-8542771001947111682;-7346427490856972875;-4444431877093242857;-5010331760540143503;-2058962624910731643;5222687634727059338;4809910837343895664;4394741953119507130;7260015656918940831;-2535304470267203744;1521553634216966697;2079446205642904719;5064445273577337960;5914168298930514166;}
 }
 }
