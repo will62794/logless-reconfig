@@ -1,25 +1,35 @@
 ---- MODULE quorums ----
-EXTENDS TLC
+EXTENDS TLC, FiniteSets, Naturals
 
 CONSTANT Server
 VARIABLE Q
 
-Init == Q \in SUBSET (SUBSET Server)
 
-AddOne(s) == 
+\* The set of all majority quorums of a given set.
+Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
+
+\* Do all quorums of two sets intersect.
+QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
+
+Add(s) == 
     /\ s \notin Q
     /\ Q' = Q \cup {s}
 
-RemoveOne(s) == 
+Rem(s) == 
     /\ s \in Q
     /\ Q' = Q \ {s}
 
+Mov(s, Qnew) == 
+    /\ s \in Qnew
+    /\ QuorumsOverlap(Qnew, Q)
+    /\ Q' = Qnew
+
+Init == Q \in (SUBSET Server)
+
 Next == 
-    /\ Q' \in SUBSET (SUBSET Server)
-    /\ \A q \in Q, q2 \in Q' : q \cap q2 # {} 
-    
-    \* \/ \E s \in Server : AddOne(s)
-    \* \/ \E s \in Server : RemoveOne(s)
+    \/ \E s \in Server : Add(s)
+    \/ \E s \in Server : Rem(s)
+    \/ \E s \in Server, S \in SUBSET Server : Mov(s, S)
 
 Symmetry == Permutations(Server)
 
