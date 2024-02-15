@@ -44,3 +44,4 @@ checkproofs.log
 *.nav
 *.snm
 *.toc
+quorums.dot
