@@ -1,0 +1,43 @@
+strict digraph DiskGraph {
+edge [colorscheme="paired12"]
+nodesep=0.35;concentrate=true;
+subgraph cluster_graph {
+color="white";
+-4615964965084577761 [label="Q = {s1}",style = filled]
+7276969124814655979 [label="Q = {s2}",style = filled]
+-2493501127510503004 [label="Q = {s3}",style = filled]
+2986244916262271917 [label="Q = {s1, s2}",style = filled]
+-8004879097433703454 [label="Q = {s1, s3}",style = filled]
+-8892326587893025785 [label="Q = {s2, s3}",style = filled]
+3636229250625015009 [label="Q = {s1, s2, s3}",style = filled]
+-4615964965084577761 -> 2986244916262271917 [label="",color="2",fontcolor="2"];
+-4615964965084577761 -> -8004879097433703454 [label="",color="2",fontcolor="2"];
+7276969124814655979 -> 2986244916262271917 [label="",color="2",fontcolor="2"];
+7276969124814655979 -> -8892326587893025785 [label="",color="2",fontcolor="2"];
+-2493501127510503004 -> -8004879097433703454 [label="",color="2",fontcolor="2"];
+-2493501127510503004 -> -8892326587893025785 [label="",color="2",fontcolor="2"];
+2986244916262271917 -> 7276969124814655979 [label="",color="2",fontcolor="2"];
+2986244916262271917 -> -4615964965084577761 [label="",color="2",fontcolor="2"];
+2986244916262271917 -> 3636229250625015009 [label="",color="2",fontcolor="2"];
+2986244916262271917 -> -8004879097433703454 [label="",color="3",fontcolor="3"];
+2986244916262271917 -> -8892326587893025785 [label="",color="3",fontcolor="3"];
+-8004879097433703454 -> -2493501127510503004 [label="",color="2",fontcolor="2"];
+-8004879097433703454 -> 3636229250625015009 [label="",color="2",fontcolor="2"];
+-8004879097433703454 -> -4615964965084577761 [label="",color="2",fontcolor="2"];
+-8004879097433703454 -> 2986244916262271917 [label="",color="3",fontcolor="3"];
+-8004879097433703454 -> -8892326587893025785 [label="",color="3",fontcolor="3"];
+-8892326587893025785 -> 3636229250625015009 [label="",color="2",fontcolor="2"];
+-8892326587893025785 -> -2493501127510503004 [label="",color="2",fontcolor="2"];
+-8892326587893025785 -> 7276969124814655979 [label="",color="2",fontcolor="2"];
+-8892326587893025785 -> 2986244916262271917 [label="",color="3",fontcolor="3"];
+-8892326587893025785 -> -8004879097433703454 [label="",color="3",fontcolor="3"];
+3636229250625015009 -> -8892326587893025785 [label="",color="2",fontcolor="2"];
+3636229250625015009 -> -8004879097433703454 [label="",color="2",fontcolor="2"];
+3636229250625015009 -> 2986244916262271917 [label="",color="2",fontcolor="2"];
+
+}
+subgraph cluster_legend {graph[style=bold];label = "Next State Actions" style="solid"
+node [ labeljust="l",colorscheme="paired12",style=filled,shape=record ]
+SingleNodeChange [label="SingleNodeChange",fillcolor=2]
+ToQuorumOverlap [label="ToQuorumOverlap",fillcolor=3]
+}}

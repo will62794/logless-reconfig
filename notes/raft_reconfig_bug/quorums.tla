@@ -17,19 +17,38 @@ Add(s) ==
 
 Rem(s) == 
     /\ s \in Q
+    /\ Q # {s}
     /\ Q' = Q \ {s}
 
-Mov(s, Qnew) == 
-    /\ s \in Qnew
+SingleNodeChange(s) == 
+    \* Add
+    \/ /\ s \notin Q
+       /\ Q' = Q \cup {s}
+    \* Remove
+    \/ /\ s \in Q
+       /\ Q # {s}
+       /\ Q' = Q \ {s}
+
+ToQuorumOverlap(Qnew) == 
+    /\ Qnew # Q
+    /\ Qnew # {}
     /\ QuorumsOverlap(Qnew, Q)
+    \* Take only reconfigs in this action that wouldn't be single node changes.
+    /\ ~\E t \in Server : Qnew = Q \cup {t}
+    /\ ~\E t \in Server : Qnew = Q \ {t}
     /\ Q' = Qnew
 
-Init == Q \in (SUBSET Server)
+Init == 
+    /\ Q \in (SUBSET Server)
+    /\ Q # {}
 
 Next == 
-    \/ \E s \in Server : Add(s)
-    \/ \E s \in Server : Rem(s)
-    \/ \E s \in Server, S \in SUBSET Server : Mov(s, S)
+    \/ \E s \in Server : SingleNodeChange(s)
+    \/ \E S \in SUBSET Server : ToQuorumOverlap(S)
+
+\* NextOverlap == 
+    \* \/ \E S \in SUBSET Server : Overlap(S)
+
 
 Symmetry == Permutations(Server)
 
