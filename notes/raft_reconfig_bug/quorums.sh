@@ -9,12 +9,12 @@ do
   sed -E -i "" "s/.*rank.*;}//" $name.dot
   sed -E -i "" "s/nodesep=0.35;/nodesep=0.35;concentrate=false;/" $name.dot
   # Render standard.
-  dot -Tpng -Gconcentrate=true $name.dot > $name.png
+  dot -Tpng -Gdpi=200 -Gconcentrate=true $name.dot > $name.png
 
   # Remove the legend for fdp.
   sed -E -i "" "s/SingleNodeChange.*//" $name.dot
   sed -E -i "" "s/ToQuorumOverlap.*//" $name.dot
 
   # Render with force-directed.
-  dot -Tpng -Ksfdp -Gdpi=350 -Gnodesep=0.15 -Gconcentrate=false $name.dot > ${name}_fdp.png
+  dot -Tpng -Ksfdp -Gdpi=180 -Gnodesep=0.15 -Gconcentrate=false $name.dot > ${name}_fdp.png
 done
