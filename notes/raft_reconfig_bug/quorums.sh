@@ -6,6 +6,15 @@ for name in "quorums_n2" "quorums_n3" "quorums_n4" "quorums_n5"
 do
   $tlc -noGenerateSpecTE -config $name.cfg -dump dot,colorize $name.dot quorums
   sed -E -i "" "s/.*rank.*;}//" $name.dot
-  sed -E -i "" "s/nodesep=0.35;/nodesep=0.35;concentrate=true;/" $name.dot
-  dot -Tpng $name.dot > $name.png
+  sed -E -i "" "s/.*rank.*;}//" $name.dot
+  sed -E -i "" "s/nodesep=0.35;/nodesep=0.35;concentrate=false;/" $name.dot
+  # Render standard.
+  dot -Tpng -Gconcentrate=true $name.dot > $name.png
+
+  # Remove the legend for fdp.
+  sed -E -i "" "s/SingleNodeChange.*//" $name.dot
+  sed -E -i "" "s/ToQuorumOverlap.*//" $name.dot
+
+  # Render with force-directed.
+  dot -Tpng -Ksfdp -Gdpi=350 -Gnodesep=0.15 -Gconcentrate=false $name.dot > ${name}_fdp.png
 done

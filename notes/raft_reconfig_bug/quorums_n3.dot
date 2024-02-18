@@ -1,43 +1,43 @@
 strict digraph DiskGraph {
 edge [colorscheme="paired12"]
-nodesep=0.35;concentrate=true;
+nodesep=0.35;concentrate=false;
 subgraph cluster_graph {
 color="white";
--8021294612694838380 [label="Q = {s1}",style = filled]
-7689248013513876646 [label="Q = {s2}",style = filled]
--8715565032626938413 [label="Q = {s3}",style = filled]
--3671750978134116092 [label="Q = {s1, s2}",style = filled]
-2356214265313263729 [label="Q = {s1, s3}",style = filled]
--2979650619162516543 [label="Q = {s2, s3}",style = filled]
--999346464786346595 [label="Q = {s1, s2, s3}",style = filled]
--8021294612694838380 -> -3671750978134116092 [label="",color="2",fontcolor="2"];
--8021294612694838380 -> 2356214265313263729 [label="",color="2",fontcolor="2"];
-7689248013513876646 -> -3671750978134116092 [label="",color="2",fontcolor="2"];
-7689248013513876646 -> -2979650619162516543 [label="",color="2",fontcolor="2"];
--8715565032626938413 -> 2356214265313263729 [label="",color="2",fontcolor="2"];
--8715565032626938413 -> -2979650619162516543 [label="",color="2",fontcolor="2"];
--3671750978134116092 -> 7689248013513876646 [label="",color="2",fontcolor="2"];
--3671750978134116092 -> -8021294612694838380 [label="",color="2",fontcolor="2"];
--3671750978134116092 -> -999346464786346595 [label="",color="2",fontcolor="2"];
--3671750978134116092 -> 2356214265313263729 [label="",color="3",fontcolor="3"];
--3671750978134116092 -> -2979650619162516543 [label="",color="3",fontcolor="3"];
-2356214265313263729 -> -8715565032626938413 [label="",color="2",fontcolor="2"];
-2356214265313263729 -> -999346464786346595 [label="",color="2",fontcolor="2"];
-2356214265313263729 -> -8021294612694838380 [label="",color="2",fontcolor="2"];
-2356214265313263729 -> -3671750978134116092 [label="",color="3",fontcolor="3"];
-2356214265313263729 -> -2979650619162516543 [label="",color="3",fontcolor="3"];
--2979650619162516543 -> -999346464786346595 [label="",color="2",fontcolor="2"];
--2979650619162516543 -> -8715565032626938413 [label="",color="2",fontcolor="2"];
--2979650619162516543 -> 7689248013513876646 [label="",color="2",fontcolor="2"];
--2979650619162516543 -> -3671750978134116092 [label="",color="3",fontcolor="3"];
--2979650619162516543 -> 2356214265313263729 [label="",color="3",fontcolor="3"];
--999346464786346595 -> -2979650619162516543 [label="",color="2",fontcolor="2"];
--999346464786346595 -> 2356214265313263729 [label="",color="2",fontcolor="2"];
--999346464786346595 -> -3671750978134116092 [label="",color="2",fontcolor="2"];
+-1272779981742972117 [label="C = {s1}",style = filled]
+1672709541418505699 [label="C = {s2}",style = filled]
+-6490144564870010890 [label="C = {s3}",style = filled]
+-9154485508467734443 [label="C = {s1, s2}",style = filled]
+3615348705441643072 [label="C = {s1, s3}",style = filled]
+-7275064081245309035 [label="C = {s2, s3}",style = filled]
+-2053241676672690939 [label="C = {s1, s2, s3}",style = filled]
+-1272779981742972117 -> -9154485508467734443 [label="",color="2",fontcolor="2"];
+-1272779981742972117 -> 3615348705441643072 [label="",color="2",fontcolor="2"];
+1672709541418505699 -> -9154485508467734443 [label="",color="2",fontcolor="2"];
+1672709541418505699 -> -7275064081245309035 [label="",color="2",fontcolor="2"];
+-6490144564870010890 -> 3615348705441643072 [label="",color="2",fontcolor="2"];
+-6490144564870010890 -> -7275064081245309035 [label="",color="2",fontcolor="2"];
+-9154485508467734443 -> 1672709541418505699 [label="",color="2",fontcolor="2"];
+-9154485508467734443 -> -1272779981742972117 [label="",color="2",fontcolor="2"];
+-9154485508467734443 -> -2053241676672690939 [label="",color="2",fontcolor="2"];
+-9154485508467734443 -> 3615348705441643072 [label="",color="3",fontcolor="3"];
+-9154485508467734443 -> -7275064081245309035 [label="",color="3",fontcolor="3"];
+3615348705441643072 -> -6490144564870010890 [label="",color="2",fontcolor="2"];
+3615348705441643072 -> -2053241676672690939 [label="",color="2",fontcolor="2"];
+3615348705441643072 -> -1272779981742972117 [label="",color="2",fontcolor="2"];
+3615348705441643072 -> -9154485508467734443 [label="",color="3",fontcolor="3"];
+3615348705441643072 -> -7275064081245309035 [label="",color="3",fontcolor="3"];
+-7275064081245309035 -> -2053241676672690939 [label="",color="2",fontcolor="2"];
+-7275064081245309035 -> -6490144564870010890 [label="",color="2",fontcolor="2"];
+-7275064081245309035 -> 1672709541418505699 [label="",color="2",fontcolor="2"];
+-7275064081245309035 -> -9154485508467734443 [label="",color="3",fontcolor="3"];
+-7275064081245309035 -> 3615348705441643072 [label="",color="3",fontcolor="3"];
+-2053241676672690939 -> -7275064081245309035 [label="",color="2",fontcolor="2"];
+-2053241676672690939 -> 3615348705441643072 [label="",color="2",fontcolor="2"];
+-2053241676672690939 -> -9154485508467734443 [label="",color="2",fontcolor="2"];
 
 }
 subgraph cluster_legend {graph[style=bold];label = "Next State Actions" style="solid"
 node [ labeljust="l",colorscheme="paired12",style=filled,shape=record ]
-SingleNodeChange [label="SingleNodeChange",fillcolor=2]
-ToQuorumOverlap [label="ToQuorumOverlap",fillcolor=3]
+
+
 }}

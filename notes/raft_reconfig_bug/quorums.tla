@@ -2,7 +2,7 @@
 EXTENDS TLC, FiniteSets, Naturals
 
 CONSTANT Server
-VARIABLE Q
+VARIABLE C
 
 
 \* The set of all majority quorums of a given set.
@@ -12,35 +12,35 @@ Quorums(S) == {i \in SUBSET(S) : Cardinality(i) * 2 > Cardinality(S)}
 QuorumsOverlap(x, y) == \A qx \in Quorums(x), qy \in Quorums(y) : qx \cap qy # {}
 
 Add(s) == 
-    /\ s \notin Q
-    /\ Q' = Q \cup {s}
+    /\ s \notin C
+    /\ C' = C \cup {s}
 
 Rem(s) == 
-    /\ s \in Q
-    /\ Q # {s}
-    /\ Q' = Q \ {s}
+    /\ s \in C
+    /\ C # {s}
+    /\ C' = C \ {s}
 
 SingleNodeChange(s) == 
     \* Add
-    \/ /\ s \notin Q
-       /\ Q' = Q \cup {s}
+    \/ /\ s \notin C
+       /\ C' = C \cup {s}
     \* Remove
-    \/ /\ s \in Q
-       /\ Q # {s}
-       /\ Q' = Q \ {s}
+    \/ /\ s \in C
+       /\ C # {s}
+       /\ C' = C \ {s}
 
 ToQuorumOverlap(Qnew) == 
-    /\ Qnew # Q
+    /\ Qnew # C
     /\ Qnew # {}
-    /\ QuorumsOverlap(Qnew, Q)
+    /\ QuorumsOverlap(Qnew, C)
     \* Take only reconfigs in this action that wouldn't be single node changes.
-    /\ ~\E t \in Server : Qnew = Q \cup {t}
-    /\ ~\E t \in Server : Qnew = Q \ {t}
-    /\ Q' = Qnew
+    /\ ~\E t \in Server : Qnew = C \cup {t}
+    /\ ~\E t \in Server : Qnew = C \ {t}
+    /\ C' = Qnew
 
 Init == 
-    /\ Q \in (SUBSET Server)
-    /\ Q # {}
+    /\ C \in (SUBSET Server)
+    /\ C # {}
 
 Next == 
     \/ \E s \in Server : SingleNodeChange(s)
