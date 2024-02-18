@@ -18,7 +18,7 @@ do
   # command line flag to remove all arrowheads: 
   # Set edge style from command line flag: 
 
-  nodesep="0.01"
+  nodesep="0.15"
   # If "quorums_n2" then make nodesep=0.3
   if [ $name = "quorums_n2" ]
   then

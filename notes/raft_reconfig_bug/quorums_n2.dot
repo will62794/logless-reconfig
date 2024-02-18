@@ -3,13 +3,13 @@ edge [colorscheme="paired12"]
 nodesep=0.35;
 subgraph cluster_graph {
 color="white";
--4829239824706946026 [label="C = {s1}",style = filled]
--2531206959618473713 [label="C = {s2}",style = filled]
-33554553732200034 [label="C = {s1, s2}",style = filled]
--4829239824706946026 -> 33554553732200034 [label="",color="2",fontcolor="2"];
--2531206959618473713 -> 33554553732200034 [label="",color="2",fontcolor="2"];
-33554553732200034 -> -2531206959618473713 [label="",color="2",fontcolor="2"];
-33554553732200034 -> -4829239824706946026 [label="",color="2",fontcolor="2"];
+7424936044790554196 [label="C = {s1}",style = filled]
+6224692438980243147 [label="C = {s2}",style = filled]
+-4418220350573957946 [label="C = {s1, s2}",style = filled]
+7424936044790554196 -> -4418220350573957946 [label="",color="2",fontcolor="2"];
+6224692438980243147 -> -4418220350573957946 [label="",color="2",fontcolor="2"];
+-4418220350573957946 -> 6224692438980243147 [label="",color="2",fontcolor="2"];
+-4418220350573957946 -> 7424936044790554196 [label="",color="2",fontcolor="2"];
 
 }
 }
