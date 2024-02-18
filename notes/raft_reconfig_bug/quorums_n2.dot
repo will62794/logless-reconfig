@@ -1,15 +1,15 @@
 strict digraph DiskGraph {
 edge [colorscheme="paired12"]
-nodesep=0.35;concentrate=false;
+nodesep=0.35;
 subgraph cluster_graph {
 color="white";
--2514124501985420386 [label="C = {s1}",style = filled]
--976436706902401161 [label="C = {s2}",style = filled]
-5471330131867489116 [label="C = {s1, s2}",style = filled]
--2514124501985420386 -> 5471330131867489116 [label="",color="2",fontcolor="2"];
--976436706902401161 -> 5471330131867489116 [label="",color="2",fontcolor="2"];
-5471330131867489116 -> -976436706902401161 [label="",color="2",fontcolor="2"];
-5471330131867489116 -> -2514124501985420386 [label="",color="2",fontcolor="2"];
+-4829239824706946026 [label="C = {s1}",style = filled]
+-2531206959618473713 [label="C = {s2}",style = filled]
+33554553732200034 [label="C = {s1, s2}",style = filled]
+-4829239824706946026 -> 33554553732200034 [label="",color="2",fontcolor="2"];
+-2531206959618473713 -> 33554553732200034 [label="",color="2",fontcolor="2"];
+33554553732200034 -> -2531206959618473713 [label="",color="2",fontcolor="2"];
+33554553732200034 -> -4829239824706946026 [label="",color="2",fontcolor="2"];
 
 }
 }
