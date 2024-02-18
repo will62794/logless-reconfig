@@ -16,5 +16,5 @@ do
   sed -E -i "" "s/ToQuorumOverlap.*//" $name.dot
 
   # Render with force-directed.
-  dot -Tpng -Ksfdp -Gdpi=180 -Gnodesep=0.15 -Gconcentrate=false $name.dot > ${name}_fdp.png
+  dot -Tpng -Ksfdp -Gdpi=180 -Gnodesep=0.065 -Gconcentrate=false $name.dot > ${name}_fdp.png
 done
