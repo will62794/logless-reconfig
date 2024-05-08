@@ -92,16 +92,21 @@ BecomeLeader(i, voteQuorum) ==
     /\ UNCHANGED <<config, configVersion>>    
 
 \* A reconfig occurs on node i. The node must currently be a leader.
+\* Ported over directly from mldr3.tla:
+\* https://github.com/egolf-cs/tla-synthesis/blob/3aa5a99182112187129a947aaa0434f007d48263/tool_and_experimentation/run_tool/proofs/mldr3.tla#L267-L282
 Reconfig(i, newConfig) ==
-    /\ state[i] = Primary
-    /\ ConfigQuorumCheck(i)
-    /\ TermQuorumCheck(i)
-    /\ QuorumsOverlap(config[i], newConfig)
-    /\ i \in newConfig
-    /\ configTerm' = [configTerm EXCEPT ![i] = currentTerm[i]]
-    /\ configVersion' = [configVersion EXCEPT ![i] = configVersion[i] + 1]
-    /\ config' = [config EXCEPT ![i] = newConfig]
-    /\ UNCHANGED <<currentTerm, state>>
+    /\ state[i] = Primary \* gt: state[i] = Primary
+    /\ ConfigQuorumCheck(i) \* gt: ConfigQuorumCheck(i)
+    /\ TermQuorumCheck(i) \* gt: TermQuorumCheck(i)
+    /\ QuorumsOverlap(config[i], newConfig) \* gt: QuorumsOverlap(config[i], newConfig)
+    /\ i \in newConfig \* gt: i \in newConfig
+    /\ newConfig # config[i] \* gt: newConfig # config[i]
+    \* /\ (configVersion[i] < newVersion) \* gt: newVersion = configVersion[i] + 1
+    /\ configTerm' = configTerm \* gt: [configTerm EXCEPT ![i] = currentTerm[i]]
+    /\ \E newVersion \in Nat : (configVersion[i] < newVersion) /\ configVersion' = [configVersion EXCEPT ![i] = newVersion] \* gt: [configVersion EXCEPT ![i] = newVersion]
+    /\ config' = [config EXCEPT ![i] = newConfig] \* gt: [config EXCEPT ![i] = newConfig]
+    /\ currentTerm' = currentTerm \* gt: currentTerm
+    /\ state' = state \* gt: state
 
 \* Node i sends its current config to node j.
 SendConfig(i, j) ==
