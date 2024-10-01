@@ -1,5 +1,5 @@
 #!/bin/bash
-tlc="/Users/willyschultz/Downloads/zulu15.32.15-ca-jdk15.0.3-macosx_aarch64/bin/java -DTLA-Library=/usr/local/lib/tlaps -cp /usr/local/tla2tools-v1.8.jar tlc2.TLC"
+tlc="java -DTLA-Library=/usr/local/lib/tlaps -cp /usr/local/tla2tools-v1.8.jar tlc2.TLC"
 
 # For loop iterating over strings.
 for name in "quorums_n2" "quorums_n3" "quorums_n4" "quorums_n5"
@@ -25,6 +25,6 @@ do
       nodesep="0.35"
   fi
 
-  dot -Tpng -Kneato -Gdpi=180 -Gnodesep=$nodesep -Epenwidth=0.7 -Goverlap=scale -Gconcentrate=false $name.dot > ${name}_neato.png
-  dot -Tpng -Ksfdp -Gdpi=180 -Gnodesep=$nodesep -Epenwidth=0.7 -Goverlap=scale -Gconcentrate=false $name.dot > ${name}_fdp.png
+  dot -Tpng -Kneato -Gdpi=180 -Gnodesep=$nodesep -Epenwidth=0.7 -Goverlap=scale -Gconcentrate=false -Nshape=box -Nstyle=rounded $name.dot > ${name}_neato.png
+  dot -Tpng -Ksfdp -Gdpi=180 -Gnodesep=$nodesep -Epenwidth=0.7 -Goverlap=scale -Gconcentrate=false -Nshape=box -Nstyle=rounded $name.dot > ${name}_fdp.png
 done
