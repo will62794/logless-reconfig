@@ -25,6 +25,6 @@ do
       nodesep="0.35"
   fi
 
-  dot -Tpng -Kneato -Gdpi=180 -Gnodesep=$nodesep -Epenwidth=0.7 -Goverlap=scale -Gconcentrate=false -Nshape=box -Nstyle=rounded $name.dot > ${name}_neato.png
-  dot -Tpng -Ksfdp -Gdpi=180 -Gnodesep=$nodesep -Epenwidth=0.7 -Goverlap=scale -Gconcentrate=false -Nshape=box -Nstyle=rounded $name.dot > ${name}_fdp.png
+  dot -Tpng -Kneato -Gdpi=180 -Gnodesep=$nodesep -Epenwidth=0.7 -Goverlap=scale -Gconcentrate=false -Nstyle=rounded $name.dot > ${name}_neato.png
+  dot -Tpng -Ksfdp -Gdpi=180 -Gnodesep=$nodesep -Epenwidth=0.7 -Goverlap=scale -Gconcentrate=false -Nstyle=rounded $name.dot > ${name}_fdp.png
 done
