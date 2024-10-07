@@ -18,13 +18,17 @@ do
   # command line flag to remove all arrowheads: 
   # Set edge style from command line flag: 
 
-  nodesep="0.15"
-  # If "quorums_n2" then make nodesep=0.3
+  nodesep="0.4"
+  # If "quorums_n2" then make nodesep larger
   if [ $name = "quorums_n2" ]
   then
-      nodesep="0.35"
+      nodesep="0.8"
   fi
 
-  dot -Tpng -Kneato -Gdpi=180 -Gnodesep=$nodesep -Epenwidth=0.7 -Goverlap=scale -Gconcentrate=false -Nstyle=rounded $name.dot > ${name}_neato.png
-  dot -Tpng -Ksfdp -Gdpi=180 -Gnodesep=$nodesep -Epenwidth=0.7 -Goverlap=scale -Gconcentrate=false -Nstyle=rounded $name.dot > ${name}_fdp.png
+  # Remove "style = filled" from local nodes
+  sed -i '' 's/,style = filled//' $name.dot
+
+  dot -Tpng -Kneato -Gdpi=180 -Gnodesep=$nodesep -Epenwidth=0.7 -Goverlap=scale -Gconcentrate=false -Nshape=rectangle -Nstyle="rounded,filled" -Nfillcolor="#FFFFFF" -Nstyle="rounded,filled" -Nfillcolor="#FFFFFF" $name.dot > ${name}_neato.png
+  dot -Tpng -Ksfdp -Gdpi=180 -Gnodesep=$nodesep -Epenwidth=0.7 -Goverlap=scale -Gconcentrate=false -Nshape=rectangle -Nstyle="rounded,filled" -Nfillcolor="#FFFFFF" -Nstyle="rounded,filled" -Nfillcolor="#FFFFFF" $name.dot > ${name}_fdp.png
+
 done
