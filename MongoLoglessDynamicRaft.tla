@@ -80,7 +80,9 @@ BecomeLeader(i, voteQuorum) ==
     LET newTerm == currentTerm[i] + 1 IN
     /\ i \in config[i]
     /\ i \in voteQuorum
-    /\ \A v \in voteQuorum : CanVoteForConfig(v, i, newTerm)
+    \* Need to ensure that this config is "safe" w.r.t prior terms.
+    /\ \A s \in Server : (state[s] = Primary) => \A q \in voteQuorum : currentTerm[q] >= currentTerm[s]
+    /\ \A v \in voteQuorum : currentTerm[v] < newTerm
     \* Update the terms of each voter.
     /\ currentTerm' = [s \in Server |-> IF s \in voteQuorum THEN newTerm ELSE currentTerm[s]]
     /\ state' = [s \in Server |->
@@ -94,8 +96,11 @@ BecomeLeader(i, voteQuorum) ==
 \* A reconfig occurs on node i. The node must currently be a leader.
 Reconfig(i, newConfig) ==
     /\ state[i] = Primary
-    /\ ConfigQuorumCheck(i)
-    /\ TermQuorumCheck(i)
+    \* If you are the newest current leader, you can reconfig.
+    /\ \A j \in Server : (j # i /\ state[j] = Primary) => (currentTerm[j] < currentTerm[i])
+    \* Can't move forward if there's an older primary with an active config
+    \* /\ ConfigQuorumCheck(i)
+    \* /\ TermQuorumCheck(i)
     /\ QuorumsOverlap(config[i], newConfig)
     /\ i \in newConfig
     /\ configTerm' = [configTerm EXCEPT ![i] = currentTerm[i]]
@@ -123,7 +128,7 @@ Init ==
 
 Next ==
     \/ \E s \in Server, newConfig \in SUBSET Server : Reconfig(s, newConfig)
-    \/ \E s,t \in Server : SendConfig(s, t)
+    \* \/ \E s,t \in Server : SendConfig(s, t)
     \/ \E i \in Server : \E Q \in Quorums(config[i]) :  BecomeLeader(i, Q)
     \/ \E s,t \in Server : UpdateTerms(s,t)
 
